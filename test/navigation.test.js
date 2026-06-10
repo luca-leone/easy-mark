@@ -2,17 +2,20 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { renderNavigation } from '../core/server/navigation.js';
 
-test('genera una gerarchia valida anche con salti di livello', () => {
-  const html = renderNavigation([{
-    route: '/guide',
-    title: 'guida & uso API Node.js',
-    headings: [
-      { depth: 1, title: 'Guida', id: 'doc-guida' },
-      { depth: 3, title: 'dettaglio API', id: 'doc-dettaglio' },
-      { depth: 2, title: 'funzionalità Node.js', id: 'doc-funzionalità' },
-      { depth: 1, title: 'appendice', id: 'doc-appendice' }
-    ]
-  }]);
+test('numera i documenti e usa bullet per ogni livello di heading', () => {
+  const html = renderNavigation([
+    {
+      route: '/guide',
+      title: 'guida & uso API Node.js',
+      headings: [
+        { depth: 1, title: 'Guida', id: 'doc-guida' },
+        { depth: 2, title: 'dettaglio API', id: 'doc-dettaglio' },
+        { depth: 3, title: 'funzionalità Node.js', id: 'doc-funzionalità' },
+        { depth: 1, title: 'appendice', id: 'doc-appendice' }
+      ]
+    },
+    { route: '/introduzione', title: 'introduzione', headings: [] }
+  ]);
 
   assert.match(html, />Guida &amp; Uso API Node.js</);
   assert.doesNotMatch(html, /#doc-guida/);
@@ -20,9 +23,13 @@ test('genera una gerarchia valida anche con salti di livello', () => {
   assert.match(html, />Funzionalità Node.js</);
   assert.match(html, />Appendice</);
   assert.match(html, /href="\/guide#doc-funzionalit%C3%A0"/);
-  assert.equal((html.match(/<ol/g) ?? []).length, (html.match(/<\/ol>/g) ?? []).length);
+  assert.equal((html.match(/<ol/g) ?? []).length, 1);
+  assert.equal((html.match(/<\/ol>/g) ?? []).length, 1);
+  assert.equal((html.match(/<ul/g) ?? []).length, 2);
+  assert.equal((html.match(/<\/ul>/g) ?? []).length, 2);
   assert.equal((html.match(/<li/g) ?? []).length, (html.match(/<\/li>/g) ?? []).length);
-  assert.match(html, /navigation__headings"><li><a href="\/guide#doc-dettaglio"[^]*<li><a href="\/guide#doc-funzionalit%C3%A0"/);
+  assert.match(html, /^<nav[^]*<ol>[^]*Guida &amp; Uso API Node\.js[^]*Introduzione[^]*<\/ol><\/nav>$/);
+  assert.match(html, /<ul class="navigation__headings"><li><a href="\/guide#doc-dettaglio"[^]*<ul><li><a href="\/guide#doc-funzionalit%C3%A0"/);
 });
 
 test('mantiene route serializzate e codifica i fragment della navigazione', () => {

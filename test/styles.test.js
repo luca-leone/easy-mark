@@ -13,6 +13,9 @@ test('usa Google Sans locale con una scala tipografica leggibile', async () => {
   assert.match(styles, /body\.sidebar-collapsed \.app-layout/);
   assert.match(styles, /ionicons\/menu-outline\.svg/);
   assert.match(styles, /--navigation-gutter:\s*1\.35rem/);
+  assert.match(styles, /\.navigation > ol\s*{[^}]*padding-left:\s*1\.85rem[^}]*list-style:\s*decimal/s);
+  assert.match(styles, /\.navigation ul\s*{[^}]*padding-left:\s*1\.15rem[^}]*list-style:\s*disc/s);
+  assert.doesNotMatch(styles, /\.navigation > ol\s*{[^}]*list-style:\s*none/s);
   assert.match(styles, /\.app-header__menu\s*{[^}]*translateX\(calc\(var\(--navigation-gutter\) - var\(--header-inline-padding\) - var\(--menu-toggle-glyph-offset\)\)\)/s);
   assert.match(styles, /\.app-sidebar\s*{[^}]*padding:\s*1\.75rem var\(--navigation-gutter\) 3rem/s);
   assert.match(styles, /--reading-progress/);

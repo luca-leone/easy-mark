@@ -112,8 +112,9 @@ a { color: var(--link); text-underline-offset: 0.16em; }
 .app-sidebar { min-width: 0; padding: 1.75rem var(--navigation-gutter) 3rem; overflow-x: hidden; border-right: 1px solid var(--border); background: var(--surface); transition: padding 180ms ease, border-color 180ms ease, visibility 180ms step-start; }
 .app-sidebar__header { display: none; align-items: center; justify-content: space-between; min-height: 3rem; margin-bottom: 1rem; font-weight: 650; }
 .sidebar-backdrop { display: none; }
-.navigation ol { margin: 0; padding-left: 1.15rem; }
-.navigation > ol { padding: 0; list-style: none; }
+.navigation ol, .navigation ul { margin: 0; }
+.navigation > ol { padding-left: 1.85rem; list-style: decimal; }
+.navigation ul { padding-left: 1.15rem; list-style: disc; }
 .navigation__document { margin-bottom: 1.2rem; }
 .navigation a { display: inline-block; padding-block: 0.16rem; color: var(--text); line-height: 1.4; text-decoration: none; }
 .navigation__document > a { font-weight: 600; }

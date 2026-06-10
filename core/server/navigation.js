@@ -13,7 +13,7 @@ function capitalizeMenuLabel(value) {
 }
 
 function renderHeadingList(headings, startIndex = 0, parentDepth = 0) {
-  let html = '<ol>';
+  let html = '<ul>';
   let index = startIndex;
 
   while (index < headings.length) {
@@ -32,7 +32,7 @@ function renderHeadingList(headings, startIndex = 0, parentDepth = 0) {
     html += '</li>';
   }
 
-  html += '</ol>';
+  html += '</ul>';
   return { html, nextIndex: index };
 }
 
@@ -44,7 +44,7 @@ function renderHeadings(document) {
     .map((heading) => ({ ...heading, route: document.route }));
   if (headings.length === 0) return '';
   const result = renderHeadingList(headings);
-  return result.html.replace('<ol>', '<ol class="navigation__headings">');
+  return result.html.replace('<ul>', '<ul class="navigation__headings">');
 }
 
 export function renderNavigation(documents) {

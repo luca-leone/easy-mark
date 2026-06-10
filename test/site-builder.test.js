@@ -132,6 +132,8 @@ test('crea uno snapshot di esportazione ordinato usando solo i frammenti in mem-
   assert.deepEqual(snapshot.documents.map(({ route }) => route), ['/alfa', '/zeta']);
   assert.deepEqual(snapshot.documents.map(({ assetBase }) => assetBase), ['/', '/']);
   assert.match(snapshot.navigation, /href="\/alfa#doc-caff%C3%A8"/);
+  assert.equal((snapshot.navigation.match(/<ol/g) ?? []).length, 1);
+  assert.match(snapshot.navigation, /<ul class="navigation__headings">/);
   assert.match(snapshot.documents[0].html, /<h1 id="doc-alfa">Alfa<\/h1>/);
   assert.doesNotMatch(snapshot.documents[0].html, /non usare|<script>/);
 });

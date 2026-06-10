@@ -50,6 +50,7 @@
 - `GET /__content/<route>` returns the corresponding HTML fragment or `404`.
 - Public static requests are restricted to an allowlist of browser asset extensions; authored Markdown and HTML templates are not served as static files.
 - Navigation lists documents in a deterministic total path order, using case-insensitive ordering with exact-path tie-breaking, and nests their headings by heading depth.
+- The top-level document list is ordered and displays progressive decimal markers starting at `1`; every nested heading list is unordered and displays bullet markers at all depths. The same navigation markup is used by the sidebar and aggregate PDF export.
 - The first H1 labels a document and is not repeated as a child heading in the menu; later headings, including later H1 elements, remain navigable. The filename is the fallback label when no H1 exists.
 - Navigation labels use Capitalized Case by uppercasing the first lowercase Unicode letter of each whitespace-delimited token while preserving all remaining characters, including acronyms and product names. This presentation-only transformation does not change document content, routes, manifests, or fragment IDs.
 - Internal navigation uses the History API and loads fragments on demand.
