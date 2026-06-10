@@ -1,0 +1,14 @@
+#!/bin/sh
+
+repo_root=$(git rev-parse --show-toplevel 2>/dev/null) || {
+  echo "commit-msg: unable to locate repository root" >&2
+  exit 1
+}
+
+if ! command -v node >/dev/null 2>&1; then
+  echo "commit-msg: Node.js 22 or later is required in PATH; run 'nvm use' or configure your Git client environment" >&2
+  exit 1
+fi
+
+cd "$repo_root" || exit 1
+exec node "$repo_root/script/git/validate-commit-message.mjs" --hook "$1"

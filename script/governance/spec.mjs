@@ -1,0 +1,55 @@
+export const REQUIRED_FILES = Object.freeze([
+  'AGENTS.md',
+  'rules/project-rules.md',
+  'contracts/application-contract.md',
+  'guardrails/non-negotiables.md',
+  'evaluation/acceptance-checklist.md',
+  'reports/README.md',
+  'memory/decisions.md',
+  'doc/adr/README.md',
+  '.codex/config.toml',
+  '.codex/agents/planner.toml',
+  '.codex/agents/implementer.toml',
+  '.codex/agents/senior-implementer.toml',
+  '.codex/agents/verifier.toml',
+  '.codex/agents/reviewer.toml',
+  '.agents/skills/context-budget-monitor/SKILL.md',
+  '.agents/skills/context-budget-monitor/agents/openai.yaml',
+  '.agents/skills/generate-commit/SKILL.md',
+  '.agents/skills/generate-commit/agents/openai.yaml',
+  'hooks/commit-msg',
+  'core/server/server.js',
+  'script/git/validate-commit-message.mjs',
+  'script/git/install-hooks.mjs'
+]);
+
+export const REQUIRED_ADR_SECTIONS = Object.freeze([
+  '## Status',
+  '## Context',
+  '## Decision',
+  '## Consequences',
+  '## Alternatives Considered'
+]);
+
+export const AGENT_SPECIFICATIONS = Object.freeze({
+  planner: { model: 'gpt-5.5', effort: 'high', sandbox: 'read-only' },
+  implementer: { model: 'gpt-5.4-mini', effort: 'medium', sandbox: 'workspace-write' },
+  'senior-implementer': { model: 'gpt-5.5', effort: 'high', sandbox: 'workspace-write' },
+  verifier: { model: 'gpt-5.4-mini', effort: 'low', sandbox: 'read-only' },
+  reviewer: { model: 'gpt-5.5', effort: 'high', sandbox: 'read-only' }
+});
+
+export const GOVERNANCE_MARKDOWN_DIRECTORIES = Object.freeze([
+  'rules',
+  'contracts',
+  'guardrails',
+  'evaluation',
+  'reports',
+  'memory',
+  'doc',
+  '.agents'
+]);
+
+export const EXPECTED_AGENT_FILES = Object.freeze(
+  Object.keys(AGENT_SPECIFICATIONS).map((name) => `${name}.toml`).sort()
+);

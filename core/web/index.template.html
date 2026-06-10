@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>easy-mark</title>
+    <script src="/theme-init.js"></script>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <header class="app-header">
+      <button id="menu-toggle" class="icon-button app-header__menu" type="button" aria-label="Apri navigazione" aria-controls="app-sidebar" aria-expanded="false">
+        <span class="icon icon--menu" aria-hidden="true"></span>
+      </button>
+      <a class="app-header__brand" href="/">easy-mark</a>
+      <div class="app-header__actions">
+        <button id="pdf-export" class="text-button" type="button" aria-describedby="pdf-export-status">Esporta PDF</button>
+        <button id="theme-toggle" class="icon-button" type="button" aria-label="Attiva tema scuro">
+          <span class="icon icon--theme" aria-hidden="true"></span>
+        </button>
+      </div>
+      <p id="pdf-export-status" class="visually-hidden" role="status" aria-live="polite"></p>
+      <div id="reading-progress" class="reading-progress" role="progressbar" aria-label="Avanzamento lettura" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+        <span class="reading-progress__bar"></span>
+      </div>
+    </header>
+    <div class="app-layout">
+      <aside id="app-sidebar" class="app-sidebar" aria-label="Navigazione documentazione">
+        <div class="app-sidebar__header">
+          <span>Indice</span>
+          <button id="menu-close" class="icon-button" type="button" aria-label="Chiudi navigazione">
+            <span class="icon icon--close" aria-hidden="true"></span>
+          </button>
+        </div>
+        <!-- NAVIGATION -->
+      </aside>
+      <button id="sidebar-backdrop" class="sidebar-backdrop" type="button" aria-label="Chiudi navigazione" tabindex="-1"></button>
+      <main id="content" class="document" tabindex="-1" aria-live="polite"></main>
+    </div>
+    <div id="print-export" class="print-export" aria-hidden="true"></div>
+    <!-- DOCUMENT_MANIFEST -->
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

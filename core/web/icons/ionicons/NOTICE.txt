@@ -1,0 +1,11 @@
+Ionicons 8.0.13
+
+The outline SVG files in this directory were extracted unchanged from the official `ionicons` npm package:
+
+- menu-outline.svg
+- close-outline.svg
+- sunny-outline.svg
+- moon-outline.svg
+
+Project: https://ionic.io/ionicons
+License: MIT, reproduced in LICENSE.

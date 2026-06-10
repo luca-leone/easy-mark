@@ -1,0 +1,35 @@
+{
+  "name": "easy-mark",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node core/server/server.js",
+    "commit:validate": "node script/git/validate-commit-message.mjs",
+    "hooks:install": "node script/git/install-hooks.mjs",
+    "validate:governance": "node script/validate-governance.mjs",
+    "test:node": "node --test",
+    "test:coverage": "node --test --experimental-test-coverage",
+    "test": "npm run validate:governance && npm run test:node",
+    "check": "npm test"
+  },
+  "dependencies": {
+    "chokidar": "^4.0.3",
+    "express": "^4.21.2",
+    "github-slugger": "^2.0.0",
+    "mem-fs": "^4.1.0",
+    "mem-fs-editor": "^11.1.4",
+    "mime-types": "^2.1.35",
+    "rehype-raw": "^7.0.0",
+    "rehype-sanitize": "^6.0.0",
+    "rehype-stringify": "^10.0.1",
+    "remark-gfm": "^4.0.1",
+    "remark-parse": "^11.0.0",
+    "remark-rehype": "^11.1.2",
+    "unified": "^11.0.5",
+    "unist-util-visit": "^5.0.0"
+  }
+}

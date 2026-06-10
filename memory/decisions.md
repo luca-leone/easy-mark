@@ -1,0 +1,33 @@
+# Decision Memory
+
+This file is an append-only chronological index for agents. Existing entries must not be edited or removed. Corrections and supersessions are recorded as new entries.
+
+Entry format:
+
+`- YYYY-MM-DD | Status | Decision | ADR reference or N/A`
+
+- 2026-06-08 | Accepted | Build converted Markdown and the mirrored `src/` tree exclusively in `mem-fs`; do not write generated HTML to disk. | [ADR-0001](../doc/adr/0001-in-memory-build-architecture.md)
+- 2026-06-08 | Accepted | Render CommonMark plus GFM, sanitize raw HTML, create stable heading IDs, and rewrite relative Markdown links to SPA routes. | [ADR-0002](../doc/adr/0002-markdown-conversion-and-security.md)
+- 2026-06-08 | Accepted | Use one app shell with History API routing, on-demand fragments, hierarchical navigation, global CSS, and Unicode-safe anchor resolution. | [ADR-0003](../doc/adr/0003-spa-shell-routing-and-navigation.md)
+- 2026-06-08 | Accepted | Watch `src/` with Chokidar, serialize incremental virtual rebuilds, and reload browsers through SSE. | [ADR-0004](../doc/adr/0004-live-update-pipeline.md)
+- 2026-06-08 | Accepted | Govern repository context through contracts, ADRs, append-only memory, rules, guardrails, and automated validation. | [ADR-0005](../doc/adr/0005-repository-governance.md)
+- 2026-06-08 | Accepted | Restrict static assets, add browser security headers, render errors as text, structurally generate navigation, and isolate the serialized watcher handler for testing. | [ADR-0006](../doc/adr/0006-security-and-testability-hardening.md)
+- 2026-06-08 | Accepted | Use document titles as canonical navigation routes, keep source filename routes as compatibility aliases, and activate only the exact selected menu or anchor link. | [ADR-0007](../doc/adr/0007-title-based-routes-and-exact-navigation-state.md)
+- 2026-06-08 | Accepted | Self-host optimized Google Sans variable WOFF2 subsets, increase the reading scale, and refine the documentation layout without external font requests. | [ADR-0008](../doc/adr/0008-local-google-sans-and-typographic-system.md)
+- 2026-06-08 | Accepted | Add a mobile Ionicons hamburger drawer, persistent system-aware dark theme, and document-relative reading progress while preserving CSP and accessibility. | [ADR-0009](../doc/adr/0009-responsive-controls-theme-and-reading-progress.md)
+- 2026-06-08 | Accepted | Extend the hamburger to a persistent in-layout sidebar toggle from 900px through 1199px while keeping drawer behavior below 900px and a fixed sidebar from 1200px. | [ADR-0010](../doc/adr/0010-three-mode-responsive-sidebar.md)
+- 2026-06-08 | Accepted | Supersede the fixed wide-desktop exception: the hamburger collapses the inline sidebar at every width of at least 900px, including wide landscape viewports. | [ADR-0011](../doc/adr/0011-unbounded-inline-sidebar-toggle.md)
+- 2026-06-08 | Accepted | Use native Codex context telemetry for exact capacity and a repository-scoped explicit skill for 50/30/15 threshold discipline and pre-compact handoffs. | [ADR-0012](../doc/adr/0012-native-context-telemetry-and-compact-handoffs.md)
+- 2026-06-08 | Accepted | Support Node.js 22 and later while retaining Node.js 22 as the development baseline, and align the hamburger glyph with the shared navigation gutter without shrinking its interactive target. | N/A
+- 2026-06-08 | Accepted | Use explicitly invoked project-scoped agents with risk-based model routing, independent verification, one writer per overlapping scope, and coordinator-owned final integration. | [ADR-0013](../doc/adr/0013-risk-routed-multi-agent-workflow.md)
+- 2026-06-08 | Accepted | Export one atomic in-memory snapshot through native browser printing, with navigation first, stable document order, and namespaced internal links. | [ADR-0014](../doc/adr/0014-atomic-in-memory-pdf-export.md)
+- 2026-06-09 | Accepted | Store generated Markdown fragments in a virtual root disjoint from the authored mirror, and use an exact-path tie-breaker for deterministic document ordering. | [ADR-0015](../doc/adr/0015-disjoint-virtual-fragment-storage.md)
+- 2026-06-09 | Accepted | Activate aggregate print layout only during explicit export, resolve fragment assets from their Markdown source directories, normalize Unicode route lookup, and await images before printing. | [ADR-0016](../doc/adr/0016-export-print-isolation-and-assets.md)
+- 2026-06-08 | Accepted | Correction: the ADR-0015 and ADR-0016 decision entries dated 2026-06-09 were recorded with an incorrect future date; both decisions were accepted on 2026-06-08. | [ADR-0015](../doc/adr/0015-disjoint-virtual-fragment-storage.md), [ADR-0016](../doc/adr/0016-export-print-isolation-and-assets.md)
+- 2026-06-08 | Accepted | Give canonical routes precedence over aliases, namespace sanitized ID references during export, and force a theme-independent light print palette. | [ADR-0017](../doc/adr/0017-canonical-route-precedence-and-print-integrity.md)
+- 2026-06-08 | Accepted | Normalize route segments to NFC and serialize them once with percent encoding across Markdown compilation, server, SPA navigation, and PDF export. | [ADR-0018](../doc/adr/0018-normalized-url-route-space.md)
+- 2026-06-09 | Accepted | Enforce a dependency-free Conventional Commit subset with a versioned local hook, idempotent installer, and explicit staged-diff-aware Codex skill. | [ADR-0019](../doc/adr/0019-versioned-conventional-commit-policy.md)
+- 2026-06-09 | Accepted | Make commit validation respect Git cleanup, comment, and merge context; preserve existing hook managers; and cover native revert and autosquash forms. | [ADR-0020](../doc/adr/0020-context-aware-commit-validation.md)
+- 2026-06-09 | Accepted | Keep Codex skills and subagent definitions in their distinct supported directories, standardize workflow executables on ESM `.mjs`, move the server entry point under `lib/`, rename the product to `easy-mark`, and require deterministic governance diagnostics. | [ADR-0021](../doc/adr/0021-deterministic-javascript-workspace-layout.md)
+- 2026-06-10 | Accepted | Separate server logic into `core/server/`, bundled browser templates and assets into `core/web/`, and user content and full-file shell overrides into `src/`, with deterministic in-memory fallback to bundled templates. | [ADR-0022](../doc/adr/0022-core-server-web-and-user-overrides.md)
+- 2026-06-10 | Accepted | Omit the first H1 from navigation children because it already labels the document, and render menu labels in Unicode-aware Capitalized Case without changing routes or authored metadata. | [ADR-0023](../doc/adr/0023-non-duplicated-capitalized-navigation-labels.md)

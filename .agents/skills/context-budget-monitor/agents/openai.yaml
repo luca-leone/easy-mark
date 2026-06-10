@@ -1,0 +1,6 @@
+interface:
+  display_name: "Context Budget Monitor"
+  short_description: "Monitor context thresholds and prepare compact handoffs"
+  default_prompt: "Use $context-budget-monitor to assess the remaining context and prepare a safe /compact handoff when needed."
+policy:
+  allow_implicit_invocation: false

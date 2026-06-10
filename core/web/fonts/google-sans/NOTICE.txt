@@ -1,0 +1,10 @@
+Google Sans local web fonts
+
+The files in this directory are unmodified variable WOFF2 subsets downloaded from the Google Fonts CSS API on 2026-06-08:
+
+- google-sans-latin.woff2
+- google-sans-latin-ext.woff2
+
+Source specimen: https://fonts.google.com/specimen/Google+Sans
+
+The Google Fonts specimen identifies the family as licensed under the SIL Open Font License 1.1. The authoritative license text is available at https://openfontlicense.org/open-font-license-official-text/.
