@@ -5,6 +5,7 @@
 - [ ] `npm run start` launches `easy-mark` through `core/server/server.js`; no application entry point remains in the repository root.
 - [ ] Startup succeeds with the bundled `core/web` templates and at least one Markdown file, without requiring shell or stylesheet files in `src/`.
 - [ ] Valid `src/index.html` and `src/styles.css` files override their bundled templates, and deleting them restores the defaults.
+- [ ] A valid optional `src/manifest.json` customizes the shell and dynamic browser title; deletion restores `easy-mark`, and invalid updates preserve the last valid state.
 - [ ] Missing required inputs fail with explicit errors.
 - [ ] Source directory structure is preserved in `mem-fs`.
 - [ ] No generated `.html` files appear on disk beyond the authored shell.

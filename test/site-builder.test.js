@@ -72,6 +72,66 @@ test('rifiuta un override index privo dei placeholder applicativi', async (conte
   );
 });
 
+test('applica manifest, escaping e fallback durante gli aggiornamenti live', async (context) => {
+  const sourceDirectory = await fs.mkdtemp(path.join(os.tmpdir(), 'markdown-project-manifest-'));
+  context.after(() => fs.rm(sourceDirectory, { recursive: true, force: true }));
+  await fs.writeFile(path.join(sourceDirectory, 'page.md'), '# Pagina');
+  const manifestPath = path.join(sourceDirectory, 'manifest.json');
+  await fs.writeFile(manifestPath, JSON.stringify({ title: '  Guide <script>alert(1)</script>  ' }));
+  const builder = new SiteBuilder({ sourceDirectory });
+  await builder.build();
+
+  let shell = builder.read('index.html').toString();
+  assert.match(shell, /<title>Guide &lt;script&gt;alert\(1\)&lt;\/script&gt;<\/title>/);
+  assert.match(shell, /class="app-header__brand"[^>]*>Guide &lt;script&gt;alert\(1\)&lt;\/script&gt;<\/a>/);
+  assert.match(shell, /id="project-manifest"[^>]*>{"title":"Guide \\u003cscript>alert\(1\)\\u003c\/script>"}<\/script>/);
+
+  await fs.writeFile(manifestPath, '{"title":"Manuale API"}');
+  await builder.handleFileEvent('change', manifestPath);
+  assert.match(builder.read('index.html').toString(), /<title>Manuale API<\/title>/);
+
+  await fs.writeFile(manifestPath, '{"title":""}');
+  await assert.rejects(builder.handleFileEvent('change', manifestPath), /title deve essere una stringa non vuota/);
+  assert.match(builder.read('index.html').toString(), /<title>Manuale API<\/title>/);
+
+  await fs.unlink(manifestPath);
+  await builder.handleFileEvent('unlink', manifestPath);
+  shell = builder.read('index.html').toString();
+  assert.match(shell, /<title>easy-mark<\/title>/);
+  assert.match(shell, /id="project-manifest"[^>]*>{"title":"easy-mark"}<\/script>/);
+});
+
+test('mantiene compatibili gli override senza placeholder titolo', async (context) => {
+  const sourceDirectory = await fs.mkdtemp(path.join(os.tmpdir(), 'markdown-custom-project-shell-'));
+  context.after(() => fs.rm(sourceDirectory, { recursive: true, force: true }));
+  await fs.writeFile(path.join(sourceDirectory, 'page.md'), '# Pagina');
+  await fs.writeFile(path.join(sourceDirectory, 'manifest.json'), '{"title":"Manuale"}');
+  await fs.writeFile(path.join(sourceDirectory, 'index.html'), '<title>Statico</title><!-- NAVIGATION --><!-- DOCUMENT_MANIFEST -->');
+  const builder = new SiteBuilder({ sourceDirectory });
+  await builder.build();
+
+  const shell = builder.read('index.html').toString();
+  assert.match(shell, /<title>Statico<\/title>/);
+  assert.match(shell, /id="project-manifest"[^>]*>{"title":"Manuale"}<\/script>/);
+});
+
+test('sostituisce ogni placeholder titolo presente in un override', async (context) => {
+  const sourceDirectory = await fs.mkdtemp(path.join(os.tmpdir(), 'markdown-project-title-placeholders-'));
+  context.after(() => fs.rm(sourceDirectory, { recursive: true, force: true }));
+  await fs.writeFile(path.join(sourceDirectory, 'page.md'), '# Pagina');
+  await fs.writeFile(path.join(sourceDirectory, 'manifest.json'), '{"title":"Manuale"}');
+  await fs.writeFile(
+    path.join(sourceDirectory, 'index.html'),
+    '<title><!-- PROJECT_TITLE --></title><header><!-- PROJECT_TITLE --></header><!-- NAVIGATION --><!-- DOCUMENT_MANIFEST -->'
+  );
+  const builder = new SiteBuilder({ sourceDirectory });
+  await builder.build();
+
+  const shell = builder.read('index.html').toString();
+  assert.match(shell, /<title>Manuale<\/title><header>Manuale<\/header>/);
+  assert.doesNotMatch(shell, /PROJECT_TITLE/);
+});
+
 test('usa il primo H1 come route canonica e conserva il nome file come alias', async (context) => {
   const sourceDirectory = await fs.mkdtemp(path.join(os.tmpdir(), 'markdown-route-'));
   context.after(() => fs.rm(sourceDirectory, { recursive: true, force: true }));

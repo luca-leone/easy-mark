@@ -3,10 +3,10 @@
 ## Startup
 
 - The application supports Node.js 22 and later; Node.js 22 remains the development and verification baseline.
-- The product name is `easy-mark`; the package manifest, browser shell, dynamic page titles, and startup log use that name.
+- The product name, package name, and startup log remain `easy-mark`; the hosted documentation title is configured independently through `src/manifest.json`.
 - `npm run start` starts the application through `core/server/server.js` with Node.js.
 - The default HTTP port is `3000`; `PORT` may override it.
-- Startup fails when either bundled template under `core/web/` is missing, when a `src/index.html` override is structurally invalid, or when all Markdown documents are missing.
+- Startup fails when either bundled template under `core/web/` is missing, when a `src/index.html` override is structurally invalid, when a present `src/manifest.json` is invalid, or when all Markdown documents are missing.
 - The server starts only after the initial virtual build and navigation generation complete.
 
 ## Virtual Build
@@ -19,6 +19,15 @@
 - The resolved virtual `index.html` is the sole application shell and the resolved virtual `styles.css` is the sole global stylesheet.
 - Optional `src/index.html` and `src/styles.css` files override the bundled templates. Deleting either override during live development restores its bundled template immediately.
 - A `src/index.html` override must contain exactly one `<!-- NAVIGATION -->` placeholder and exactly one `<!-- DOCUMENT_MANIFEST -->` placeholder.
+- The bundled shell contains exactly two `<!-- PROJECT_TITLE -->` placeholders. A user override may contain zero or more; each occurrence is replaced with the HTML-escaped project title.
+
+## Project Metadata
+
+- `src/manifest.json` is optional public configuration. When absent or deleted, the project title defaults to `easy-mark`.
+- When present, the manifest must be valid JSON with an object root and a non-empty string `title`; surrounding whitespace is removed and additional properties are ignored.
+- The project title is rendered in the bundled header and initial `<title>`, and browser navigation formats dynamic titles as `<document title> — <project title>`.
+- The resolved metadata is embedded as escaped JSON in a `project-manifest` script element for the browser runtime. Values containing `<` cannot terminate the script or inject markup.
+- Invalid manifest updates preserve the last valid virtual state, emit no reload event, and do not prevent later file events from being processed.
 
 ## Typography and Presentation
 
@@ -58,6 +67,7 @@
 - Anchor navigation decodes URL fragments and resolves headings with `getElementById`, including Unicode IDs.
 - Below `900px`, navigation opens as an accessible hamburger drawer with backdrop, Escape handling, focus containment, focus restoration, and body scroll locking.
 - At `900px` and above, the sidebar remains in the page grid and the hamburger can collapse or restore it without a backdrop or focus trap; this preference persists in `localStorage` under `documentation-sidebar-collapsed`.
+- Sidebar opening and closing fades opacity over the existing layout transition. Inline navigation retains its expanded internal width while being clipped during collapse so labels do not reflow into narrow columns; mobile drawer content fades with its slide transition. Reduced-motion preferences make these transitions effectively immediate.
 - Crossing the mobile breakpoint closes any open drawer and applies the persisted inline sidebar state.
 - Selecting a navigation link closes the mobile drawer.
 - A three-pixel bar below the sticky header reports reading progress relative to the current document and resets after SPA navigation.
@@ -86,6 +96,7 @@
 - Deleting authored non-Markdown files removes only their mirrored virtual entries. Deleting Markdown removes its mirrored source, generated fragment, and navigation entry.
 - File events are processed serially to avoid concurrent rebuilds.
 - Successful updates regenerate the shell and send an SSE reload event through `GET /__events`.
+- Adding, changing, or deleting `src/manifest.json` regenerates the shell and updates the project title; deletion restores the default title.
 - Browser reload preserves a still-valid route; an invalid route falls back to the first document.
 
 ## HTTP Security

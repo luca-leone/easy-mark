@@ -13,6 +13,7 @@ test('serve app shell, frammenti e asset dalla memoria', async (context) => {
   await fs.writeFile(path.join(sourceDirectory, 'index.html'), '<main><!-- NAVIGATION --><!-- DOCUMENT_MANIFEST --></main>');
   await fs.writeFile(path.join(sourceDirectory, 'styles.css'), 'body{}');
   await fs.writeFile(path.join(sourceDirectory, 'page.md'), '# Pagina');
+  await fs.writeFile(path.join(sourceDirectory, 'manifest.json'), '{"title":"Manuale"}');
   await fs.writeFile(path.join(sourceDirectory, 'page.html'), '<script>authoredUnsafe()</script>');
   await fs.mkdir(path.join(sourceDirectory, 'fonts', 'google-sans'), { recursive: true });
   await fs.writeFile(path.join(sourceDirectory, 'fonts', 'google-sans', 'google-sans-latin.woff2'), Buffer.from('wOF2'));
@@ -28,7 +29,9 @@ test('serve app shell, frammenti e asset dalla memoria', async (context) => {
 
   const shellResponse = await fetch(`${baseUrl}/page`, { headers: { Accept: 'text/html' } });
   assert.equal(shellResponse.status, 200);
-  assert.match(await shellResponse.text(), /document-manifest/);
+  const shell = await shellResponse.text();
+  assert.match(shell, /document-manifest/);
+  assert.match(shell, /project-manifest[^]*"title":"Manuale"/);
 
   const contentResponse = await fetch(`${baseUrl}/__content/page`);
   assert.equal(contentResponse.status, 200);
@@ -59,6 +62,10 @@ test('serve app shell, frammenti e asset dalla memoria', async (context) => {
   const iconResponse = await fetch(`${baseUrl}/icons/ionicons/menu-outline.svg`);
   assert.equal(iconResponse.status, 200);
   assert.match(iconResponse.headers.get('content-type'), /image\/svg\+xml/);
+
+  const manifestResponse = await fetch(`${baseUrl}/manifest.json`);
+  assert.equal(manifestResponse.status, 200);
+  assert.deepEqual(await manifestResponse.json(), { title: 'Manuale' });
 
   assert.equal((await fetch(`${baseUrl}/page.md`)).status, 404);
   assert.equal((await fetch(`${baseUrl}/page.html`)).status, 404);

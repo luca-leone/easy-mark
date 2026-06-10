@@ -32,7 +32,7 @@ Never rewrite or delete existing entries in `memory/decisions.md`. Record correc
 
 - `core/server/`: server entry point, conversion, virtual filesystem, navigation, and HTTP behavior.
 - `core/web/`: bundled app shell and stylesheet templates, browser runtime, and default static assets.
-- `src/`: user-authored Markdown, assets, and optional app shell and stylesheet overrides.
+- `src/`: user-authored Markdown, public project metadata, assets, and optional app shell and stylesheet overrides.
 - `test/`: Node unit and integration tests.
 - `rules/`: repository engineering rules.
 - `contracts/`: normative application behavior.

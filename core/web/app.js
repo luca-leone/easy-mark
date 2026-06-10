@@ -4,9 +4,11 @@ import { initializeReadingProgress } from './reading-progress.js';
 import { initializePdfExport } from './pdf-export.js';
 import { initializeSidebar } from './sidebar.js';
 import { initializeTheme } from './theme.js';
+import { formatPageTitle } from './page-title.js';
 
 const content = document.querySelector('#content');
 const manifest = JSON.parse(document.querySelector('#document-manifest').textContent);
+const projectMetadata = JSON.parse(document.querySelector('#project-manifest')?.textContent ?? '{"title":"easy-mark"}');
 const sidebarController = initializeSidebar({
   sidebar: document.querySelector('#app-sidebar'),
   openButton: document.querySelector('#menu-toggle'),
@@ -55,7 +57,10 @@ async function render(route, { push = false } = {}) {
     if (state) link.setAttribute('aria-current', state);
   });
 
-  document.title = `${manifest.find((document) => document.route === route)?.title ?? 'Documentazione'} — easy-mark`;
+  document.title = formatPageTitle(
+    manifest.find((document) => document.route === route)?.title,
+    projectMetadata.title
+  );
   const headingId = hashToElementId(window.location.hash);
   if (headingId) document.getElementById(headingId)?.scrollIntoView();
   else content.focus({ preventScroll: true });

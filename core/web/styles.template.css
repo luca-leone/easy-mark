@@ -40,6 +40,7 @@
   --progress: #0b57d0;
   --header-inline-padding: clamp(1.25rem, 3vw, 2.25rem);
   --navigation-gutter: 1.35rem;
+  --sidebar-width: clamp(17rem, 25vw, 21rem);
   /* Compensates for the centered button and the menu SVG's internal leading inset. */
   --menu-toggle-glyph-offset: 0.77rem;
   color: var(--text);
@@ -108,8 +109,8 @@ a { color: var(--link); text-underline-offset: 0.16em; }
 [data-theme="dark"] .icon--theme { mask-image: url("/icons/ionicons/sunny-outline.svg"); -webkit-mask-image: url("/icons/ionicons/sunny-outline.svg"); }
 .reading-progress { --reading-progress: 0%; position: absolute; right: 0; bottom: -1px; left: 0; height: 3px; overflow: hidden; pointer-events: none; }
 .reading-progress__bar { width: var(--reading-progress); height: 100%; display: block; background: var(--progress); transition: width 100ms linear; }
-.app-layout { display: grid; grid-template-columns: clamp(17rem, 25vw, 21rem) minmax(0, 1fr); min-height: calc(100vh - 4.5rem); transition: grid-template-columns 180ms ease; }
-.app-sidebar { min-width: 0; padding: 1.75rem var(--navigation-gutter) 3rem; overflow-x: hidden; border-right: 1px solid var(--border); background: var(--surface); transition: padding 180ms ease, border-color 180ms ease, visibility 180ms step-start; }
+.app-layout { display: grid; grid-template-columns: var(--sidebar-width) minmax(0, 1fr); min-height: calc(100vh - 4.5rem); transition: grid-template-columns 180ms ease; }
+.app-sidebar { min-width: 0; padding: 1.75rem var(--navigation-gutter) 3rem; overflow-x: hidden; border-right: 1px solid var(--border); opacity: 1; background: var(--surface); transition: padding 180ms ease, border-color 180ms ease, opacity 180ms ease, visibility 0s step-start; }
 .app-sidebar__header { display: none; align-items: center; justify-content: space-between; min-height: 3rem; margin-bottom: 1rem; font-weight: 650; }
 .sidebar-backdrop { display: none; }
 .navigation ol, .navigation ul { margin: 0; }
@@ -121,6 +122,7 @@ a { color: var(--link); text-underline-offset: 0.16em; }
 .navigation a:hover { color: var(--link); }
 .navigation a[aria-current] { color: var(--link-active); font-weight: 600; text-decoration: underline; }
 .navigation__headings { margin-top: 0.45rem !important; font-size: 0.92rem; }
+.app-sidebar > .navigation { width: calc(var(--sidebar-width) - (2 * var(--navigation-gutter))); }
 
 .document {
   width: min(100%, 62rem);
@@ -149,15 +151,16 @@ a { color: var(--link); text-underline-offset: 0.16em; }
 @media (min-width: 900px) {
   .app-header__menu { display: inline-grid; }
   body.sidebar-collapsed .app-layout { grid-template-columns: 0 minmax(0, 1fr); }
-  body.sidebar-collapsed .app-sidebar { padding-inline: 0; overflow: hidden; border-right-color: transparent; visibility: hidden; transition: padding 180ms ease, border-color 180ms ease, visibility 180ms step-end; }
+  body.sidebar-collapsed .app-sidebar { padding-inline: 0; overflow: hidden; border-right-color: transparent; opacity: 0; visibility: hidden; pointer-events: none; transition: padding 180ms ease, border-color 180ms ease, opacity 180ms ease, visibility 0s 180ms; }
 }
 
 @media (max-width: 899px) {
   .app-layout { grid-template-columns: 1fr; }
   .app-header { min-height: 4rem; }
   .app-header__menu { display: inline-grid; }
-  .app-sidebar { position: fixed; z-index: 40; top: 0; bottom: 0; left: 0; width: min(88vw, 21rem); padding: 1rem var(--navigation-gutter) 3rem; overflow-y: auto; border-right: 1px solid var(--border); box-shadow: 0 16px 48px rgba(0, 0, 0, 0.25); transform: translateX(-105%); visibility: hidden; transition: transform 180ms ease, visibility 180ms step-end; }
-  .app-sidebar.is-open { transform: translateX(0); visibility: visible; transition: transform 180ms ease; }
+  .app-sidebar { position: fixed; z-index: 40; top: 0; bottom: 0; left: 0; width: min(88vw, 21rem); padding: 1rem var(--navigation-gutter) 3rem; overflow-y: auto; border-right: 1px solid var(--border); opacity: 0; box-shadow: 0 16px 48px rgba(0, 0, 0, 0.25); transform: translateX(-105%); visibility: hidden; pointer-events: none; transition: transform 180ms ease, opacity 180ms ease, visibility 0s 180ms; }
+  .app-sidebar.is-open { opacity: 1; transform: translateX(0); visibility: visible; pointer-events: auto; transition: transform 180ms ease, opacity 180ms ease, visibility 0s step-start; }
+  .app-sidebar > .navigation { width: auto; }
   .app-sidebar__header { display: flex; }
   .sidebar-backdrop { position: fixed; z-index: 30; inset: 0; display: block; padding: 0; border: 0; opacity: 0; visibility: hidden; background: var(--backdrop); transition: opacity 180ms ease, visibility 180ms step-end; }
   .sidebar-backdrop.is-visible { opacity: 1; visibility: visible; transition: opacity 180ms ease; }

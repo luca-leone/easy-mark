@@ -5,6 +5,7 @@ import { create } from 'mem-fs';
 import { create as createEditor } from 'mem-fs-editor';
 import { compileMarkdown } from './markdown.js';
 import { renderNavigation } from './navigation.js';
+import { defaultProjectMetadata, parseProjectMetadata } from './project-metadata.js';
 import { normalizeRoutePath, routeFromSegments, routeKey } from '../web/routes.js';
 
 const templatePaths = new Map([
@@ -12,12 +13,24 @@ const templatePaths = new Map([
   ['styles.template.css', 'styles.css']
 ]);
 const shellPlaceholders = ['<!-- NAVIGATION -->', '<!-- DOCUMENT_MANIFEST -->'];
+const projectTitlePlaceholder = '<!-- PROJECT_TITLE -->';
 
-function validateShellTemplate(contents, sourceName) {
+function escapeHtml(value) {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;');
+}
+
+function validateShellTemplate(contents, sourceName, { bundled = false } = {}) {
   for (const placeholder of shellPlaceholders) {
     if (contents.split(placeholder).length !== 2) {
       throw new Error(`${sourceName} deve contenere esattamente una volta ${placeholder}`);
     }
+  }
+  if (bundled && contents.split(projectTitlePlaceholder).length !== 3) {
+    throw new Error(`${sourceName} deve contenere esattamente due volte ${projectTitlePlaceholder}`);
   }
 }
 
@@ -60,6 +73,7 @@ export class SiteBuilder {
     this.editor = createEditor(this.store);
     this.documents = new Map();
     this.bundledFiles = new Map();
+    this.projectMetadata = { ...defaultProjectMetadata };
     this.template = '';
   }
 
@@ -98,7 +112,9 @@ export class SiteBuilder {
     if (webRelativePath.startsWith('..')) return;
     const relativePath = templatePaths.get(webRelativePath) ?? webRelativePath;
     const contents = await fs.readFile(filePath);
-    if (relativePath === 'index.html') validateShellTemplate(contents.toString('utf8'), 'core/web/index.template.html');
+    if (relativePath === 'index.html') {
+      validateShellTemplate(contents.toString('utf8'), 'core/web/index.template.html', { bundled: true });
+    }
     this.bundledFiles.set(relativePath, contents);
     this.editor.write(this.virtualPath(relativePath), contents);
     if (relativePath === 'index.html') this.template = contents.toString('utf8');
@@ -109,8 +125,12 @@ export class SiteBuilder {
     if (relativePath.startsWith('..')) return;
     const contents = await fs.readFile(filePath);
     if (relativePath === 'index.html') validateShellTemplate(contents.toString('utf8'), 'src/index.html');
+    const projectMetadata = relativePath === 'manifest.json'
+      ? parseProjectMetadata(contents.toString('utf8'))
+      : null;
     this.editor.write(this.virtualPath(relativePath), contents);
     if (relativePath === 'index.html') this.template = contents.toString('utf8');
+    if (projectMetadata) this.projectMetadata = projectMetadata;
 
     if (/\.md$/i.test(relativePath)) {
       const document = await compileMarkdown(contents.toString('utf8'), relativePath);
@@ -142,6 +162,7 @@ export class SiteBuilder {
         this.editor.delete(this.generatedPath(relativePath.replace(/\.md$/i, '.html')));
         this.documents.delete(relativePath);
       }
+      if (relativePath === 'manifest.json') this.projectMetadata = { ...defaultProjectMetadata };
     } else if (eventName === 'add' || eventName === 'change') {
       await this.copySourceFile(filePath);
     }
@@ -192,9 +213,14 @@ export class SiteBuilder {
     const documents = this.getDocuments();
     const navigation = renderNavigation(documents);
     const manifest = JSON.stringify(documents.map(({ route, aliases, title }) => ({ route, aliases, title }))).replaceAll('<', '\\u003c');
+    const projectManifest = JSON.stringify(this.projectMetadata).replaceAll('<', '\\u003c');
     const shell = this.template
+      .replaceAll(projectTitlePlaceholder, escapeHtml(this.projectMetadata.title))
       .replace('<!-- NAVIGATION -->', navigation)
-      .replace('<!-- DOCUMENT_MANIFEST -->', `<script id="document-manifest" type="application/json">${manifest}</script>`);
+      .replace('<!-- DOCUMENT_MANIFEST -->', [
+        `<script id="project-manifest" type="application/json">${projectManifest}</script>`,
+        `<script id="document-manifest" type="application/json">${manifest}</script>`
+      ].join(''));
     this.editor.write(this.virtualPath('index.html'), shell);
   }
 

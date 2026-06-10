@@ -16,13 +16,21 @@ Aprire `http://localhost:3000`. La porta può essere modificata con la variabile
 
 `core/server/server.js` è l'entry point applicativo. La business logic server vive in `core/server/`; runtime browser, asset e template predefiniti vivono in `core/web/`. `src/` è riservata ai contenuti e agli override dell'utente. Tutto viene composto in memoria senza generare output HTML sul disco.
 
+Il titolo della documentazione si configura in `src/manifest.json`:
+
+```json
+{
+  "title": "La mia documentazione"
+}
+```
+
 ## Override della shell
 
 Senza configurazione aggiuntiva, `core/web/index.template.html` e `core/web/styles.template.css` vengono caricati in memoria come `index.html` e `styles.css`. La shell risponde sulle route della SPA, mentre il foglio di stile è disponibile come `/styles.css`; i nomi `.template` non sono pubblici.
 
 Per personalizzare l'interfaccia è possibile creare:
 
-- `src/index.html`, che sostituisce completamente il template HTML predefinito e deve contenere esattamente una volta `<!-- NAVIGATION -->` e `<!-- DOCUMENT_MANIFEST -->`;
+- `src/index.html`, che sostituisce completamente il template HTML predefinito e deve contenere esattamente una volta `<!-- NAVIGATION -->` e `<!-- DOCUMENT_MANIFEST -->`; può usare `<!-- PROJECT_TITLE -->` per inserire il titolo configurato;
 - `src/styles.css`, che sostituisce completamente il foglio di stile predefinito ed è servito come `/styles.css`.
 
 L'override HTML deve preservare gli elementi e gli ID richiesti dai moduli browser che si desidera continuare a usare, oltre ai relativi tag `script` e al collegamento a `/styles.css`. Gli override non vengono fusi con i template: il file in `src/` ha priorità completa. Se viene eliminato durante `npm run start`, il template predefinito torna attivo al successivo evento del watcher.
