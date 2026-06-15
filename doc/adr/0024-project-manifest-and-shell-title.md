@@ -20,6 +20,8 @@ Represent title insertion in the bundled shell with two `<!-- PROJECT_TITLE -->`
 
 Format dynamic browser titles as `<document title> — <project title>`. Keep the package name, product identity, and startup log as `easy-mark`.
 
+Logo metadata and asset overlay behavior are added by [ADR-0025](0025-project-logo-overlay-and-header-spacing.md).
+
 ## Consequences
 
 - Users can name their documentation without copying the bundled HTML template.

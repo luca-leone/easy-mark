@@ -3,12 +3,13 @@ import { currentLinkState, findDocument } from './navigation-state.js';
 import { initializeReadingProgress } from './reading-progress.js';
 import { initializePdfExport } from './pdf-export.js';
 import { initializeSidebar } from './sidebar.js';
+import { initializeSearch } from './search.js';
 import { initializeTheme } from './theme.js';
 import { formatPageTitle } from './page-title.js';
 
 const content = document.querySelector('#content');
 const manifest = JSON.parse(document.querySelector('#document-manifest').textContent);
-const projectMetadata = JSON.parse(document.querySelector('#project-manifest')?.textContent ?? '{"title":"easy-mark"}');
+const projectMetadata = JSON.parse(document.querySelector('#project-manifest')?.textContent ?? '{"title":"Easy Mark"}');
 const sidebarController = initializeSidebar({
   sidebar: document.querySelector('#app-sidebar'),
   openButton: document.querySelector('#menu-toggle'),
@@ -31,6 +32,26 @@ initializePdfExport({
   button: document.querySelector('#pdf-export'),
   status: document.querySelector('#pdf-export-status'),
   container: document.querySelector('#print-export')
+});
+
+const searchController = initializeSearch({
+  manifest,
+  elements: {
+    launcher: document.querySelector('#search-launcher'),
+    overlay: document.querySelector('#search-overlay'),
+    dialog: document.querySelector('#search-dialog'),
+    input: document.querySelector('#search-input'),
+    results: document.querySelector('#search-results'),
+    emptyMessage: document.querySelector('#search-empty'),
+    clearButton: document.querySelector('#search-clear'),
+    closeButton: document.querySelector('#search-close'),
+    backdrop: document.querySelector('#search-backdrop')
+  },
+  closeSidebar: sidebarController.close,
+  onNavigate(route) {
+    history.pushState({}, '', route);
+    render(route).catch(showError);
+  }
 });
 
 function currentRoute() {
@@ -61,9 +82,11 @@ async function render(route, { push = false } = {}) {
     manifest.find((document) => document.route === route)?.title,
     projectMetadata.title
   );
-  const headingId = hashToElementId(window.location.hash);
-  if (headingId) document.getElementById(headingId)?.scrollIntoView();
-  else content.focus({ preventScroll: true });
+  if (!searchController?.isOpen()) {
+    const headingId = hashToElementId(window.location.hash);
+    if (headingId) document.getElementById(headingId)?.scrollIntoView();
+    else content.focus({ preventScroll: true });
+  }
   readingProgress.reset();
 }
 

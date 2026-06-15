@@ -1,8 +1,8 @@
 # easy-mark
 
-`easy-mark` converte `src/**/*.md` in frammenti HTML conservati in `mem-fs`, li presenta tramite una SPA e aggiorna il browser quando i sorgenti cambiano.
+`easy-mark` converte una directory di Markdown in frammenti HTML sanitizzati conservati in `mem-fs`, li presenta tramite una SPA e puo esportare un PDF aggregato.
 
-## Avvio
+## CLI
 
 Richiede Node.js 22 o successivo. `.nvmrc` mantiene Node.js 22 come baseline di sviluppo.
 
@@ -12,28 +12,28 @@ npm install
 npm run start
 ```
 
-Aprire `http://localhost:3000`. La porta può essere modificata con la variabile `PORT`.
+Per usare il binario locale:
 
-`core/server/server.js` è l'entry point applicativo. La business logic server vive in `core/server/`; runtime browser, asset e template predefiniti vivono in `core/web/`. `src/` è riservata ai contenuti e agli override dell'utente. Tutto viene composto in memoria senza generare output HTML sul disco.
+```sh
+easy-mark serve ./doc
+easy-mark serve ./doc --title "My Documentation"
+easy-mark export ./doc --pdf ./bignami.pdf
+```
 
-Il titolo della documentazione si configura in `src/manifest.json`:
+`./doc` e solo un esempio: il percorso puo essere qualunque directory che contiene Markdown e asset pubblici. `npm run start` serve `./src` come workspace demo del repository. La porta puo essere modificata con `PORT` o con `--port` sul comando `serve`.
+
+Il titolo visibile usa questa precedenza: `manifest.json` nella content directory, poi `--title`, poi `Easy Mark`. Il manifest e opzionale:
 
 ```json
 {
-  "title": "La mia documentazione"
+  "title": "La mia documentazione",
+  "logo": "/logo.svg"
 }
 ```
 
-## Override della shell
+`core/server/` contiene la logica server e CLI, `core/web/` contiene runtime browser, asset e template predefiniti. `core/web/index.template.html` e `core/web/styles.template.css` vengono sempre caricati in memoria come `index.html` e `styles.css`; la content directory non puo sostituirli con propri `index.html` o `styles.css`.
 
-Senza configurazione aggiuntiva, `core/web/index.template.html` e `core/web/styles.template.css` vengono caricati in memoria come `index.html` e `styles.css`. La shell risponde sulle route della SPA, mentre il foglio di stile è disponibile come `/styles.css`; i nomi `.template` non sono pubblici.
-
-Per personalizzare l'interfaccia è possibile creare:
-
-- `src/index.html`, che sostituisce completamente il template HTML predefinito e deve contenere esattamente una volta `<!-- NAVIGATION -->` e `<!-- DOCUMENT_MANIFEST -->`; può usare `<!-- PROJECT_TITLE -->` per inserire il titolo configurato;
-- `src/styles.css`, che sostituisce completamente il foglio di stile predefinito ed è servito come `/styles.css`.
-
-L'override HTML deve preservare gli elementi e gli ID richiesti dai moduli browser che si desidera continuare a usare, oltre ai relativi tag `script` e al collegamento a `/styles.css`. Gli override non vengono fusi con i template: il file in `src/` ha priorità completa. Se viene eliminato durante `npm run start`, il template predefinito torna attivo al successivo evento del watcher.
+Il comando `serve` non scrive HTML generato su disco. Il comando `export` scrive solo il PDF richiesto e richiede un adapter Playwright/Chromium disponibile nell'ambiente.
 
 ## Commit standard
 

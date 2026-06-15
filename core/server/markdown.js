@@ -11,6 +11,12 @@ import { visit } from 'unist-util-visit';
 import { routeFromSegments } from '../web/routes.js';
 
 const headingIdPrefix = 'doc-';
+const searchSeparatorTagNames = new Set([
+  'address', 'article', 'aside', 'blockquote', 'br', 'caption', 'dd', 'details', 'div', 'dl', 'dt',
+  'fieldset', 'figcaption', 'figure', 'footer', 'form', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+  'header', 'hgroup', 'hr', 'li', 'main', 'nav', 'ol', 'p', 'pre', 'section', 'summary', 'table',
+  'tbody', 'td', 'tfoot', 'th', 'thead', 'tr', 'ul'
+]);
 const schema = {
   ...defaultSchema,
   clobberPrefix: headingIdPrefix,
@@ -37,6 +43,28 @@ const schema = {
 function textContent(node) {
   if (typeof node.value === 'string') return node.value;
   return (node.children ?? []).map(textContent).join('');
+}
+
+function collectSanitizedSearchText() {
+  return (tree, file) => {
+    const parts = [];
+
+    function collect(node) {
+      if (node.type === 'text') {
+        parts.push(node.value);
+        return;
+      }
+      if (node.type !== 'root' && node.type !== 'element') return;
+
+      const separated = node.type === 'element' && searchSeparatorTagNames.has(node.tagName);
+      if (separated) parts.push(' ');
+      for (const child of node.children ?? []) collect(child);
+      if (separated) parts.push(' ');
+    }
+
+    collect(tree);
+    file.data.searchText = parts.join('').replace(/\s+/gu, ' ').trim();
+  };
 }
 
 function splitUrl(url) {
@@ -102,9 +130,11 @@ export async function compileMarkdown(markdown, relativePath) {
     .use(remarkRehype, { allowDangerousHtml: true })
     .use(rehypeRaw)
     .use(rehypeSanitize, schema)
+    .use(collectSanitizedSearchText)
     .use(rehypeStringify);
 
-  const html = String(await processor.process(markdown));
+  const file = await processor.process(markdown);
+  const html = String(file);
   const fallbackTitle = path.basename(relativePath, path.extname(relativePath));
   const title = headings.find((heading) => heading.depth === 1)?.title || fallbackTitle;
   const sourceRoute = documentRoute(relativePath);
@@ -113,6 +143,7 @@ export async function compileMarkdown(markdown, relativePath) {
     html,
     headings,
     route: titleRoute(relativePath, title),
+    searchText: file.data.searchText,
     sourceRoute,
     title
   };

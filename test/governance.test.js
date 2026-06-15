@@ -110,7 +110,13 @@ test('uses the easy-mark package name and ESM workflow scripts', async () => {
   assert.equal(packageManifest.name, 'easy-mark');
   assert.equal(lockfile.name, 'easy-mark');
   assert.equal(lockfile.packages[''].name, 'easy-mark');
-  assert.equal(packageManifest.scripts.start, 'node core/server/server.js');
+  assert.equal(packageManifest.private, false);
+  assert.deepEqual(packageManifest.bin, { 'easy-mark': './bin/easy-mark.mjs' });
+  assert.deepEqual(lockfile.packages[''].bin, { 'easy-mark': 'bin/easy-mark.mjs' });
+  assert.equal(packageManifest.scripts.start, 'node bin/easy-mark.mjs serve ./src');
+  assert.ok(packageManifest.files.includes('bin/'));
+  assert.ok(packageManifest.files.includes('core/server/'));
+  assert.ok(packageManifest.files.includes('core/web/'));
   await assert.rejects(fs.access(new URL('../server.js', import.meta.url)));
   assert.deepEqual(validateWorkflowScriptPaths([
     'script/valid.mjs',

@@ -4,8 +4,10 @@ The outline SVG files in this directory were extracted unchanged from the offici
 
 - menu-outline.svg
 - close-outline.svg
+- close-circle-outline.svg
 - sunny-outline.svg
 - moon-outline.svg
+- search-outline.svg
 
 Project: https://ionic.io/ionicons
 License: MIT, reproduced in LICENSE.

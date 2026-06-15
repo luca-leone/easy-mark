@@ -178,7 +178,7 @@ function rewriteDocument(section, documentEntry, routeNamespaces, origin) {
   rewriteDocumentAssets(section, documentEntry, origin);
 }
 
-function buildPrintExport(snapshot, container, documentObject, origin) {
+export function buildPrintExport(snapshot, container, documentObject, origin) {
   const sections = snapshot.documents.map((documentEntry, index) => {
     const namespace = exportNamespace(index);
     const section = documentObject.createElement('section');

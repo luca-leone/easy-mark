@@ -5,7 +5,7 @@ import { create } from 'mem-fs';
 import { create as createEditor } from 'mem-fs-editor';
 import { compileMarkdown } from './markdown.js';
 import { renderNavigation } from './navigation.js';
-import { defaultProjectMetadata, parseProjectMetadata } from './project-metadata.js';
+import { createDefaultProjectMetadata, defaultProjectMetadata, parseProjectMetadata } from './project-metadata.js';
 import { normalizeRoutePath, routeFromSegments, routeKey } from '../web/routes.js';
 
 const templatePaths = new Map([
@@ -14,6 +14,8 @@ const templatePaths = new Map([
 ]);
 const shellPlaceholders = ['<!-- NAVIGATION -->', '<!-- DOCUMENT_MANIFEST -->'];
 const projectTitlePlaceholder = '<!-- PROJECT_TITLE -->';
+const projectLogoPlaceholder = '<!-- PROJECT_LOGO -->';
+const reservedContentFiles = new Set(['index.html', 'styles.css']);
 
 function escapeHtml(value) {
   return value
@@ -31,6 +33,9 @@ function validateShellTemplate(contents, sourceName, { bundled = false } = {}) {
   }
   if (bundled && contents.split(projectTitlePlaceholder).length !== 3) {
     throw new Error(`${sourceName} deve contenere esattamente due volte ${projectTitlePlaceholder}`);
+  }
+  if (bundled && contents.split(projectLogoPlaceholder).length !== 2) {
+    throw new Error(`${sourceName} deve contenere esattamente una volta ${projectLogoPlaceholder}`);
   }
 }
 
@@ -63,17 +68,21 @@ async function listFiles(directory) {
 export class SiteBuilder {
   constructor({
     sourceDirectory,
+    title,
     webDirectory = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'web')
   }) {
     this.sourceDirectory = path.resolve(sourceDirectory);
     this.webDirectory = path.resolve(webDirectory);
-    this.virtualDirectory = path.resolve(this.sourceDirectory, '..', '.mem-fs', 'src');
+    this.virtualDirectory = path.resolve(this.sourceDirectory, '..', '.mem-fs', 'content');
     this.generatedDirectory = path.resolve(this.sourceDirectory, '..', '.mem-fs', 'generated');
     this.store = create();
     this.editor = createEditor(this.store);
     this.documents = new Map();
     this.bundledFiles = new Map();
-    this.projectMetadata = { ...defaultProjectMetadata };
+    this.defaultProjectMetadata = title === undefined
+      ? { ...defaultProjectMetadata }
+      : createDefaultProjectMetadata(title);
+    this.projectMetadata = { ...this.defaultProjectMetadata };
     this.template = '';
   }
 
@@ -93,7 +102,7 @@ export class SiteBuilder {
     await this.validateWebTemplates();
     for (const filePath of await listFiles(this.webDirectory)) await this.copyBundledFile(filePath);
     for (const filePath of await listFiles(this.sourceDirectory)) await this.copySourceFile(filePath);
-    if (this.documents.size === 0) throw new Error('La directory src deve contenere almeno un file Markdown.');
+    if (this.documents.size === 0) throw new Error('La directory contenuti deve contenere almeno un file Markdown.');
     this.renderShell();
   }
 
@@ -123,13 +132,14 @@ export class SiteBuilder {
   async copySourceFile(filePath) {
     const relativePath = this.relativePath(filePath);
     if (relativePath.startsWith('..')) return;
+    if (reservedContentFiles.has(relativePath.split(path.sep).join('/'))) {
+      throw new Error(`${relativePath}: index.html e styles.css sono riservati al runtime easy-mark e non sono personalizzabili`);
+    }
     const contents = await fs.readFile(filePath);
-    if (relativePath === 'index.html') validateShellTemplate(contents.toString('utf8'), 'src/index.html');
     const projectMetadata = relativePath === 'manifest.json'
-      ? parseProjectMetadata(contents.toString('utf8'))
+      ? parseProjectMetadata(contents.toString('utf8'), { fallbackMetadata: this.defaultProjectMetadata })
       : null;
     this.editor.write(this.virtualPath(relativePath), contents);
-    if (relativePath === 'index.html') this.template = contents.toString('utf8');
     if (projectMetadata) this.projectMetadata = projectMetadata;
 
     if (/\.md$/i.test(relativePath)) {
@@ -152,9 +162,12 @@ export class SiteBuilder {
 
     if (eventName === 'unlink' || eventName === 'unlinkDir') {
       const bundledContents = this.bundledFiles.get(relativePath);
+      if (reservedContentFiles.has(relativePath.split(path.sep).join('/'))) {
+        this.renderShell();
+        return;
+      }
       if (bundledContents) {
         this.editor.write(this.virtualPath(relativePath), bundledContents);
-        if (relativePath === 'index.html') this.template = bundledContents.toString('utf8');
       } else {
         this.editor.delete(this.virtualPath(relativePath));
       }
@@ -162,12 +175,12 @@ export class SiteBuilder {
         this.editor.delete(this.generatedPath(relativePath.replace(/\.md$/i, '.html')));
         this.documents.delete(relativePath);
       }
-      if (relativePath === 'manifest.json') this.projectMetadata = { ...defaultProjectMetadata };
+      if (relativePath === 'manifest.json') this.projectMetadata = { ...this.defaultProjectMetadata };
     } else if (eventName === 'add' || eventName === 'change') {
       await this.copySourceFile(filePath);
     }
 
-    if (this.documents.size === 0) throw new Error('La directory src deve contenere almeno un file Markdown.');
+    if (this.documents.size === 0) throw new Error('La directory contenuti deve contenere almeno un file Markdown.');
     this.renderShell();
   }
 
@@ -212,10 +225,20 @@ export class SiteBuilder {
   renderShell() {
     const documents = this.getDocuments();
     const navigation = renderNavigation(documents);
-    const manifest = JSON.stringify(documents.map(({ route, aliases, title }) => ({ route, aliases, title }))).replaceAll('<', '\\u003c');
+    const manifest = JSON.stringify(documents.map(({ route, aliases, title, searchText }) => ({
+      route,
+      aliases,
+      title,
+      text: searchText ?? ''
+    }))).replaceAll('<', '\\u003c');
     const projectManifest = JSON.stringify(this.projectMetadata).replaceAll('<', '\\u003c');
+    const logoPath = this.projectMetadata.logo ? decodeURIComponent(this.projectMetadata.logo.slice(1)) : null;
+    const projectLogo = logoPath && this.read(logoPath)
+      ? `<img class="app-header__logo" src="${escapeHtml(this.projectMetadata.logo)}" alt="">`
+      : '';
     const shell = this.template
       .replaceAll(projectTitlePlaceholder, escapeHtml(this.projectMetadata.title))
+      .replaceAll(projectLogoPlaceholder, projectLogo)
       .replace('<!-- NAVIGATION -->', navigation)
       .replace('<!-- DOCUMENT_MANIFEST -->', [
         `<script id="project-manifest" type="application/json">${projectManifest}</script>`,

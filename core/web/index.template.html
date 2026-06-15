@@ -12,7 +12,15 @@
       <button id="menu-toggle" class="icon-button app-header__menu" type="button" aria-label="Apri navigazione" aria-controls="app-sidebar" aria-expanded="false">
         <span class="icon icon--menu" aria-hidden="true"></span>
       </button>
-      <a class="app-header__brand" href="/"><!-- PROJECT_TITLE --></a>
+      <a class="app-header__brand" href="/">
+        <!-- PROJECT_LOGO -->
+        <span class="app-header__title"><!-- PROJECT_TITLE --></span>
+      </a>
+      <label class="app-header__search">
+        <span class="visually-hidden">Cerca nella documentazione</span>
+        <span class="icon icon--search" aria-hidden="true"></span>
+        <input id="search-launcher" class="search-launcher" type="search" placeholder="Cerca nella documentazione" readonly aria-haspopup="dialog" aria-controls="search-dialog" aria-expanded="false">
+      </label>
       <div class="app-header__actions">
         <button id="pdf-export" class="text-button" type="button" aria-describedby="pdf-export-status">Esporta PDF</button>
         <button id="theme-toggle" class="icon-button" type="button" aria-label="Attiva tema scuro">
@@ -36,6 +44,27 @@
       </aside>
       <button id="sidebar-backdrop" class="sidebar-backdrop" type="button" aria-label="Chiudi navigazione" tabindex="-1"></button>
       <main id="content" class="document" tabindex="-1" aria-live="polite"></main>
+    </div>
+    <div id="search-overlay" class="search-overlay" hidden>
+      <button id="search-backdrop" class="search-backdrop" type="button" aria-label="Chiudi ricerca" tabindex="-1"></button>
+      <section id="search-dialog" class="search-dialog" role="dialog" aria-modal="true" aria-labelledby="search-title">
+        <div class="search-dialog__header">
+          <h2 id="search-title">Cerca nella documentazione</h2>
+          <button id="search-close" class="icon-button" type="button" aria-label="Chiudi ricerca">
+            <span class="icon icon--close" aria-hidden="true"></span>
+          </button>
+        </div>
+        <div class="search-dialog__field">
+          <label class="visually-hidden" for="search-input">Termini di ricerca</label>
+          <span class="icon icon--search" aria-hidden="true"></span>
+          <input id="search-input" type="search" role="combobox" autocomplete="off" aria-autocomplete="list" aria-controls="search-results" aria-expanded="false">
+          <button id="search-clear" class="search-clear" type="button" aria-label="Cancella ricerca" hidden>
+            <span class="icon icon--clear" aria-hidden="true"></span>
+          </button>
+        </div>
+        <div id="search-results" class="search-results" role="listbox" aria-label="Risultati della ricerca"></div>
+        <p id="search-empty" class="search-empty" hidden>Nessun documento corrisponde alla ricerca.</p>
+      </section>
     </div>
     <div id="print-export" class="print-export" aria-hidden="true"></div>
     <!-- DOCUMENT_MANIFEST -->

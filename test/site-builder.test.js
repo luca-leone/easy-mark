@@ -8,10 +8,15 @@ import { compareDocumentPaths, SiteBuilder } from '../core/server/site-builder.j
 async function fixture() {
   const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'markdown-spa-'));
   await fs.mkdir(path.join(directory, 'guide'));
-  await fs.writeFile(path.join(directory, 'index.html'), '<!-- NAVIGATION --><!-- DOCUMENT_MANIFEST -->');
-  await fs.writeFile(path.join(directory, 'styles.css'), 'body{}');
   await fs.writeFile(path.join(directory, 'guide', 'page.md'), '# Pagina\n\n## Sezione');
   return directory;
+}
+
+function readDocumentManifest(builder) {
+  const shell = builder.read('index.html').toString();
+  const json = shell.match(/<script id="document-manifest" type="application\/json">([^]*?)<\/script>/)?.[1];
+  assert.ok(json);
+  return JSON.parse(json);
 }
 
 test('mantiene HTML generato solo in mem-fs e costruisce shell e menu', async (context) => {
@@ -27,48 +32,67 @@ test('mantiene HTML generato solo in mem-fs e costruisce shell e menu', async (c
   assert.match(builder.read('index.html').toString(), /href="\/guide\/pagina"/);
   assert.equal(builder.routeToHtmlPath('/guide/pagina'), path.join('guide', 'page.html'));
   assert.equal(builder.routeToHtmlPath('/guide/page'), path.join('guide', 'page.html'));
+  assert.deepEqual(readDocumentManifest(builder), [{
+    route: '/guide/pagina',
+    aliases: ['/guide/page'],
+    title: 'Pagina',
+    text: 'Pagina Sezione'
+  }]);
 });
 
-test('usa i template web predefiniti e dà priorità agli override in src', async (context) => {
+test('serializza nel document manifest solo metadata pubblici e testo sanitizzato con escaping script-safe', async (context) => {
+  const sourceDirectory = await fs.mkdtemp(path.join(os.tmpdir(), 'markdown-search-manifest-'));
+  context.after(() => fs.rm(sourceDirectory, { recursive: true, force: true }));
+  await fs.writeFile(
+    path.join(sourceDirectory, 'page.md'),
+    '# Ricerca\n\nTesto sicuro `</script><script>non eseguire</script>`\n\n<script>rimosso</script>'
+  );
+  const builder = new SiteBuilder({ sourceDirectory });
+  await builder.build();
+
+  const shell = builder.read('index.html').toString();
+  const [document] = readDocumentManifest(builder);
+  assert.deepEqual(Object.keys(document), ['route', 'aliases', 'title', 'text']);
+  assert.equal(document.text, 'Ricerca Testo sicuro </script><script>non eseguire</script>');
+  assert.match(shell, /"text":"Ricerca Testo sicuro \\u003c\/script>\\u003cscript>non eseguire\\u003c\/script>"/);
+  assert.doesNotMatch(shell.match(/id="document-manifest"[^]*?<\/script>/)?.[0] ?? '', /relativePath|htmlPath|searchText|\.md|<script>non eseguire/);
+  assert.equal(await fs.access(path.join(sourceDirectory, 'page.html')).then(() => true, () => false), false);
+
+  const exportDocument = builder.getExportSnapshot().documents[0];
+  assert.deepEqual(Object.keys(exportDocument), ['route', 'aliases', 'title', 'assetBase', 'html']);
+});
+
+test('usa sempre i template web predefiniti senza override HTML o CSS', async (context) => {
   const sourceDirectory = await fs.mkdtemp(path.join(os.tmpdir(), 'markdown-template-overlay-'));
   context.after(() => fs.rm(sourceDirectory, { recursive: true, force: true }));
   await fs.writeFile(path.join(sourceDirectory, 'page.md'), '# Pagina');
   const builder = new SiteBuilder({ sourceDirectory });
   await builder.build();
 
-  assert.match(builder.read('index.html').toString(), /<title>easy-mark<\/title>/);
+  assert.match(builder.read('index.html').toString(), /<title>Easy Mark<\/title>/);
   assert.match(builder.read('styles.css').toString(), /font-family: "Google Sans"/);
+  assert.match(builder.read('search.js').toString(), /export function initializeSearch/);
+  assert.match(builder.read('icons/ionicons/search-outline.svg').toString(), /class="ionicon"/);
   assert.equal(builder.read('index.template.html'), null);
   assert.equal(builder.read('styles.template.css'), null);
-
-  const indexPath = path.join(sourceDirectory, 'index.html');
-  const stylesPath = path.join(sourceDirectory, 'styles.css');
-  await fs.writeFile(indexPath, '<main>Custom<!-- NAVIGATION --><!-- DOCUMENT_MANIFEST --></main>');
-  await fs.writeFile(stylesPath, 'body { color: rebeccapurple; }');
-  await builder.handleFileEvent('add', indexPath);
-  await builder.handleFileEvent('add', stylesPath);
-
-  assert.match(builder.read('index.html').toString(), /<main>Custom/);
-  assert.equal(builder.read('styles.css').toString(), 'body { color: rebeccapurple; }');
-
-  await fs.unlink(indexPath);
-  await fs.unlink(stylesPath);
-  await builder.handleFileEvent('unlink', indexPath);
-  await builder.handleFileEvent('unlink', stylesPath);
-
-  assert.match(builder.read('index.html').toString(), /<title>easy-mark<\/title>/);
-  assert.match(builder.read('styles.css').toString(), /font-family: "Google Sans"/);
 });
 
-test('rifiuta un override index privo dei placeholder applicativi', async (context) => {
-  const sourceDirectory = await fs.mkdtemp(path.join(os.tmpdir(), 'markdown-invalid-shell-'));
+test('rifiuta index.html e styles.css nella directory contenuti', async (context) => {
+  const sourceDirectory = await fs.mkdtemp(path.join(os.tmpdir(), 'markdown-reserved-runtime-files-'));
   context.after(() => fs.rm(sourceDirectory, { recursive: true, force: true }));
   await fs.writeFile(path.join(sourceDirectory, 'page.md'), '# Pagina');
-  await fs.writeFile(path.join(sourceDirectory, 'index.html'), '<main>Shell incompleta</main>');
+  await fs.writeFile(path.join(sourceDirectory, 'index.html'), '<main>Custom</main>');
 
   await assert.rejects(
     new SiteBuilder({ sourceDirectory }).build(),
-    /src\/index\.html deve contenere esattamente una volta <!-- NAVIGATION -->/
+    /index\.html: index\.html e styles\.css sono riservati/
+  );
+
+  await fs.unlink(path.join(sourceDirectory, 'index.html'));
+  await fs.writeFile(path.join(sourceDirectory, 'styles.css'), 'body{}');
+  await assert.rejects(
+    new SiteBuilder({ sourceDirectory }).build(),
+    /styles\.css: index\.html e styles\.css sono riservati/
   );
 });
 
@@ -83,8 +107,8 @@ test('applica manifest, escaping e fallback durante gli aggiornamenti live', asy
 
   let shell = builder.read('index.html').toString();
   assert.match(shell, /<title>Guide &lt;script&gt;alert\(1\)&lt;\/script&gt;<\/title>/);
-  assert.match(shell, /class="app-header__brand"[^>]*>Guide &lt;script&gt;alert\(1\)&lt;\/script&gt;<\/a>/);
-  assert.match(shell, /id="project-manifest"[^>]*>{"title":"Guide \\u003cscript>alert\(1\)\\u003c\/script>"}<\/script>/);
+  assert.match(shell, /class="app-header__title">Guide &lt;script&gt;alert\(1\)&lt;\/script&gt;<\/span>/);
+  assert.match(shell, /id="project-manifest"[^>]*>{"title":"Guide \\u003cscript>alert\(1\)\\u003c\/script>","logo":null}<\/script>/);
 
   await fs.writeFile(manifestPath, '{"title":"Manuale API"}');
   await builder.handleFileEvent('change', manifestPath);
@@ -97,46 +121,78 @@ test('applica manifest, escaping e fallback durante gli aggiornamenti live', asy
   await fs.unlink(manifestPath);
   await builder.handleFileEvent('unlink', manifestPath);
   shell = builder.read('index.html').toString();
-  assert.match(shell, /<title>easy-mark<\/title>/);
-  assert.match(shell, /id="project-manifest"[^>]*>{"title":"easy-mark"}<\/script>/);
+  assert.match(shell, /<title>Easy Mark<\/title>/);
+  assert.match(shell, /id="project-manifest"[^>]*>{"title":"Easy Mark","logo":null}<\/script>/);
 });
 
-test('mantiene compatibili gli override senza placeholder titolo', async (context) => {
-  const sourceDirectory = await fs.mkdtemp(path.join(os.tmpdir(), 'markdown-custom-project-shell-'));
+test('usa il title CLI come fallback quando manifest.json è assente', async (context) => {
+  const sourceDirectory = await fs.mkdtemp(path.join(os.tmpdir(), 'markdown-cli-title-'));
   context.after(() => fs.rm(sourceDirectory, { recursive: true, force: true }));
   await fs.writeFile(path.join(sourceDirectory, 'page.md'), '# Pagina');
-  await fs.writeFile(path.join(sourceDirectory, 'manifest.json'), '{"title":"Manuale"}');
-  await fs.writeFile(path.join(sourceDirectory, 'index.html'), '<title>Statico</title><!-- NAVIGATION --><!-- DOCUMENT_MANIFEST -->');
-  const builder = new SiteBuilder({ sourceDirectory });
+  const builder = new SiteBuilder({ sourceDirectory, title: 'CLI Docs' });
   await builder.build();
 
   const shell = builder.read('index.html').toString();
-  assert.match(shell, /<title>Statico<\/title>/);
-  assert.match(shell, /id="project-manifest"[^>]*>{"title":"Manuale"}<\/script>/);
+  assert.match(shell, /<title>CLI Docs<\/title>/);
+  assert.match(shell, /id="project-manifest"[^>]*>{"title":"CLI Docs","logo":null}<\/script>/);
 });
 
-test('sostituisce ogni placeholder titolo presente in un override', async (context) => {
-  const sourceDirectory = await fs.mkdtemp(path.join(os.tmpdir(), 'markdown-project-title-placeholders-'));
+test('manifest.json prevale sul title CLI', async (context) => {
+  const sourceDirectory = await fs.mkdtemp(path.join(os.tmpdir(), 'markdown-manifest-title-precedence-'));
   context.after(() => fs.rm(sourceDirectory, { recursive: true, force: true }));
   await fs.writeFile(path.join(sourceDirectory, 'page.md'), '# Pagina');
   await fs.writeFile(path.join(sourceDirectory, 'manifest.json'), '{"title":"Manuale"}');
-  await fs.writeFile(
-    path.join(sourceDirectory, 'index.html'),
-    '<title><!-- PROJECT_TITLE --></title><header><!-- PROJECT_TITLE --></header><!-- NAVIGATION --><!-- DOCUMENT_MANIFEST -->'
-  );
-  const builder = new SiteBuilder({ sourceDirectory });
+  const builder = new SiteBuilder({ sourceDirectory, title: 'CLI Docs' });
   await builder.build();
 
   const shell = builder.read('index.html').toString();
-  assert.match(shell, /<title>Manuale<\/title><header>Manuale<\/header>/);
+  assert.match(shell, /<title>Manuale<\/title>/);
+  assert.match(shell, /id="project-manifest"[^>]*>{"title":"Manuale","logo":null}<\/script>/);
   assert.doesNotMatch(shell, /PROJECT_TITLE/);
+});
+
+test('usa il logo bundled, applica override src e ripristina il fallback', async (context) => {
+  const sourceDirectory = await fs.mkdtemp(path.join(os.tmpdir(), 'markdown-project-logo-'));
+  context.after(() => fs.rm(sourceDirectory, { recursive: true, force: true }));
+  await fs.writeFile(path.join(sourceDirectory, 'page.md'), '# Pagina');
+  await fs.writeFile(path.join(sourceDirectory, 'manifest.json'), '{"title":"Manuale","logo":"/logo.svg"}');
+  const builder = new SiteBuilder({ sourceDirectory });
+  await builder.build();
+
+  const bundledLogo = builder.read('logo.svg').toString();
+  assert.match(bundledLogo, /fill="#0b57d0"/);
+  assert.match(builder.read('index.html').toString(), /<img class="app-header__logo" src="\/logo\.svg" alt="">/);
+
+  const logoPath = path.join(sourceDirectory, 'logo.svg');
+  await fs.writeFile(logoPath, '<svg id="custom"></svg>');
+  await builder.handleFileEvent('add', logoPath);
+  assert.equal(builder.read('logo.svg').toString(), '<svg id="custom"></svg>');
+
+  await fs.unlink(logoPath);
+  await builder.handleFileEvent('unlink', logoPath);
+  assert.equal(builder.read('logo.svg').toString(), bundledLogo);
+  assert.match(builder.read('index.html').toString(), /src="\/logo\.svg"/);
+});
+
+test('non renderizza un logo configurato finché l’asset non esiste', async (context) => {
+  const sourceDirectory = await fs.mkdtemp(path.join(os.tmpdir(), 'markdown-missing-project-logo-'));
+  context.after(() => fs.rm(sourceDirectory, { recursive: true, force: true }));
+  await fs.writeFile(path.join(sourceDirectory, 'page.md'), '# Pagina');
+  await fs.writeFile(path.join(sourceDirectory, 'manifest.json'), '{"title":"Manuale","logo":"/brand/custom.png"}');
+  const builder = new SiteBuilder({ sourceDirectory });
+  await builder.build();
+  assert.doesNotMatch(builder.read('index.html').toString(), /app-header__logo/);
+
+  const logoPath = path.join(sourceDirectory, 'brand', 'custom.png');
+  await fs.mkdir(path.dirname(logoPath));
+  await fs.writeFile(logoPath, Buffer.from('custom-logo'));
+  await builder.handleFileEvent('add', logoPath);
+  assert.match(builder.read('index.html').toString(), /src="\/brand\/custom\.png"/);
 });
 
 test('usa il primo H1 come route canonica e conserva il nome file come alias', async (context) => {
   const sourceDirectory = await fs.mkdtemp(path.join(os.tmpdir(), 'markdown-route-'));
   context.after(() => fs.rm(sourceDirectory, { recursive: true, force: true }));
-  await fs.writeFile(path.join(sourceDirectory, 'index.html'), '<!-- NAVIGATION --><!-- DOCUMENT_MANIFEST -->');
-  await fs.writeFile(path.join(sourceDirectory, 'styles.css'), 'body{}');
   await fs.writeFile(path.join(sourceDirectory, 'README.md'), '# Introduzione\n\n## Navigazione');
   const builder = new SiteBuilder({ sourceDirectory });
   await builder.build();
@@ -160,27 +216,28 @@ test('aggiorna contenuti e menu per add, change e unlink', async (context) => {
   await builder.build();
 
   const addedPath = path.join(sourceDirectory, 'guide', 'added.md');
-  await fs.writeFile(addedPath, '# Aggiunto');
+  await fs.writeFile(addedPath, '# Aggiunto\n\nCorpo iniziale');
   await builder.handleFileEvent('add', addedPath);
   assert.match(builder.readGenerated('guide/added.html').toString(), /Aggiunto/);
   assert.match(builder.read('index.html').toString(), /\/guide\/aggiunto/);
+  assert.equal(readDocumentManifest(builder).find(({ route }) => route === '/guide/aggiunto').text, 'Aggiunto Corpo iniziale');
 
-  await fs.writeFile(addedPath, '# Modificato');
+  await fs.writeFile(addedPath, '# Modificato\n\nCorpo aggiornato');
   await builder.handleFileEvent('change', addedPath);
   assert.match(builder.readGenerated('guide/added.html').toString(), /Modificato/);
   assert.doesNotMatch(builder.read('index.html').toString(), />Aggiunto</);
+  assert.equal(readDocumentManifest(builder).find(({ route }) => route === '/guide/modificato').text, 'Modificato Corpo aggiornato');
 
   await fs.unlink(addedPath);
   await builder.handleFileEvent('unlink', addedPath);
   assert.equal(builder.readGenerated('guide/added.html'), null);
   assert.doesNotMatch(builder.read('index.html').toString(), /\/guide\/(?:aggiunto|modificato)/);
+  assert.equal(readDocumentManifest(builder).some(({ text }) => text.includes('Corpo aggiornato')), false);
 });
 
 test('crea uno snapshot di esportazione ordinato usando solo i frammenti in mem-fs', async (context) => {
   const sourceDirectory = await fs.mkdtemp(path.join(os.tmpdir(), 'markdown-export-'));
   context.after(() => fs.rm(sourceDirectory, { recursive: true, force: true }));
-  await fs.writeFile(path.join(sourceDirectory, 'index.html'), '<!-- NAVIGATION --><!-- DOCUMENT_MANIFEST -->');
-  await fs.writeFile(path.join(sourceDirectory, 'styles.css'), 'body{}');
   await fs.writeFile(path.join(sourceDirectory, 'zeta.md'), '# Zeta');
   await fs.writeFile(path.join(sourceDirectory, 'alfa.md'), '# Alfa\n\n## Caff\u00e8');
   const builder = new SiteBuilder({ sourceDirectory });
@@ -201,8 +258,6 @@ test('crea uno snapshot di esportazione ordinato usando solo i frammenti in mem-
 test('isola frammenti generati e HTML authored durante build, add, change e unlink', async (context) => {
   const sourceDirectory = await fs.mkdtemp(path.join(os.tmpdir(), 'markdown-collision-'));
   context.after(() => fs.rm(sourceDirectory, { recursive: true, force: true }));
-  await fs.writeFile(path.join(sourceDirectory, 'index.html'), '<!-- NAVIGATION --><!-- DOCUMENT_MANIFEST -->');
-  await fs.writeFile(path.join(sourceDirectory, 'styles.css'), 'body{}');
   await fs.writeFile(path.join(sourceDirectory, 'keep.md'), '# Keep');
   const markdownPath = path.join(sourceDirectory, 'page.md');
   const authoredHtmlPath = path.join(sourceDirectory, 'page.html');
@@ -264,13 +319,14 @@ test('ordina totalmente e deterministicamente path che differiscono solo per cas
   const documents = builder.getDocuments();
   assert.deepEqual(documents.map(({ relativePath }) => relativePath), ['PAGE.md', 'Page.md', 'page.md']);
   assert.deepEqual(documents.map(({ route }) => route), ['/pagina', '/pagina-2', '/pagina-3']);
+  builder.template = '<!-- NAVIGATION --><!-- DOCUMENT_MANIFEST -->';
+  builder.renderShell();
+  assert.deepEqual(readDocumentManifest(builder).map(({ route }) => route), ['/pagina', '/pagina-2', '/pagina-3']);
 });
 
 test('assegna canoniche prima degli alias e scarta deterministicamente alias collidenti', async (context) => {
   const sourceDirectory = await fs.mkdtemp(path.join(os.tmpdir(), 'markdown-route-collision-'));
   context.after(() => fs.rm(sourceDirectory, { recursive: true, force: true }));
-  await fs.writeFile(path.join(sourceDirectory, 'index.html'), '<!-- NAVIGATION --><!-- DOCUMENT_MANIFEST -->');
-  await fs.writeFile(path.join(sourceDirectory, 'styles.css'), 'body{}');
   await fs.writeFile(path.join(sourceDirectory, 'a.md'), '# Bar');
   await fs.writeFile(path.join(sourceDirectory, 'bar.md'), '# Baz');
   const builder = new SiteBuilder({ sourceDirectory });
@@ -313,8 +369,6 @@ test('non usa come suffisso una route canonica riservata', () => {
 test('codifica la base asset derivata da directory sorgente con caratteri URL', async (context) => {
   const sourceDirectory = await fs.mkdtemp(path.join(os.tmpdir(), 'markdown-asset-base-'));
   context.after(() => fs.rm(sourceDirectory, { recursive: true, force: true }));
-  await fs.writeFile(path.join(sourceDirectory, 'index.html'), '<!-- NAVIGATION --><!-- DOCUMENT_MANIFEST -->');
-  await fs.writeFile(path.join(sourceDirectory, 'styles.css'), 'body{}');
   const documentDirectory = path.join(sourceDirectory, 'guida # caff\u00e8');
   await fs.mkdir(documentDirectory);
   await fs.writeFile(path.join(documentDirectory, 'page.md'), '# Pagina');
@@ -327,8 +381,6 @@ test('codifica la base asset derivata da directory sorgente con caratteri URL', 
 test('disambigua canoniche NFC e NFD nello stesso spazio URL normalizzato', async (context) => {
   const sourceDirectory = await fs.mkdtemp(path.join(os.tmpdir(), 'markdown-unicode-routes-'));
   context.after(() => fs.rm(sourceDirectory, { recursive: true, force: true }));
-  await fs.writeFile(path.join(sourceDirectory, 'index.html'), '<!-- NAVIGATION --><!-- DOCUMENT_MANIFEST -->');
-  await fs.writeFile(path.join(sourceDirectory, 'styles.css'), 'body{}');
   await fs.writeFile(path.join(sourceDirectory, 'a.md'), '# Caf\u00e9');
   await fs.writeFile(path.join(sourceDirectory, 'b.md'), '# Cafe\u0301');
   const builder = new SiteBuilder({ sourceDirectory });
@@ -360,8 +412,6 @@ test('scarta un alias NFD che collide con una canonica NFC', () => {
 test('serializza directory e alias con caratteri riservati come segmenti URL', async (context) => {
   const sourceDirectory = await fs.mkdtemp(path.join(os.tmpdir(), 'markdown-special-route-'));
   context.after(() => fs.rm(sourceDirectory, { recursive: true, force: true }));
-  await fs.writeFile(path.join(sourceDirectory, 'index.html'), '<!-- NAVIGATION --><!-- DOCUMENT_MANIFEST -->');
-  await fs.writeFile(path.join(sourceDirectory, 'styles.css'), 'body{}');
   const directory = path.join(sourceDirectory, 'guide #1?');
   await fs.mkdir(directory);
   await fs.writeFile(path.join(directory, 'source %.md'), '# Pagina');

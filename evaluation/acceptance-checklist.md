@@ -6,6 +6,7 @@
 - [ ] Startup succeeds with the bundled `core/web` templates and at least one Markdown file, without requiring shell or stylesheet files in `src/`.
 - [ ] Valid `src/index.html` and `src/styles.css` files override their bundled templates, and deleting them restores the defaults.
 - [ ] A valid optional `src/manifest.json` customizes the shell and dynamic browser title; deletion restores `easy-mark`, and invalid updates preserve the last valid state.
+- [ ] An optional validated manifest logo uses the bundled `/logo.svg` by default, supports same-path `src/` overrides and custom local image paths, and disappears cleanly when unavailable.
 - [ ] Missing required inputs fail with explicit errors.
 - [ ] Source directory structure is preserved in `mem-fs`.
 - [ ] No generated `.html` files appear on disk beyond the authored shell.
@@ -14,6 +15,7 @@
 
 - [ ] CommonMark and GFM constructs render correctly.
 - [ ] Unsafe scripts and event handlers are removed.
+- [ ] Full-text search extraction runs after HAST sanitization, preserves visible code/table/link/allowed-HTML text with deterministic separators, and excludes URLs, attributes, comments, paths, raw Markdown/HTML, and removed dangerous content.
 - [ ] Heading IDs are stable, unique, and Unicode-safe.
 - [ ] Relative Markdown links become valid SPA links.
 
@@ -37,6 +39,15 @@
 - [ ] At every width of at least 900px, the hamburger collapses the in-layout sidebar without backdrop or focus trapping.
 - [ ] Inline sidebar preference persists across reloads and landscape viewport widths.
 - [ ] Reading progress reaches expected top, middle, and end values and resets after navigation.
+- [ ] The header search launcher opens an accessible modal, closes an open mobile drawer, traps and restores focus, locks body scrolling, and dismisses through Escape, close, or backdrop.
+- [ ] The document manifest exposes only `{ route, aliases, title, text }` in deterministic order with script-safe escaping and live add/change/unlink updates; PDF export remains unchanged.
+- [ ] Search normalizes Unicode and whitespace, deduplicates tokens, requires every token across metadata plus sanitized body, and deterministically ranks title, canonical-route, alias, body-phrase, body-AND, and mixed-field matches with manifest-order ties.
+- [ ] Result descriptors expose rank and match source; metadata-only matches omit snippets, while body-dependent matches show deterministic original-text snippets of at most 180 code points with correct phrase/token selection and ellipses.
+- [ ] Empty search shows every document, zero matches show text, and every result displays and navigates to its canonical route.
+- [ ] Typing updates only the overlay draft; Escape, backdrop, close, selection, and controller dismissal commit it, reopening restores it, and selection does not restore launcher focus.
+- [ ] The custom clear button appears only for non-empty drafts, clears through native button activation, restores all results, keeps the overlay open, and focuses the input while the native WebKit clear control stays suppressed.
+- [ ] Search supports Arrow Up, Arrow Down, Home, End, and Enter, uses the responsive second header row and mobile panel, and remains usable in both themes and reduced motion.
+- [ ] Existing `src/index.html` overrides without the complete search hook set, including `search-clear`, continue to work without partially initialized search behavior or unrelated parent hiding.
 
 ## Live Updates
 

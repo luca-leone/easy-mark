@@ -1,0 +1,6 @@
+interface:
+  display_name: "PDF Export Verification"
+  short_description: "Verify easy-mark CLI packaging and PDF export"
+  default_prompt: "Use $pdf-export-verification to validate CLI packaging and PDF export behavior without modifying files."
+policy:
+  allow_implicit_invocation: false

@@ -10,12 +10,45 @@ test('compila GFM, genera slug e riscrive i link Markdown', async () => {
   assert.equal(result.title, 'Titolo');
   assert.equal(result.route, '/guide/titolo');
   assert.equal(result.sourceRoute, '/guide/page');
+  assert.equal(result.searchText, 'Titolo A B Altro');
 });
 
 test('sanitizza HTML pericoloso', async () => {
   const result = await compileMarkdown('<script>alert(1)</script><p onclick="alert(1)">Test</p>', 'page.md');
   assert.doesNotMatch(result.html, /script|onclick/);
   assert.match(result.html, /<p>Test<\/p>/);
+  assert.equal(result.searchText, 'Test');
+});
+
+test('estrae testo ricercabile solo dal tree HAST sanitizzato', async () => {
+  const markdown = [
+    '# Café',
+    '',
+    'Testo **forte** e `codice()` con [link visibile](https://example.test/segreto).',
+    '',
+    'Prima riga<br>Seconda riga',
+    '',
+    '| Colonna A | Colonna B |',
+    '| --- | --- |',
+    '| Uno | Due |',
+    '',
+    '<div>HTML <em>consentito</em></div>',
+    '<script>contenuto pericoloso</script>',
+    '<img src="/interno/segreto.png" alt="attributo non visibile">',
+    '<!-- commento invisibile -->'
+  ].join('\n');
+  const result = await compileMarkdown(markdown, 'private/internal-name.md');
+
+  assert.equal(
+    result.searchText,
+    'Café Testo forte e codice() con link visibile. Prima riga Seconda riga Colonna A Colonna B Uno Due HTML consentito'
+  );
+  assert.doesNotMatch(result.searchText, /example|segreto|pericoloso|attributo|commento|internal-name/);
+});
+
+test('mantiene Unicode e whitespace visibile collassato nel testo ricercabile', async () => {
+  const result = await compileMarkdown('## Cafe\u0301\n\nA\t\nB\n\n<div>C\nD</div>', 'page.md');
+  assert.equal(result.searchText, 'Cafe\u0301 A B C D');
 });
 
 test('preserva attributi IDREF accessibili sanitizzati', async () => {

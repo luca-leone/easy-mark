@@ -10,8 +10,6 @@ import { SiteBuilder } from '../core/server/site-builder.js';
 test('serve app shell, frammenti e asset dalla memoria', async (context) => {
   const sourceDirectory = await fs.mkdtemp(path.join(os.tmpdir(), 'markdown-http-'));
   context.after(() => fs.rm(sourceDirectory, { recursive: true, force: true }));
-  await fs.writeFile(path.join(sourceDirectory, 'index.html'), '<main><!-- NAVIGATION --><!-- DOCUMENT_MANIFEST --></main>');
-  await fs.writeFile(path.join(sourceDirectory, 'styles.css'), 'body{}');
   await fs.writeFile(path.join(sourceDirectory, 'page.md'), '# Pagina');
   await fs.writeFile(path.join(sourceDirectory, 'manifest.json'), '{"title":"Manuale"}');
   await fs.writeFile(path.join(sourceDirectory, 'page.html'), '<script>authoredUnsafe()</script>');
@@ -63,6 +61,22 @@ test('serve app shell, frammenti e asset dalla memoria', async (context) => {
   assert.equal(iconResponse.status, 200);
   assert.match(iconResponse.headers.get('content-type'), /image\/svg\+xml/);
 
+  const searchIconResponse = await fetch(`${baseUrl}/icons/ionicons/search-outline.svg`);
+  assert.equal(searchIconResponse.status, 200);
+  assert.match(searchIconResponse.headers.get('content-type'), /image\/svg\+xml/);
+
+  const clearIconResponse = await fetch(`${baseUrl}/icons/ionicons/close-outline.svg`);
+  assert.equal(clearIconResponse.status, 200);
+  assert.match(clearIconResponse.headers.get('content-type'), /image\/svg\+xml/);
+
+  const searchModuleResponse = await fetch(`${baseUrl}/search.js`);
+  assert.equal(searchModuleResponse.status, 200);
+  assert.match(await searchModuleResponse.text(), /export function initializeSearch/);
+
+  const logoResponse = await fetch(`${baseUrl}/logo.svg`);
+  assert.equal(logoResponse.status, 200);
+  assert.match(logoResponse.headers.get('content-type'), /image\/svg\+xml/);
+
   const manifestResponse = await fetch(`${baseUrl}/manifest.json`);
   assert.equal(manifestResponse.status, 200);
   assert.deepEqual(await manifestResponse.json(), { title: 'Manuale' });
@@ -92,8 +106,6 @@ test('restituisce un errore JSON sicuro se lo snapshot di esportazione fallisce'
 test('serve la route canonica quando un alias sorgente collide su /bar', async (context) => {
   const sourceDirectory = await fs.mkdtemp(path.join(os.tmpdir(), 'markdown-http-route-collision-'));
   context.after(() => fs.rm(sourceDirectory, { recursive: true, force: true }));
-  await fs.writeFile(path.join(sourceDirectory, 'index.html'), '<!-- NAVIGATION --><!-- DOCUMENT_MANIFEST -->');
-  await fs.writeFile(path.join(sourceDirectory, 'styles.css'), 'body{}');
   await fs.writeFile(path.join(sourceDirectory, 'a.md'), '# Bar\n\nContenuto canonico');
   await fs.writeFile(path.join(sourceDirectory, 'bar.md'), '# Baz\n\nContenuto alias collidente');
   const builder = new SiteBuilder({ sourceDirectory });
@@ -117,8 +129,6 @@ test('serve la route canonica quando un alias sorgente collide su /bar', async (
 test('serve route Unicode normalizzate dentro directory con caratteri riservati', async (context) => {
   const sourceDirectory = await fs.mkdtemp(path.join(os.tmpdir(), 'markdown-http-special-routes-'));
   context.after(() => fs.rm(sourceDirectory, { recursive: true, force: true }));
-  await fs.writeFile(path.join(sourceDirectory, 'index.html'), '<!-- NAVIGATION --><!-- DOCUMENT_MANIFEST -->');
-  await fs.writeFile(path.join(sourceDirectory, 'styles.css'), 'body{}');
   const directory = path.join(sourceDirectory, 'guide #1?');
   await fs.mkdir(directory);
   await fs.writeFile(path.join(directory, 'a.md'), '# Caf\u00e9\n\nPrimo');
