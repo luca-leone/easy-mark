@@ -38,13 +38,16 @@ test('mantiene invariata l’icona close-outline di Ionicons 8.0.13', async () =
   assert.match(notice, /close-outline\.svg/);
 });
 
-test('documents content directories and the reserved runtime files', async () => {
+test('documents user-facing usage and supported content features', async () => {
   const readme = await fs.readFile(new URL('../README.md', import.meta.url), 'utf8');
-  assert.match(readme, /easy-mark serve \.\/demo/);
-  assert.match(readme, /easy-mark export \.\/demo --pdf \.\/handbook\.pdf/);
-  assert.match(readme, /A manifest is optional/);
-  assert.match(readme, /cannot replace them with its own `index\.html` or `styles\.css`/);
+  assert.match(readme, /npm install @easy-mark\/cli/);
+  assert.match(readme, /easy-mark serve \.\/docs/);
+  assert.match(readme, /easy-mark export \.\/docs --pdf \.\/team-handbook\.pdf/);
+  assert.match(readme, /Mermaid diagrams/);
+  assert.match(readme, /JSON `chart` fences/);
+  assert.match(readme, /Node\.js 22 or later/);
   assert.doesNotMatch(readme, /Esempio HTML alternativo|<!-- NAVIGATION -->|<!-- DOCUMENT_MANIFEST -->/);
+  assert.doesNotMatch(readme, /Codex Multi-Agent Workflow|commit-msg|core\/server|core\/web/);
 });
 
 test('collega il clear button al controller search del runtime', async () => {

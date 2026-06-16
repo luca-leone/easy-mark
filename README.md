@@ -1,88 +1,106 @@
 # Easy Mark
 
-A lightweight CLI to compile, sanitise, preview, and export Markdown directories as production-ready HTML and PDFs.
+Easy Mark is a command-line tool for turning a folder of Markdown files into a clean local documentation site, then exporting the same content to PDF when you need a shareable document.
 
-## Key Features
+It is designed for project notes, product docs, team handbooks, technical guides, and any content set where Markdown should become something easy to browse.
 
-- **Directory-driven:** Process entire nested Markdown structures without a project-specific `src/` convention.
-- **Sanitised output:** Generate deterministic, secure HTML previews held in memory instead of writing compiled fragments to disk.
-- **Built-in visuals:** Render Mermaid diagrams and Chart.js charts from Markdown fences by default.
-- **PDF export:** Export the complete documentation set through the same sanitised rendering pipeline.
-- **Local runtime:** Serve the bundled app shell, styles, fonts, icons, Mermaid, and Chart.js assets without CDNs.
+## What It Does
 
-`easy-mark` is published as `@easy-mark/cli` while keeping the terminal binary name `easy-mark`.
+- **Serves Markdown as a website:** point Easy Mark at a directory and it opens the content through a local single-page app.
+- **Builds navigation automatically:** nested Markdown files become a structured menu.
+- **Keeps output clean:** rendered HTML is sanitised before it is shown.
+- **Supports visuals:** Mermaid diagrams and Chart.js charts work directly from fenced Markdown blocks.
+- **Exports to PDF:** create a complete PDF from the same Markdown source.
+- **Works locally:** bundled assets are served from the package, without depending on external CDNs.
 
 ## Installation
 
-Install the published package:
+Install it in a project:
 
 ```sh
 npm install @easy-mark/cli
 ```
 
-The package exposes the `easy-mark` binary on `node_modules/.bin/` and, when installed globally, on your shell `PATH`.
-
-## Usage
-
-From a repository checkout, run the local binary against any content directory:
+Then run it through `npx`:
 
 ```sh
-node bin/easy-mark.mjs serve ./demo
+npx easy-mark serve ./docs
 ```
 
-After installation, use the terminal binary directly:
+Or install it globally if you want the `easy-mark` command available everywhere:
 
 ```sh
-easy-mark serve ./demo
-easy-mark serve ./demo --title "Team Handbook"
-easy-mark export ./demo --pdf ./handbook.pdf
+npm install --global @easy-mark/cli
 ```
 
-`./demo` is a repository-only sample directory. Your own content directory can be anywhere and may contain Markdown files plus public assets. The `serve` command keeps generated HTML in memory, and `export` writes only the requested PDF file.
+## Quick Start
 
-The visible project title uses this precedence: `manifest.json` in the content directory, then `--title`, then `Easy Mark`. A manifest is optional:
+Create a folder with Markdown files:
+
+```text
+docs/
+  README.md
+  guides/
+    setup.md
+    release.md
+```
+
+Preview it locally:
+
+```sh
+easy-mark serve ./docs
+```
+
+Use a custom title:
+
+```sh
+easy-mark serve ./docs --title "Team Handbook"
+```
+
+Export it to PDF:
+
+```sh
+easy-mark export ./docs --pdf ./team-handbook.pdf
+```
+
+## Project Metadata
+
+You can add an optional `manifest.json` file to the content directory:
 
 ```json
 {
-  "title": "My documentation",
+  "title": "Team Handbook",
   "logo": "/logo.svg"
 }
 ```
 
-## Demo
+The title is resolved in this order:
 
-The bundled demo at `./demo` shows the supported visual features working together:
+1. `manifest.json`
+2. `--title`
+3. `Easy Mark`
 
-- A Mermaid flowchart
-- A Chart.js line chart
-- A Chart.js pie chart
+## Diagrams
 
-Open it locally with:
-
-```sh
-node bin/easy-mark.mjs serve ./demo
-```
-
-## Visual Examples
-
-Mermaid diagrams are written as fenced Markdown blocks:
+Mermaid diagrams are supported with `mermaid` fences:
 
 ````md
 ```mermaid
 flowchart TD
-  Author[Write Markdown] --> Render[Render in memory]
-  Render --> Serve[Serve the SPA]
-  Render --> Export[Print to PDF]
+  Draft[Write Markdown] --> Preview[Preview locally]
+  Preview --> Export[Export PDF]
 ```
 ````
 
-Chart.js charts use JSON fenced blocks:
+## Charts
+
+Charts are supported with JSON `chart` fences:
 
 ````md
 ```chart
 {
   "type": "line",
-  "title": "Documents rendered",
+  "title": "Pages reviewed",
   "data": {
     "labels": ["Mon", "Tue", "Wed", "Thu", "Fri"],
     "datasets": [
@@ -94,58 +112,28 @@ Chart.js charts use JSON fenced blocks:
   }
 }
 ```
-
-```chart
-{
-  "type": "pie",
-  "title": "Content mix",
-  "data": {
-    "labels": ["Guides", "Notes", "Assets"],
-    "datasets": [
-      {
-        "label": "Share",
-        "data": [55, 30, 15]
-      }
-    ]
-  }
-}
-```
 ````
 
-The chart block accepts `bar`, `line`, `pie`, `doughnut`, `donut`, `polarArea`, `radar`, `bubble`, and `scatter`. `donut` is a friendly alias for Chart.js `doughnut`. Chart configuration must be valid JSON, not JavaScript, so callbacks and custom plugins are not accepted.
+Supported chart types are `bar`, `line`, `pie`, `doughnut`, `donut`, `polarArea`, `radar`, `bubble`, and `scatter`. `donut` is accepted as an alias for Chart.js `doughnut`.
 
-## Repository Notes
+## Demo
 
-`core/server/` contains the server and CLI logic, while `core/web/` contains the browser runtime, assets, and default templates. `core/web/index.template.html` and `core/web/styles.template.css` are always loaded into memory as `index.html` and `styles.css`; the content directory cannot replace them with its own `index.html` or `styles.css`.
+This repository includes a `demo/` directory with a Mermaid flowchart, a line chart, and a pie chart.
 
-The repository uses Conventional Commits and includes a versioned `commit-msg` hook. After cloning, install the dependencies and configure the local hook:
-
-```sh
-npm install
-npm run hooks:install
-```
-
-The command is idempotent and sets `core.hooksPath=hooks` only in the Git configuration for the current clone. If the clone already uses a different hook path, the installer stops without overwriting it and requires an explicit decision. The format can also be checked manually:
+From a repository checkout, run:
 
 ```sh
-npm run commit:validate -- --message "feat(navigation): add keyboard shortcuts"
+node bin/easy-mark.mjs serve ./demo
 ```
 
-Allowed types are `feat`, `fix`, `docs`, `chore`, `test`, `refactor`, `build`, and `ci`, with an optional scope. `!` and a strict `BREAKING CHANGE: description` or `BREAKING-CHANGE: description` footer can independently mark an incompatible change. The hook applies Git clean-up modes that can be determined without knowing the invocation: `strip` and `whitespace` are reproduced, `default` and `verbatim` preserve the input, while `scissors` applies only whitespace normalisation so text that Git might keep in non-edited commits is not accepted accidentally. `core.commentString` and `core.commentChar` respect the last effective configuration. Merge subjects are accepted only in known Git forms during a real merge. The hook can be bypassed with `--no-verify`, so it is not a server-side control.
+After installing the package, the same content can be served with:
 
-The Codex `$generate-commit` skill analyses the status and staged diff to propose a semantic message. It does not create commits or stage files without an explicit request.
+```sh
+easy-mark serve ./demo
+```
 
-## Codex Multi-Agent Workflow
+## Requirements
 
-The directories whose names include `agents` have different responsibilities:
+Easy Mark requires Node.js 22 or later.
 
-- `.agents/skills/` contains repository-scoped skills discovered by Codex. Each skill uses the required `SKILL.md` format and may include `agents/openai.yaml` metadata.
-- `.codex/agents/` contains the TOML configuration for the project's subagent roles.
-
-They must not be merged. Codex starts subagents only when explicitly requested; after configuration changes, use a new thread.
-
-Narrow changes can be delegated to `implementer`; security, routing, sanitisation, virtual filesystems, concurrency, watchers, and architecture require `senior-implementer`.
-
-## Workspace Scripts
-
-Executable workflow and maintenance logic lives under `script/` and uses only ESM JavaScript with the `.mjs` extension. Skills, metadata, agent configurations, and guardrails remain Markdown, YAML, TOML, and Markdown respectively because they are declarative formats read directly by tools. `hooks/commit-msg` is the minimal POSIX wrapper required by Git's hook interface and delegates all logic to the `.mjs` validator.
+PDF export requires a Playwright-compatible Chromium environment.
