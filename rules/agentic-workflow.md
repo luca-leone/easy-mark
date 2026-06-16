@@ -24,7 +24,7 @@ Non-trivial work preserves this state order for every applicable state:
 12. `repair-loop`
 13. `handoff`
 
-Every state produces output that can be inspected. Before file edits, non-trivial commands, or project-agent runs, emit and validate the JSON runtime contract required by `rules/agentic-paths.json`; `PreToolUse` and `PostToolUse` hooks enforce and report the agentic lean path for governed tools.
+Every state produces output that can be inspected. Before file edits, non-trivial commands, or project-agent runs, emit and validate the JSON runtime contract required by `rules/agentic-paths.json`; `PreToolUse` and `PostToolUse` hooks detect and report agentic lean path violations for governed tools.
 
 ## Intake And Classification Loop
 
@@ -114,9 +114,10 @@ Loop until:
 
 ## Repair Loop
 
-The repair loop is mandatory when any of these triggers occurs:
+The repair loop is mandatory when any of these triggers occurs. Hook violations enter `repair mode`: do not start a new workflow phase until the violation is repaired or reported as blocked.
 
 - a test, governance validation, or targeted verification fails;
+- a `PreToolUse` or `PostToolUse` hook reports an agentic lean path violation;
 - implementation violates a contract, ADR, rule, or guardrail;
 - reviewer or verifier reports a valid finding;
 - acceptance criteria are not met;
@@ -138,7 +139,7 @@ Before the final response, confirm:
 - tests and validation outcomes are known;
 - required contracts, ADRs, memory entries, and skills are synchronized;
 - budget handoff report is complete;
-- agentic compliance report covers selected path, escalation rules, hook enforcement, verification, and violations;
+- agentic compliance report covers selected path, escalation rules, hook monitoring, hook violation policy, verification, and violations;
 - verified task changes are committed with `$auto-commit` or `npm run task:commit` unless the user explicitly disables automatic committing;
 - long-running processes are closed unless intentionally handed off with a URL;
 - residual risks or skipped checks are explicitly stated.

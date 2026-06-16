@@ -19,7 +19,8 @@ export async function buildAgenticComplianceReport(rootDirectory, runtimeContrac
   return buildComplianceReport(runtimeContract, {
     violations,
     toolUseEntries,
-    hookEnforcement: options.hookEnforcement ?? 'PreToolUse and PostToolUse configured',
+    hookMonitoring: options.hookMonitoring ?? 'PreToolUse and PostToolUse configured',
+    hookViolationPolicy: options.hookViolationPolicy ?? 'violations trigger repair mode',
     verification: options.verification ?? runtimeContract.verification
   });
 }

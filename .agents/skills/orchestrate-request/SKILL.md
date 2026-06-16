@@ -25,7 +25,7 @@ Follow these states in order and emit the state output before moving on:
 12. `repair-loop`
 13. `handoff`
 
-Select the workflow path from `rules/agentic-paths.json`. Before file edits, non-trivial commands, or project-agent runs, emit and validate the JSON runtime contract required by that contract; `PreToolUse` and `PostToolUse` hooks enforce and report the agentic lean path for governed tools.
+Select the workflow path from `rules/agentic-paths.json`. Before file edits, non-trivial commands, or project-agent runs, emit and validate the JSON runtime contract required by that contract; `PreToolUse` and `PostToolUse` hooks detect and report agentic lean path violations for governed tools.
 
 ## Intake
 
@@ -132,3 +132,4 @@ Handoff Gate:
 ## Repair Triggers
 
 Require repair when a test, governance validation, contract check, guardrail check, reviewer finding, verifier finding, or acceptance criterion fails.
+Require `repair mode` when `PreToolUse` or `PostToolUse` reports an agentic lean path violation.

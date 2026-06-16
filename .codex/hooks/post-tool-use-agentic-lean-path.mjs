@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Agentic lean path postflight hook: records governed tool calls and fails closed when execution violates the JSON runtime contract.
+// Agentic lean path postflight hook: records governed tool calls and triggers repair mode when execution violates the JSON runtime contract.
 import path from 'node:path';
 import {
   DEFAULT_RUNTIME_CONTRACT_PATH,
@@ -36,7 +36,7 @@ try {
   });
   await appendToolUseReport(root, reportEntry, toolUseReportPath);
   if (reportEntry.violations.length === 0) process.exit(0);
-  deny('Agentic lean path PostToolUse detected a contract violation.', reportEntry.violations);
+  deny('Agentic lean path PostToolUse detected a contract violation; enter repair mode.', reportEntry.violations);
 } catch (error) {
   const violations = [
     `Expected ${runtimeContractPath}.`,
@@ -53,7 +53,7 @@ try {
     requiredRepair: true,
     violations
   }, toolUseReportPath);
-  deny('Agentic lean path PostToolUse could not verify the runtime contract.', violations);
+  deny('Agentic lean path PostToolUse could not verify the runtime contract; enter repair mode.', violations);
 }
 
 function deny(message, details) {

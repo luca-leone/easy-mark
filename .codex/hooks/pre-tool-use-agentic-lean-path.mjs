@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Agentic lean path preflight hook: blocks governed tool calls until the task has a valid JSON runtime contract.
+// Agentic lean path preflight hook: detects missing or invalid JSON runtime contracts and triggers repair mode.
 import path from 'node:path';
 import {
   DEFAULT_RUNTIME_CONTRACT_PATH,
@@ -27,10 +27,10 @@ try {
   ]);
   const errors = validateAgenticRuntimeContract(runtimeContract, pathContract);
   if (errors.length === 0) process.exit(0);
-  deny(`Agentic lean path runtime contract is invalid before ${requirement.reason}.`, errors);
+  deny(`Agentic lean path violation detected before ${requirement.reason}; enter repair mode.`, errors);
 } catch (error) {
   deny(
-    `Agentic lean path runtime contract is required before ${requirement.reason}.`,
+    `Agentic lean path runtime contract is missing before ${requirement.reason}; enter repair mode.`,
     [
       `Expected ${runtimeContractPath}.`,
       error instanceof SyntaxError ? 'Runtime contract JSON is malformed.' : 'Runtime contract file is missing or unreadable.'

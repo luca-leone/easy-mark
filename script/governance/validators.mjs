@@ -141,6 +141,8 @@ export function validateAgenticWorkflowPolicy(contents) {
     'Deterministic Agentic Workflow',
     'agentic-paths.json',
     'PreToolUse',
+    'PostToolUse',
+    'repair mode',
     'agentic compliance report',
     'intake',
     'classification',
@@ -256,7 +258,8 @@ export function validateAgenticPathContract(contract) {
     'Required Fields',
     'Budget Envelope',
     'Verification',
-    'Hook Enforcement',
+    'Hook Monitoring',
+    'Hook Violation Policy',
     'Violations'
   ];
 
@@ -357,6 +360,13 @@ export function validateAgenticPathContract(contract) {
     }
   }
 
+  if (!contract.hookPolicy?.semantics?.includes('not a guaranteed hard stop')) {
+    errors.push('rules/agentic-paths.json: hookPolicy.semantics must avoid hard-stop assumptions');
+  }
+  if (!contract.hookPolicy?.violationPolicy?.includes('repair mode')) {
+    errors.push('rules/agentic-paths.json: hookPolicy.violationPolicy must require repair mode');
+  }
+
   return errors;
 }
 
@@ -392,7 +402,7 @@ export function validateAgenticHookConfig(hookConfig) {
       }
       if (commandHook.timeout !== 30) errors.push(`.codex/hooks.json: matcher ${matcher} timeout must be 30`);
       if (!commandHook.statusMessage?.includes('agentic lean path')) {
-        errors.push(`.codex/hooks.json: matcher ${matcher} must describe agentic lean path enforcement`);
+        errors.push(`.codex/hooks.json: matcher ${matcher} must describe agentic lean path monitoring`);
       }
     }
   }
@@ -408,6 +418,7 @@ export function validateAgenticHookScript(contents) {
     'toolCallRequiresRuntimeContract',
     'validateAgenticRuntimeContract',
     'agentic-paths.json',
+    'repair mode',
     'process.exit(1)'
   ]) {
     if (!contents.includes(phrase)) errors.push(`agentic-lean-path hook script: missing ${phrase}`);
@@ -454,6 +465,8 @@ export function validateOrchestrateRequestSkill(skillContents, metadataContents)
     'State Machine',
     'agentic-paths.json',
     'PreToolUse',
+    'PostToolUse',
+    'repair mode',
     'requirements-discovery',
     'requirements-reconciliation',
     'budget-gate',

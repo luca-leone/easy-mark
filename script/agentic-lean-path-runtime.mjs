@@ -229,7 +229,8 @@ export function buildComplianceReport(runtimeContract, options = {}) {
     requiredFields: violations.some((violation) => violation.includes('requiredFields')) ? 'failed' : 'satisfied',
     budgetEnvelope: violations.some((violation) => violation.includes('budgetEnvelope')) ? 'failed' : 'satisfied',
     verification: options.verification ?? runtimeContract.verification,
-    hookEnforcement: options.hookEnforcement ?? 'configured',
+    hookMonitoring: options.hookMonitoring ?? 'configured',
+    hookViolationPolicy: options.hookViolationPolicy ?? 'violations trigger repair mode',
     governedToolUses: toolUseEntries.length,
     postToolViolations: toolUseEntries.filter((entry) => entry.requiredRepair).length,
     violations

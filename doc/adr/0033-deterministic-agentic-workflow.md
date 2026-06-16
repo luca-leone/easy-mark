@@ -30,7 +30,7 @@ Adopt a deterministic agentic workflow for every non-trivial repository task. Th
 12. `repair-loop`
 13. `handoff`
 
-Each state has explicit inputs, outputs, and exit criteria. The coordinating agent selects the required subset only through the machine-readable path contract in `rules/agentic-paths.json`, emits and validates that JSON runtime contract before file edits, non-trivial commands, or project-agent runs, and preserves the ordering of every selected state. `PreToolUse` hooks enforce the agentic lean path before governed tools run; `PostToolUse` hooks record compliance and surface violations for repair. Non-trivial work must define acceptance criteria before implementation, map each acceptance criterion to verification, and run the repair loop when any test, governance rule, contract, guardrail, ADR requirement, reviewer finding, verifier finding, or acceptance criterion fails.
+Each state has explicit inputs, outputs, and exit criteria. The coordinating agent selects the required subset only through the machine-readable path contract in `rules/agentic-paths.json`, emits and validates that JSON runtime contract before file edits, non-trivial commands, or project-agent runs, and preserves the ordering of every selected state. `PreToolUse` and `PostToolUse` hooks detect and report agentic lean path violations for governed tools; hook failure is a repair trigger, not a guaranteed hard stop. Non-trivial work must define acceptance criteria before implementation, map each acceptance criterion to verification, and run the repair loop when any test, governance rule, contract, guardrail, ADR requirement, reviewer finding, verifier finding, hook violation, or acceptance criterion fails.
 
 Add `.agents/skills/orchestrate-request` to perform deterministic prompt intake, requirement extraction, source-of-truth reconciliation, risk routing, skill selection, acceptance criteria generation, and verification matrix definition.
 
@@ -38,7 +38,7 @@ Add `.agents/skills/quality-gate` to perform deterministic diff review, contract
 
 Update project agent instructions so planner, implementer, senior-implementer, reviewer, and verifier each operate inside the workflow. The planner normalizes requirements and plans verification; implementers execute approved plans; reviewer evaluates behavioral and governance regressions; verifier runs deterministic checks without repair; the coordinating agent remains responsible for final integration and `npm test`.
 
-Governance validation must assert the presence of the workflow, deterministic path contract, runtime validation scripts, `PreToolUse` and `PostToolUse` hook enforcement, skills, required loops, and separation between `.agents/skills/` and `.codex/agents/`.
+Governance validation must assert the presence of the workflow, deterministic path contract, runtime validation scripts, `PreToolUse` and `PostToolUse` hook monitoring, skills, required loops, and separation between `.agents/skills/` and `.codex/agents/`.
 
 ## Consequences
 

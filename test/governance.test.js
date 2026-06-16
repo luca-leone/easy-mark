@@ -169,7 +169,7 @@ test('validates deterministic agentic path contract', async () => {
   assert.ok(validateAgenticPathContract(missingBudgetGate).some((error) => error.includes('budget-gate')));
 });
 
-test('validates agentic runtime contract and lean path hook enforcement', async (context) => {
+test('validates agentic runtime contract and lean path hook monitoring', async (context) => {
   const rootDirectory = path.resolve(import.meta.dirname, '..');
   const temporaryDirectory = await fs.mkdtemp(path.join(os.tmpdir(), 'agentic-runtime-'));
   context.after(() => fs.rm(temporaryDirectory, { recursive: true, force: true }));
@@ -231,7 +231,7 @@ test('validates agentic runtime contract and lean path hook enforcement', async 
     input: JSON.stringify({ toolName: 'apply_patch', input: { patch: '*** Begin Patch\n*** End Patch\n' } })
   });
   assert.equal(missingContract.status, 1);
-  assert.match(missingContract.stderr.toString(), /required before file edit/);
+  assert.match(missingContract.stderr.toString(), /missing before file edit; enter repair mode/);
 
   const validContract = spawnSync(process.execPath, [preHookScript], {
     cwd: rootDirectory,
@@ -268,7 +268,7 @@ test('validates agentic runtime contract and lean path hook enforcement', async 
     input: JSON.stringify({ toolName: 'apply_patch', status: 'success', input: { patch: '*** Begin Patch\n*** End Patch\n' } })
   });
   assert.equal(postInvalid.status, 1);
-  assert.match(postInvalid.stderr.toString(), /PostToolUse detected a contract violation/);
+  assert.match(postInvalid.stderr.toString(), /PostToolUse detected a contract violation; enter repair mode/);
 });
 
 test('validates agentic hook configuration and script wiring', async () => {

@@ -41,9 +41,14 @@
       "Required Fields",
       "Budget Envelope",
       "Verification",
-      "Hook Enforcement",
+      "Hook Monitoring",
+      "Hook Violation Policy",
       "Violations"
     ]
+  },
+  "hookPolicy": {
+    "semantics": "Lifecycle hooks detect and report policy violations; they are not a guaranteed hard stop for tool execution.",
+    "violationPolicy": "Any PreToolUse or PostToolUse violation must trigger repair mode before new workflow phases begin."
   },
   "paths": {
     "trivial-read-only": {

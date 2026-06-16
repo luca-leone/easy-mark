@@ -34,7 +34,7 @@ Check each item deterministically:
 8. Required commands have passed, including `npm test` for implementation changes.
 9. Long-running processes are stopped or intentionally handed off.
 10. Budget class, skills, project agents, verification commands, approvals, and budget violations are reported.
-11. Agentic contract report states selected path, escalation rules, hook enforcement, verification, and violations.
+11. Agentic contract report states selected path, escalation rules, hook monitoring, hook violation policy, verification, and violations.
 12. Final response states skipped checks and residual risks.
 
 ## Contract And Guardrail Check
