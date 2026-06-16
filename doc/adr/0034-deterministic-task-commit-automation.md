@@ -21,6 +21,8 @@ The command also applies local tag creation when version semantics require a tag
 - patch for `fix` and `build(package)`;
 - no package version change for `docs`, `test`, `chore`, `refactor`, and `ci` by default.
 
+When existing local semver tags are ahead of `package.json`, the command uses the highest local `vMAJOR.MINOR.PATCH` tag as the version base before applying the semantic bump. This prevents deterministic tag creation from colliding with an existing local release tag after package metadata or release-policy work.
+
 Add `$auto-commit` as the repository skill for task-finalization. It must be used only after verification passes. The command prints `git push origin <tag>` when it creates a tag. Push remains manual and human-controlled unless explicitly requested.
 
 ## Consequences

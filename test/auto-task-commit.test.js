@@ -46,6 +46,12 @@ test('proposes version bumps and tags from commit semantics without pushing', ()
     nextVersion: '2.0.0',
     tag: 'v2.0.0'
   });
+  assert.deepEqual(proposeVersioning('build(package): update package metadata', '1.0.0', ['v1.0.0', 'v1.0.1']), {
+    bump: 'patch',
+    currentVersion: '1.0.0',
+    nextVersion: '1.0.2',
+    tag: 'v1.0.2'
+  });
 });
 
 test('auto task commit stages all changes, commits, and reports proposal', async () => {
@@ -54,6 +60,9 @@ test('auto task commit stages all changes, commits, and reports proposal', async
     calls.push(argumentsList);
     if (argumentsList.join(' ') === 'diff --cached --name-only -z') {
       return { status: 0, stdout: 'script/git/auto-task-commit.mjs\0test/auto-task-commit.test.js\0', stderr: '' };
+    }
+    if (argumentsList.join(' ') === 'tag --list v[0-9]*.[0-9]*.[0-9]*') {
+      return { status: 0, stdout: 'v1.0.0\n', stderr: '' };
     }
     if (argumentsList.join(' ') === 'rev-parse --short HEAD') {
       return { status: 0, stdout: 'abc1234\n', stderr: '' };
@@ -73,6 +82,7 @@ test('auto task commit stages all changes, commits, and reports proposal', async
   assert.deepEqual(calls, [
     ['add', '--all'],
     ['diff', '--cached', '--name-only', '-z'],
+    ['tag', '--list', 'v[0-9]*.[0-9]*.[0-9]*'],
     ['commit', '-m', 'chore(git): automate repository git workflow'],
     ['rev-parse', '--short', 'HEAD']
   ]);
@@ -84,6 +94,9 @@ test('auto task commit creates proposed version tags and reports tag push comman
     calls.push(argumentsList);
     if (argumentsList.join(' ') === 'diff --cached --name-only -z') {
       return { status: 0, stdout: 'core/web/styles.template.css\0test/styles.test.js\0', stderr: '' };
+    }
+    if (argumentsList.join(' ') === 'tag --list v[0-9]*.[0-9]*.[0-9]*') {
+      return { status: 0, stdout: 'v1.0.0\n', stderr: '' };
     }
     if (argumentsList.join(' ') === 'rev-parse --short HEAD') {
       return { status: 0, stdout: 'def5678\n', stderr: '' };
@@ -104,6 +117,7 @@ test('auto task commit creates proposed version tags and reports tag push comman
   assert.deepEqual(calls, [
     ['add', '--all'],
     ['diff', '--cached', '--name-only', '-z'],
+    ['tag', '--list', 'v[0-9]*.[0-9]*.[0-9]*'],
     ['commit', '-m', 'fix(navigation): align markers'],
     ['rev-parse', '--short', 'HEAD'],
     ['tag', 'v1.0.1']

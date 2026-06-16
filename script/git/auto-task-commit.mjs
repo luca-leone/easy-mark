@@ -69,7 +69,7 @@ export function deriveCommitPlan(files, options = {}) {
   const scope = options.scope ?? selectScope(classifications, type);
   const message = options.message ?? `${type}(${scope}): ${describe(type, scope)}`;
   const validation = validateCommitMessage(message);
-  const versionProposal = proposeVersioning(message, options.currentVersion);
+  const versionProposal = proposeVersioning(message, options.currentVersion, options.existingTags);
 
   return {
     hasChanges: true,
@@ -105,14 +105,42 @@ function incrementVersion(version, bump) {
   return version;
 }
 
-export function proposeVersioning(message, currentVersion) {
+function parseSemverTag(tag) {
+  const match = String(tag ?? '').match(/^v(\d+)\.(\d+)\.(\d+)$/);
+  if (!match) return undefined;
+  return {
+    version: `${Number(match[1])}.${Number(match[2])}.${Number(match[3])}`,
+    parts: [Number(match[1]), Number(match[2]), Number(match[3])]
+  };
+}
+
+function compareSemverParts(left, right) {
+  for (let index = 0; index < 3; index += 1) {
+    if (left[index] !== right[index]) return left[index] - right[index];
+  }
+  return 0;
+}
+
+function highestVersion(currentVersion, existingTags = []) {
+  const versions = [];
+  const current = parseSemverTag(`v${currentVersion}`);
+  if (current) versions.push(current);
+  for (const tag of existingTags) {
+    const parsed = parseSemverTag(tag);
+    if (parsed) versions.push(parsed);
+  }
+  return versions.sort((left, right) => compareSemverParts(left.parts, right.parts)).at(-1)?.version;
+}
+
+export function proposeVersioning(message, currentVersion, existingTags = []) {
   const header = parseConventionalHeader(message);
   const bump = header.breaking ? 'major'
     : header.type === 'feat' ? 'minor'
       : header.type === 'fix' ? 'patch'
         : header.type === 'build' && header.scope === 'package' ? 'patch'
           : 'none';
-  const nextVersion = bump === 'none' ? currentVersion : incrementVersion(currentVersion, bump);
+  const baseVersion = highestVersion(currentVersion, existingTags) ?? currentVersion;
+  const nextVersion = bump === 'none' ? currentVersion : incrementVersion(baseVersion, bump);
   return {
     bump,
     currentVersion,
@@ -142,6 +170,14 @@ async function readPackageVersion(repositoryRoot) {
   }
 }
 
+function readSemverTags(repositoryRoot, gitRunner) {
+  const result = runGitChecked(['tag', '--list', 'v[0-9]*.[0-9]*.[0-9]*'], {
+    cwd: repositoryRoot,
+    gitRunner
+  });
+  return result.stdout.split(/\r?\n/).map((tag) => tag.trim()).filter(Boolean);
+}
+
 export async function autoTaskCommit(options = {}) {
   const repositoryRoot = path.resolve(options.repositoryRoot ?? process.cwd());
   const gitRunner = options.gitRunner ?? runGit;
@@ -149,9 +185,11 @@ export async function autoTaskCommit(options = {}) {
   runGitChecked(['add', '--all'], { cwd: repositoryRoot, gitRunner });
   const diffResult = runGitChecked(['diff', '--cached', '--name-only', '-z'], { cwd: repositoryRoot, gitRunner });
   const files = parseNullSeparated(diffResult.stdout);
+  const existingTags = options.existingTags ?? readSemverTags(repositoryRoot, gitRunner);
   const plan = deriveCommitPlan(files, {
     message: options.message,
-    currentVersion: options.currentVersion ?? await readPackageVersion(repositoryRoot)
+    currentVersion: options.currentVersion ?? await readPackageVersion(repositoryRoot),
+    existingTags
   });
 
   if (!plan.hasChanges) return { committed: false, reason: 'No staged changes after git add --all.' };
