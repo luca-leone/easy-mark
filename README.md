@@ -1,78 +1,77 @@
 # easy-mark
 
-`easy-mark` converte una directory di Markdown in frammenti HTML sanitizzati conservati in `mem-fs`, li presenta tramite una SPA e puo esportare un PDF aggregato.
+`easy-mark` converts a Markdown directory into sanitised HTML fragments held in `mem-fs`, presents them through a single-page application, and can export an aggregate PDF.
 
 ## CLI
 
-Richiede Node.js 22 o successivo. `.nvmrc` mantiene Node.js 22 come baseline di sviluppo.
+It requires Node.js 22 or later. `.nvmrc` keeps Node.js 22 as the development baseline.
 
 ```sh
 nvm use
 npm install
-npm run start
 ```
 
-Per usare il binario locale:
+Use the local binary against any content directory:
 
 ```sh
 easy-mark serve ./doc
 easy-mark serve ./doc --title "My Documentation"
-easy-mark export ./doc --pdf ./bignami.pdf
+easy-mark export ./doc --pdf ./guide.pdf
 ```
 
-`./doc` e solo un esempio: il percorso puo essere qualunque directory che contiene Markdown e asset pubblici. `npm run start` serve `./src` come workspace demo del repository. La porta puo essere modificata con `PORT` o con `--port` sul comando `serve`.
+`./doc` is only an example: the path may be any directory containing Markdown and public assets. The port can be changed with `PORT` or with `--port` on the `serve` command.
 
-Il titolo visibile usa questa precedenza: `manifest.json` nella content directory, poi `--title`, poi `Easy Mark`. Il manifest e opzionale:
+The visible title uses this precedence: `manifest.json` in the content directory, then `--title`, then `Easy Mark`. The manifest is optional:
 
 ```json
 {
-  "title": "La mia documentazione",
+  "title": "My documentation",
   "logo": "/logo.svg"
 }
 ```
 
-`core/server/` contiene la logica server e CLI, `core/web/` contiene runtime browser, asset e template predefiniti. `core/web/index.template.html` e `core/web/styles.template.css` vengono sempre caricati in memoria come `index.html` e `styles.css`; la content directory non puo sostituirli con propri `index.html` o `styles.css`.
+`core/server/` contains the server and CLI logic, while `core/web/` contains the browser runtime, assets, and default templates. `core/web/index.template.html` and `core/web/styles.template.css` are always loaded into memory as `index.html` and `styles.css`; the content directory cannot replace them with its own `index.html` or `styles.css`.
 
-Il comando `serve` non scrive HTML generato su disco. Il comando `export` scrive solo il PDF richiesto e richiede un adapter Playwright/Chromium disponibile nell'ambiente.
+The `serve` command does not write generated HTML to disk. The `export` command writes only the requested PDF and requires a Playwright/Chromium adapter to be available in the environment.
 
-## Commit standard
+## Commit Standards
 
-Il repository usa Conventional Commits e include un hook `commit-msg` versionato. Dopo il clone, installare le dipendenze e configurare l'hook locale:
+The repository uses Conventional Commits and includes a versioned `commit-msg` hook. After cloning, install the dependencies and configure the local hook:
 
 ```sh
 npm install
 npm run hooks:install
 ```
 
-Il comando è idempotente e imposta `core.hooksPath=hooks` solo nella configurazione Git del clone corrente. Se il clone usa già un percorso hook differente, l'installer si ferma senza sovrascriverlo e richiede una decisione esplicita. Il formato può essere verificato anche manualmente:
+The command is idempotent and sets `core.hooksPath=hooks` only in the Git configuration for the current clone. If the clone already uses a different hook path, the installer stops without overwriting it and requires an explicit decision. The format can also be checked manually:
 
 ```sh
 npm run commit:validate -- --message "feat(navigation): add keyboard shortcuts"
 ```
 
-Sono ammessi `feat`, `fix`, `docs`, `chore`, `test`, `refactor`, `build` e `ci`, con scope opzionale. `!` e un footer rigoroso `BREAKING CHANGE: descrizione` o `BREAKING-CHANGE: descrizione` possono indicare una modifica incompatibile indipendentemente. L'hook applica i cleanup Git determinabili senza conoscere l'invocazione: `strip` e `whitespace` sono riprodotti, `default` e `verbatim` preservano l'input, mentre `scissors` applica solo la normalizzazione whitespace per non accettare testo che Git potrebbe conservare nei commit non editati. `core.commentString` e `core.commentChar` rispettano l'ultima configurazione effettiva. I merge sono ammessi soltanto in forme Git note durante un merge reale. L'hook può essere aggirato con `--no-verify`, quindi non costituisce un controllo server-side.
+Allowed types are `feat`, `fix`, `docs`, `chore`, `test`, `refactor`, `build`, and `ci`, with an optional scope. `!` and a strict `BREAKING CHANGE: description` or `BREAKING-CHANGE: description` footer can independently mark an incompatible change. The hook applies Git clean-up modes that can be determined without knowing the invocation: `strip` and `whitespace` are reproduced, `default` and `verbatim` preserve the input, while `scissors` applies only whitespace normalisation so text that Git might keep in non-edited commits is not accepted accidentally. `core.commentString` and `core.commentChar` respect the last effective configuration. Merge subjects are accepted only in known Git forms during a real merge. The hook can be bypassed with `--no-verify`, so it is not a server-side control.
 
-La skill Codex `$generate-commit` analizza lo status e il diff staged per proporre un messaggio semantico. Non crea commit e non aggiunge file allo staging senza una richiesta esplicita.
+The Codex `$generate-commit` skill analyses the status and staged diff to propose a semantic message. It does not create commits or stage files without an explicit request.
 
-## Workflow multi-agent Codex
+## Codex Multi-Agent Workflow
 
-Le directory con `agents` nel nome hanno responsabilità diverse:
+The directories whose names include `agents` have different responsibilities:
 
-- `.agents/skills/` contiene skill repository-scoped scoperte da Codex. Ogni skill usa il formato obbligatorio `SKILL.md` e può avere metadati `agents/openai.yaml`.
-- `.codex/agents/` contiene le configurazioni TOML dei ruoli subagent del progetto.
+- `.agents/skills/` contains repository-scoped skills discovered by Codex. Each skill uses the required `SKILL.md` format and may include `agents/openai.yaml` metadata.
+- `.codex/agents/` contains the TOML configuration for the project's subagent roles.
 
-Non devono essere unite. Codex avvia i subagent solo su richiesta esplicita; dopo modifiche alla configurazione, usare un nuovo thread.
+They must not be merged. Codex starts subagents only when explicitly requested; after configuration changes, use a new thread.
 
-Esempi:
+Examples:
 
 ```text
-Usa il workflow multi-agent: fai analizzare i requisiti al planner, instrada l'implementazione in base al rischio e verifica il risultato con il verifier.
+Use the multi-agent workflow: have the planner analyse the requirements, route implementation by risk, and verify the result with the verifier.
 
-Revisiona questa modifica con il reviewer e usa il verifier per eseguire i controlli senza correggere automaticamente gli errori.
+Review this change with the reviewer and use the verifier to run checks without automatically fixing failures.
 ```
 
-Le modifiche circoscritte possono essere delegate a `implementer`; sicurezza, routing, sanitizzazione, filesystem virtuale, concorrenza, watcher e architettura richiedono `senior-implementer`.
+Narrow changes can be delegated to `implementer`; security, routing, sanitisation, virtual filesystems, concurrency, watchers, and architecture require `senior-implementer`.
 
-## Script di workspace
+## Workspace Scripts
 
-La logica eseguibile di workflow e manutenzione vive sotto `script/` e usa esclusivamente JavaScript ESM con estensione `.mjs`. Skill, metadati, configurazioni agent e guardrail restano rispettivamente Markdown, YAML, TOML e Markdown perché sono formati dichiarativi letti direttamente dagli strumenti. `hooks/commit-msg` è un wrapper POSIX minimo imposto dall'interfaccia hook di Git e delega tutta la logica al validatore `.mjs`.
+Executable workflow and maintenance logic lives under `script/` and uses only ESM JavaScript with the `.mjs` extension. Skills, metadata, agent configurations, and guardrails remain Markdown, YAML, TOML, and Markdown respectively because they are declarative formats read directly by tools. `hooks/commit-msg` is the minimal POSIX wrapper required by Git's hook interface and delegates all logic to the `.mjs` validator.

@@ -93,6 +93,15 @@ Inspect and plan without editing.
     .some((error) => error.includes('model must be')));
 });
 
+test('planner workflow requires user approval before execution', async () => {
+  const rootDirectory = path.resolve(import.meta.dirname, '..');
+  const guide = await fs.readFile(path.join(rootDirectory, 'AGENTS.md'), 'utf8');
+  const planner = await fs.readFile(path.join(rootDirectory, '.codex', 'agents', 'planner.toml'), 'utf8');
+
+  assert.match(guide, /define the plan, get explicit user approval for that plan, then execute/);
+  assert.match(planner, /define the plan, wait for explicit user approval of that plan, and only then allow execution/);
+});
+
 test('supports Node.js 22 and later while retaining the Node.js 22 baseline', async () => {
   const packageManifest = JSON.parse(await fs.readFile(new URL('../package.json', import.meta.url), 'utf8'));
   const lockfile = JSON.parse(await fs.readFile(new URL('../package-lock.json', import.meta.url), 'utf8'));
@@ -113,11 +122,12 @@ test('uses the easy-mark package name and ESM workflow scripts', async () => {
   assert.equal(packageManifest.private, false);
   assert.deepEqual(packageManifest.bin, { 'easy-mark': './bin/easy-mark.mjs' });
   assert.deepEqual(lockfile.packages[''].bin, { 'easy-mark': 'bin/easy-mark.mjs' });
-  assert.equal(packageManifest.scripts.start, 'node bin/easy-mark.mjs serve ./src');
+  assert.equal(Object.hasOwn(packageManifest.scripts, 'start'), false);
   assert.ok(packageManifest.files.includes('bin/'));
   assert.ok(packageManifest.files.includes('core/server/'));
   assert.ok(packageManifest.files.includes('core/web/'));
   await assert.rejects(fs.access(new URL('../server.js', import.meta.url)));
+  await assert.rejects(fs.access(new URL('../core/server/server.js', import.meta.url)));
   assert.deepEqual(validateWorkflowScriptPaths([
     'script/valid.mjs',
     'script/invalid.js',

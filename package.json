@@ -16,7 +16,6 @@
     "node": ">=22"
   },
   "scripts": {
-    "start": "node bin/easy-mark.mjs serve ./src",
     "commit:validate": "node script/git/validate-commit-message.mjs",
     "hooks:install": "node script/git/install-hooks.mjs",
     "validate:governance": "node script/validate-governance.mjs",

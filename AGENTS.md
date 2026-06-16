@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This repository contains an OS-agnostic Node.js application that converts `src/**/*.md` into sanitized HTML fragments held only in `mem-fs`, serves them through a single-page application, and reloads browsers when source files change.
+This repository contains an OS-agnostic Node.js application that converts Markdown from an arbitrary content directory into sanitized HTML fragments held only in `mem-fs`, serves them through a single-page application, and reloads browsers when source files change.
 
 ## Source of Truth
 
@@ -30,9 +30,8 @@ Never rewrite or delete existing entries in `memory/decisions.md`. Record correc
 
 ## Repository Map
 
-- `core/server/`: server entry point, conversion, virtual filesystem, navigation, and HTTP behavior.
+- `core/server/`: server runtime, conversion, virtual filesystem, navigation, and HTTP behavior.
 - `core/web/`: bundled app shell and stylesheet templates, browser runtime, and default static assets.
-- `src/`: user-authored Markdown, public project metadata, assets, and optional app shell and stylesheet overrides.
 - `test/`: Node unit and integration tests.
 - `rules/`: repository engineering rules.
 - `contracts/`: normative application behavior.
@@ -51,7 +50,7 @@ Do not merge `.agents/skills/` into `.codex/agents/`: the directories are separa
 
 ## Commands
 
-- `npm run start`: build the virtual site, serve it, and watch `src/`.
+- `node bin/easy-mark.mjs serve <content-directory>`: build the virtual site, serve it, and watch the selected content directory.
 - `npm run hooks:install`: configure this clone to use the versioned hooks in `hooks/`.
 - `npm run commit:validate -- --message "type(scope): description"`: validate a commit message explicitly.
 - `npm run validate:governance`: validate governance structure and references.
@@ -71,6 +70,7 @@ Do not merge `.agents/skills/` into `.codex/agents/`: the directories are separa
 
 - Use project agents only when the user explicitly requests subagents, parallel agents, or the risk-routed workflow; Codex does not spawn subagents implicitly.
 - Use `planner` for ambiguous, cross-cutting, or requirements-heavy analysis and `reviewer` for independent review of material changes.
+- Planner-led work must follow this sequence: define the plan, get explicit user approval for that plan, then execute. Do not proceed from a planner handoff into implementation until the user has approved the plan.
 - Route bounded low-risk implementation to `implementer`; route security, routing, sanitization, virtual filesystem, concurrency, watcher, migration, architectural, or cross-module work to `senior-implementer`.
 - Use `verifier` after implementation to run deterministic checks independently; it reports failures but does not edit code.
 - Keep at most one write-capable agent active on a given file scope. Parallelize read-heavy planning, exploration, review, and verification only when their scopes are independent.
@@ -85,7 +85,7 @@ Do not merge `.agents/skills/` into `.codex/agents/`: the directories are separa
 - Support Node.js 22 and later as declared by `package.json`; use the Node.js 22 baseline declared by `.nvmrc` for development and verification.
 - Keep path handling portable across operating systems.
 - Do not commit generated HTML or write converted HTML to disk.
-- Keep the resolved virtual `index.html` as the only app shell and stylesheet owner; `src/index.html` and `src/styles.css` may replace the bundled templates.
+- Keep the resolved virtual `index.html` as the only app shell and stylesheet owner; content directories must not replace package-owned `index.html` or `styles.css`.
 - Sanitize rendered Markdown HTML.
 - Preserve SPA routing, hierarchical navigation, Unicode-safe anchors, and live reload.
 - Add regression tests for every fixed defect.

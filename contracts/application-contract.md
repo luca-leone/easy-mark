@@ -4,7 +4,7 @@
 
 - The application supports Node.js 22 and later; Node.js 22 remains the development and verification baseline.
 - The product name, package name, binary name, and startup log remain `easy-mark`; the default visible documentation title is `Easy Mark`.
-- `easy-mark serve <content-directory>` builds and serves the documentation from an arbitrary user-selected content directory. `npm run start` is repository-local compatibility for serving `./src`.
+- `easy-mark serve <content-directory>` builds and serves the documentation from an arbitrary user-selected content directory.
 - `easy-mark export <content-directory> --pdf <file.pdf>` builds the documentation in memory and writes the requested PDF file.
 - The default HTTP port is `3000`; `PORT` may override it and the CLI may pass an explicit port.
 - Startup fails when either bundled template under `core/web/` is missing, when the content directory contains root `index.html` or `styles.css`, when a present `manifest.json` is invalid, or when all Markdown documents are missing.

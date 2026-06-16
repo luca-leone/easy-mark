@@ -1,7 +1,7 @@
 # Non-Negotiable Guardrails
 
-1. Generated document HTML must exist only in `mem-fs`; never emit it into `src/`, `dist/`, or another disk directory.
-2. Preserve the complete relative structure of `src/` in the virtual filesystem.
+1. Generated document HTML must exist only in `mem-fs`; never emit it into the content directory, `dist/`, or another disk directory.
+2. Preserve the complete relative structure of the selected content directory in the virtual filesystem.
 3. Sanitize Markdown output before exposing it to the browser.
 4. Reject virtual document paths that can traverse outside the virtual source root.
 5. Keep the resolved virtual `index.html` as the only application shell and the resolved virtual `styles.css` as its global stylesheet; content directories must not override package-owned `index.html` or `styles.css`.

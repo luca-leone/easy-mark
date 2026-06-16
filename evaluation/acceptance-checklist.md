@@ -2,11 +2,11 @@
 
 ## Build and Filesystem
 
-- [ ] `npm run start` launches `easy-mark` through `core/server/server.js`; no application entry point remains in the repository root.
-- [ ] Startup succeeds with the bundled `core/web` templates and at least one Markdown file, without requiring shell or stylesheet files in `src/`.
-- [ ] Valid `src/index.html` and `src/styles.css` files override their bundled templates, and deleting them restores the defaults.
-- [ ] A valid optional `src/manifest.json` customizes the shell and dynamic browser title; deletion restores `easy-mark`, and invalid updates preserve the last valid state.
-- [ ] An optional validated manifest logo uses the bundled `/logo.svg` by default, supports same-path `src/` overrides and custom local image paths, and disappears cleanly when unavailable.
+- [ ] `easy-mark serve <content-directory>` launches the package CLI without requiring a repository-local demo directory.
+- [ ] Startup succeeds with the bundled `core/web` templates and at least one Markdown file, without requiring shell or stylesheet files in the content directory.
+- [ ] Content-root `index.html` and `styles.css` are rejected because package-owned runtime files are reserved.
+- [ ] A valid optional content-root `manifest.json` customises the shell and dynamic browser title; deletion restores the CLI title fallback or `Easy Mark`, and invalid updates preserve the last valid state.
+- [ ] An optional validated manifest logo uses the bundled `/logo.svg` by default, supports same-path content asset overrides and custom local image paths, and disappears cleanly when unavailable.
 - [ ] Missing required inputs fail with explicit errors.
 - [ ] Source directory structure is preserved in `mem-fs`.
 - [ ] No generated `.html` files appear on disk beyond the authored shell.
@@ -47,7 +47,7 @@
 - [ ] Typing updates only the overlay draft; Escape, backdrop, close, selection, and controller dismissal commit it, reopening restores it, and selection does not restore launcher focus.
 - [ ] The custom clear button appears only for non-empty drafts, clears through native button activation, restores all results, keeps the overlay open, and focuses the input while the native WebKit clear control stays suppressed.
 - [ ] Search supports Arrow Up, Arrow Down, Home, End, and Enter, uses the responsive second header row and mobile panel, and remains usable in both themes and reduced motion.
-- [ ] Existing `src/index.html` overrides without the complete search hook set, including `search-clear`, continue to work without partially initialized search behavior or unrelated parent hiding.
+- [ ] Incomplete bundled search hooks, including `search-clear`, keep search neutral without partially initialized behaviour or unrelated parent hiding.
 
 ## Live Updates
 

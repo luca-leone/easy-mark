@@ -18,7 +18,6 @@ export const REQUIRED_FILES = Object.freeze([
   '.agents/skills/generate-commit/SKILL.md',
   '.agents/skills/generate-commit/agents/openai.yaml',
   'hooks/commit-msg',
-  'core/server/server.js',
   'script/git/validate-commit-message.mjs',
   'script/git/install-hooks.mjs'
 ]);

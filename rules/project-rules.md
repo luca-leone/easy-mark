@@ -9,7 +9,7 @@
 - Normalize URL paths as POSIX paths; use `node:path` for filesystem paths.
 - Do not add platform-specific shell assumptions to application behavior.
 - Do not change unrelated behavior while implementing a request.
-- Keep runtime server modules under `core/server/`; `core/server/server.js` is the application entry point.
+- Keep runtime server modules under `core/server/`; the public CLI under `bin/` is the application entry point.
 - Keep bundled browser JavaScript, templates, and static assets under `core/web/`. Treat the CLI positional directory as the user content root for Markdown, public assets, and optional `manifest.json`; do not support content-root `index.html` or `styles.css` overrides.
 - Keep the public NPM executable under `bin/` and include package runtime assets through explicit package metadata.
 - Use locally vendored official Ionicons outline SVGs for interface icons unless an ADR explicitly accepts an exception.
