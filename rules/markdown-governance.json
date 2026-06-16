@@ -1,0 +1,71 @@
+{
+  "version": 1,
+  "contractName": "Markdown Governance",
+  "governedMarkdown": {
+    "exactFiles": [
+      "AGENTS.md"
+    ],
+    "directories": [
+      ".agents",
+      "contracts",
+      "doc",
+      "evaluation",
+      "guardrails",
+      "memory",
+      "reports",
+      "rules"
+    ],
+    "extension": ".md"
+  },
+  "rules": [
+    {
+      "id": "markdown.max-lines",
+      "description": "Committed governed Markdown files must stay at or below the configured line limit.",
+      "maxLines": 150,
+      "severity": "error"
+    },
+    {
+      "id": "markdown.banned-modals",
+      "description": "Governed Markdown must not use discretionary modal verbs for obligations.",
+      "bannedWords": [
+        "should",
+        "may"
+      ],
+      "severity": "error"
+    },
+    {
+      "id": "markdown.obligation-modal",
+      "description": "Governed Markdown obligations use must.",
+      "requiredWord": "must",
+      "severity": "policy"
+    }
+  ],
+  "hookPolicy": {
+    "semantics": "Markdown governance hooks detect and report policy violations; they are not a guaranteed hard stop for tool execution.",
+    "violationPolicy": "Any Markdown governance hook violation must trigger repair mode before new workflow phases begin."
+  },
+  "report": {
+    "path": "reports/markdown-governance-report.jsonl",
+    "requiredFields": [
+      "event",
+      "tool",
+      "file",
+      "line",
+      "ruleId",
+      "expected",
+      "actual",
+      "repairRequired"
+    ]
+  },
+  "repairPolicy": {
+    "script": "script/repair-markdown-governance.mjs",
+    "automaticFixes": [
+      "trailing-whitespace",
+      "final-newline"
+    ],
+    "manualRepairRequired": [
+      "markdown.max-lines",
+      "markdown.banned-modals"
+    ]
+  }
+}

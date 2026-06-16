@@ -20,6 +20,12 @@
             "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/pre-tool-use-agentic-lean-path.mjs\"",
             "timeout": 30,
             "statusMessage": "Checking agentic lean path contract"
+          },
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/pre-tool-use-markdown-governance.mjs\"",
+            "timeout": 30,
+            "statusMessage": "Checking markdown governance contract"
           }
         ]
       }
@@ -44,6 +50,12 @@
             "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/post-tool-use-agentic-lean-path.mjs\"",
             "timeout": 30,
             "statusMessage": "Recording agentic lean path compliance"
+          },
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/post-tool-use-markdown-governance.mjs\"",
+            "timeout": 30,
+            "statusMessage": "Recording markdown governance compliance"
           }
         ]
       }

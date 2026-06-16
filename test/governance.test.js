@@ -19,6 +19,12 @@ import {
   validateGovernance,
   validateInternalLinks,
   validateMarkdownLineBudgets,
+  validateMarkdownGovernance,
+  validateMarkdownGovernanceContract,
+  validateMarkdownGovernanceEntries,
+  validateMarkdownGovernanceHookConfig,
+  validateMarkdownGovernanceHookScript,
+  validateMarkdownGovernancePolicy,
   validateAgenticHookConfig,
   validateAgenticHookScript,
   validateAgenticPathContract,
@@ -291,6 +297,82 @@ test('validates agentic hook configuration and script wiring', async () => {
   assert.ok(validateAgenticHookConfig(brokenConfig).some((error) => error.includes('^Bash$')));
 });
 
+test('validates Markdown governance contract, hooks, reports, and repair trigger', async (context) => {
+  const rootDirectory = path.resolve(import.meta.dirname, '..');
+  const temporaryDirectory = await fs.mkdtemp(path.join(os.tmpdir(), 'markdown-governance-'));
+  context.after(() => fs.rm(temporaryDirectory, { recursive: true, force: true }));
+  const contract = JSON.parse(await fs.readFile(path.join(rootDirectory, 'rules', 'markdown-governance.json'), 'utf8'));
+  const policy = await fs.readFile(path.join(rootDirectory, 'rules', 'markdown-governance.md'), 'utf8');
+  const hookConfig = JSON.parse(await fs.readFile(path.join(rootDirectory, '.codex', 'hooks.json'), 'utf8'));
+  const preHookScript = await fs.readFile(
+    path.join(rootDirectory, '.codex', 'hooks', 'pre-tool-use-markdown-governance.mjs'),
+    'utf8'
+  );
+  const postHookScript = await fs.readFile(
+    path.join(rootDirectory, '.codex', 'hooks', 'post-tool-use-markdown-governance.mjs'),
+    'utf8'
+  );
+
+  assert.deepEqual(validateMarkdownGovernanceContract(contract), []);
+  assert.deepEqual(validateMarkdownGovernancePolicy(policy), []);
+  assert.deepEqual(validateMarkdownGovernanceHookConfig(hookConfig), []);
+  assert.deepEqual(validateMarkdownGovernanceHookScript(preHookScript), []);
+  assert.deepEqual(validateMarkdownGovernanceHookScript(postHookScript), []);
+  assert.deepEqual(await validateMarkdownGovernance(rootDirectory), []);
+
+  assert.deepEqual(validateMarkdownGovernanceEntries([
+    { relativePath: 'rules/bad.md', contents: 'This should fail.\nThis may fail.' },
+    { relativePath: 'rules/long.md', contents: Array.from({ length: 151 }, () => 'x').join('\n') }
+  ], contract).map(({ ruleId }) => ruleId), [
+    'markdown.banned-modals',
+    'markdown.banned-modals',
+    'markdown.max-lines'
+  ]);
+
+  const invalidContract = structuredClone(contract);
+  invalidContract.rules.find((rule) => rule.id === 'markdown.max-lines').maxLines = 151;
+  assert.ok(validateMarkdownGovernanceContract(invalidContract).some((error) => error.includes('maxLines must be 150')));
+
+  const preHookPath = path.join(rootDirectory, '.codex', 'hooks', 'pre-tool-use-markdown-governance.mjs');
+  const postHookPath = path.join(rootDirectory, '.codex', 'hooks', 'post-tool-use-markdown-governance.mjs');
+  const validPre = spawnSync(process.execPath, [preHookPath], {
+    cwd: rootDirectory,
+    input: JSON.stringify({ toolName: 'apply_patch', input: { patch: '*** Begin Patch\n*** Update File: rules/markdown-governance.md\n*** End Patch\n' } })
+  });
+  assert.equal(validPre.status, 0);
+
+  const invalidContractPath = path.join(temporaryDirectory, 'invalid-contract.json');
+  await fs.writeFile(invalidContractPath, JSON.stringify(invalidContract, null, 2));
+  const invalidPre = spawnSync(process.execPath, [preHookPath], {
+    cwd: rootDirectory,
+    env: { ...process.env, MARKDOWN_GOVERNANCE_CONTRACT_PATH: invalidContractPath },
+    input: JSON.stringify({ toolName: 'apply_patch', input: { patch: '*** Begin Patch\n*** Update File: rules/markdown-governance.md\n*** End Patch\n' } })
+  });
+  assert.equal(invalidPre.status, 1);
+  assert.match(invalidPre.stderr.toString(), /Markdown governance PreToolUse hook detected an invalid contract; enter repair mode/);
+
+  const reportPath = path.join(temporaryDirectory, 'markdown-report.jsonl');
+  const validPost = spawnSync(process.execPath, [postHookPath], {
+    cwd: rootDirectory,
+    env: { ...process.env, MARKDOWN_GOVERNANCE_REPORT_PATH: reportPath },
+    input: JSON.stringify({ toolName: 'apply_patch', input: { patch: '*** Begin Patch\n*** Update File: rules/markdown-governance.md\n*** End Patch\n' } })
+  });
+  assert.equal(validPost.status, 0);
+  const reportEntries = (await fs.readFile(reportPath, 'utf8')).trim().split('\n').map((line) => JSON.parse(line));
+  assert.equal(reportEntries[0].event, 'PostToolUse');
+  assert.equal(reportEntries[0].file, 'rules/markdown-governance.md');
+  assert.equal(reportEntries[0].ruleId, 'markdown.governance');
+  assert.equal(reportEntries[0].repairRequired, false);
+
+  const brokenConfig = structuredClone(hookConfig);
+  brokenConfig.hooks.PostToolUse
+    .find((entry) => entry.matcher === '^(apply_patch|Edit|Write)$')
+    .hooks = [];
+  assert.ok(validateMarkdownGovernanceHookConfig(brokenConfig).some((error) =>
+    error.includes('post-tool-use-markdown-governance.mjs')
+  ));
+});
+
 test('validates deterministic resource budget policy and skill', async () => {
   const rootDirectory = path.resolve(import.meta.dirname, '..');
   const policy = await fs.readFile(path.join(rootDirectory, 'rules', 'resource-budgets.md'), 'utf8');
@@ -408,6 +490,8 @@ test('uses the public @easy-mark/cli package metadata and ESM workflow scripts',
   assert.equal(packageManifest.scripts['validate:agentic-runtime-contract'], 'node script/validate-agentic-lean-path-runtime.mjs');
   assert.equal(packageManifest.scripts['report:agentic-compliance'], 'node script/report-agentic-compliance.mjs');
   assert.equal(packageManifest.scripts['validate:resource-budgets'], 'node script/validate-resource-budgets.mjs');
+  assert.equal(packageManifest.scripts['validate:markdown-governance'], 'node script/validate-markdown-governance.mjs');
+  assert.equal(packageManifest.scripts['repair:markdown-governance'], 'node script/repair-markdown-governance.mjs');
   assert.deepEqual(packageManifest.dependencies, lockfile.packages[''].dependencies);
   for (const dependencyName of [
     'chart.js',

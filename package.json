@@ -46,6 +46,8 @@
     "validate:agentic-paths": "node script/validate-agentic-paths.mjs",
     "validate:agentic-runtime-contract": "node script/validate-agentic-lean-path-runtime.mjs",
     "validate:resource-budgets": "node script/validate-resource-budgets.mjs",
+    "validate:markdown-governance": "node script/validate-markdown-governance.mjs",
+    "repair:markdown-governance": "node script/repair-markdown-governance.mjs",
     "validate:governance": "node script/validate-governance.mjs",
     "report:agentic-compliance": "node script/report-agentic-compliance.mjs",
     "test:node": "node --test",

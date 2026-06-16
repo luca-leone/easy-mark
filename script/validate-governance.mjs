@@ -19,6 +19,9 @@ import {
   validateDocumentationScope,
   validateGenerateCommitSkill,
   validateMarkdownLineBudgets,
+  validateMarkdownGovernanceHookConfig,
+  validateMarkdownGovernanceHookScript,
+  validateMarkdownGovernancePolicy,
   validateAgenticHookConfig,
   validateAgenticHookScript,
   validateAgenticPathContract,
@@ -30,6 +33,11 @@ import {
   validateResourceBudgetPolicy,
   validateWorkflowScriptPaths
 } from './governance/validators.mjs';
+import {
+  validateMarkdownGovernanceContract,
+  validateMarkdownGovernanceEntries
+} from './markdown-governance-runtime.mjs';
+import { validateMarkdownGovernance } from './validate-markdown-governance.mjs';
 
 const markdownLinkPattern = /\[[^\]]*\]\(([^)]+)\)/g;
 
@@ -138,7 +146,17 @@ export async function validateGovernance(rootDirectory) {
   }
 
   try {
-    errors.push(...validateAgenticHookConfig(JSON.parse(await fs.readFile(path.join(root, '.codex', 'hooks.json'), 'utf8'))));
+    errors.push(...validateMarkdownGovernancePolicy(await fs.readFile(path.join(root, 'rules', 'markdown-governance.md'), 'utf8')));
+  } catch {
+    // Required-file diagnostics cover this path.
+  }
+
+  errors.push(...await validateMarkdownGovernance(root));
+
+  try {
+    const hookConfig = JSON.parse(await fs.readFile(path.join(root, '.codex', 'hooks.json'), 'utf8'));
+    errors.push(...validateAgenticHookConfig(hookConfig));
+    errors.push(...validateMarkdownGovernanceHookConfig(hookConfig));
   } catch (error) {
     if (error instanceof SyntaxError) errors.push('.codex/hooks.json: invalid JSON');
   }
@@ -149,6 +167,12 @@ export async function validateGovernance(rootDirectory) {
     ));
     errors.push(...validateAgenticHookScript(
       await fs.readFile(path.join(root, '.codex', 'hooks', 'post-tool-use-agentic-lean-path.mjs'), 'utf8')
+    ));
+    errors.push(...validateMarkdownGovernanceHookScript(
+      await fs.readFile(path.join(root, '.codex', 'hooks', 'pre-tool-use-markdown-governance.mjs'), 'utf8')
+    ));
+    errors.push(...validateMarkdownGovernanceHookScript(
+      await fs.readFile(path.join(root, '.codex', 'hooks', 'post-tool-use-markdown-governance.mjs'), 'utf8')
     ));
   } catch {
     // Required-file diagnostics cover these paths.
@@ -222,10 +246,6 @@ export async function validateGovernance(rootDirectory) {
     }
   }
   errors.push(...await validateInternalLinks(root, markdownFiles));
-  errors.push(...validateMarkdownLineBudgets(await Promise.all(markdownFiles.map(async (filePath) => ({
-    relativePath: path.relative(root, filePath),
-    contents: await fs.readFile(filePath, 'utf8')
-  })))));
 
   try {
     const scriptFiles = await listFiles(path.join(root, 'script'));
@@ -264,6 +284,9 @@ export {
   validateDocumentationScope,
   validateGenerateCommitSkill,
   validateMarkdownLineBudgets,
+  validateMarkdownGovernanceHookConfig,
+  validateMarkdownGovernanceHookScript,
+  validateMarkdownGovernancePolicy,
   validateAgenticHookConfig,
   validateAgenticHookScript,
   validateAgenticPathContract,
@@ -278,3 +301,8 @@ export {
 export { validateAgenticWorkflow } from './validate-agentic-workflow.mjs';
 export { validateAgenticPaths } from './validate-agentic-paths.mjs';
 export { validateAgenticRuntimeContractFile } from './validate-agentic-lean-path-runtime.mjs';
+export { validateMarkdownGovernance } from './validate-markdown-governance.mjs';
+export {
+  validateMarkdownGovernanceContract,
+  validateMarkdownGovernanceEntries
+} from './markdown-governance-runtime.mjs';

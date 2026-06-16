@@ -9,6 +9,8 @@ import {
   validateAgenticHookScript,
   validateAgenticWorkflowGuide,
   validateAgenticWorkflowPolicy,
+  validateMarkdownGovernanceHookConfig,
+  validateMarkdownGovernanceHookScript,
   validateOrchestrateRequestSkill,
   validateQualityGateSkill,
   validateResourceBudgetGateSkill,
@@ -58,6 +60,7 @@ export async function validateAgenticWorkflow(rootDirectory) {
 
   try {
     errors.push(...validateAgenticHookConfig(JSON.parse(await fs.readFile(path.join(root, '.codex', 'hooks.json'), 'utf8'))));
+    errors.push(...validateMarkdownGovernanceHookConfig(JSON.parse(await fs.readFile(path.join(root, '.codex', 'hooks.json'), 'utf8'))));
   } catch (error) {
     errors.push(error instanceof SyntaxError
       ? '.codex/hooks.json: invalid JSON'
@@ -78,6 +81,22 @@ export async function validateAgenticWorkflow(rootDirectory) {
     ));
   } catch {
     errors.push('.codex/hooks/post-tool-use-agentic-lean-path.mjs: required for deterministic agentic workflow validation');
+  }
+
+  try {
+    errors.push(...validateMarkdownGovernanceHookScript(
+      await fs.readFile(path.join(root, '.codex', 'hooks', 'pre-tool-use-markdown-governance.mjs'), 'utf8')
+    ));
+  } catch {
+    errors.push('.codex/hooks/pre-tool-use-markdown-governance.mjs: required for deterministic agentic workflow validation');
+  }
+
+  try {
+    errors.push(...validateMarkdownGovernanceHookScript(
+      await fs.readFile(path.join(root, '.codex', 'hooks', 'post-tool-use-markdown-governance.mjs'), 'utf8')
+    ));
+  } catch {
+    errors.push('.codex/hooks/post-tool-use-markdown-governance.mjs: required for deterministic agentic workflow validation');
   }
 
   errors.push(...await readPair(

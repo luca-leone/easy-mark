@@ -108,6 +108,8 @@ export function validateAgenticWorkflowGuide(contents) {
   const requiredPhrases = [
     'Deterministic Agentic Workflow',
     'rules/agentic-workflow.md',
+    'rules/markdown-governance.md',
+    'rules/markdown-governance.json',
     'rules/resource-budgets.md',
     '$orchestrate-request',
     '$quality-gate',
@@ -410,6 +412,44 @@ export function validateAgenticHookConfig(hookConfig) {
   return errors;
 }
 
+export function validateMarkdownGovernanceHookConfig(hookConfig) {
+  const errors = [];
+  if (!hookConfig || typeof hookConfig !== 'object' || Array.isArray(hookConfig)) {
+    return ['.codex/hooks.json: hook config must be a JSON object'];
+  }
+
+  for (const eventName of ['PreToolUse', 'PostToolUse']) {
+    const hookEntries = hookConfig.hooks?.[eventName];
+    if (!Array.isArray(hookEntries)) {
+      errors.push(`.codex/hooks.json: hooks.${eventName} must be an array`);
+      continue;
+    }
+    const scriptName = eventName === 'PreToolUse'
+      ? 'pre-tool-use-markdown-governance.mjs'
+      : 'post-tool-use-markdown-governance.mjs';
+    const entry = hookEntries.find((hookEntry) => hookEntry.matcher === '^(apply_patch|Edit|Write)$');
+    if (!entry) {
+      errors.push(`.codex/hooks.json: missing ${eventName} matcher ^(apply_patch|Edit|Write)$`);
+      continue;
+    }
+    const commandHook = entry.hooks?.find((hook) =>
+      hook.type === 'command' &&
+      typeof hook.command === 'string' &&
+      hook.command.includes(`.codex/hooks/${scriptName}`)
+    );
+    if (!commandHook) {
+      errors.push(`.codex/hooks.json: edit matcher must run ${scriptName}`);
+      continue;
+    }
+    if (commandHook.timeout !== 30) errors.push(`.codex/hooks.json: ${scriptName} timeout must be 30`);
+    if (!commandHook.statusMessage?.includes('markdown governance')) {
+      errors.push(`.codex/hooks.json: ${scriptName} must describe markdown governance monitoring`);
+    }
+  }
+
+  return errors;
+}
+
 export function validateAgenticHookScript(contents) {
   const errors = [];
   for (const phrase of [
@@ -422,6 +462,37 @@ export function validateAgenticHookScript(contents) {
     'process.exit(1)'
   ]) {
     if (!contents.includes(phrase)) errors.push(`agentic-lean-path hook script: missing ${phrase}`);
+  }
+  return errors;
+}
+
+export function validateMarkdownGovernancePolicy(contents) {
+  const errors = [];
+  for (const phrase of [
+    'Markdown Governance',
+    'rules/markdown-governance.json',
+    'Governed Markdown',
+    'markdown.banned-modals',
+    'must',
+    'PreToolUse',
+    'PostToolUse',
+    'repair mode',
+    'script/repair-markdown-governance.mjs'
+  ]) {
+    if (!contents.includes(phrase)) errors.push(`rules/markdown-governance.md: missing ${phrase}`);
+  }
+  return errors;
+}
+
+export function validateMarkdownGovernanceHookScript(contents) {
+  const errors = [];
+  for (const phrase of [
+    'Markdown governance',
+    'JSON Markdown contract',
+    'runMarkdownGovernanceHook',
+    'repair mode'
+  ]) {
+    if (!contents.includes(phrase)) errors.push(`markdown-governance hook script: missing ${phrase}`);
   }
   return errors;
 }
