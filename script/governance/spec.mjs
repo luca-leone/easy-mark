@@ -17,6 +17,8 @@ export const REQUIRED_FILES = Object.freeze([
   '.codex/agents/senior-implementer.toml',
   '.codex/agents/verifier.toml',
   '.codex/agents/reviewer.toml',
+  '.agents/skills/auto-commit/SKILL.md',
+  '.agents/skills/auto-commit/agents/openai.yaml',
   '.agents/skills/context-budget-monitor/SKILL.md',
   '.agents/skills/context-budget-monitor/agents/openai.yaml',
   '.agents/skills/generate-commit/SKILL.md',
@@ -27,6 +29,7 @@ export const REQUIRED_FILES = Object.freeze([
   '.agents/skills/quality-gate/agents/openai.yaml',
   'hooks/commit-msg',
   'script/validate-agentic-workflow.mjs',
+  'script/git/auto-task-commit.mjs',
   'script/git/validate-commit-message.mjs',
   'script/git/install-hooks.mjs'
 ]);

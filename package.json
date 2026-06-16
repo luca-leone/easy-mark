@@ -40,6 +40,7 @@
   },
   "scripts": {
     "commit:validate": "node script/git/validate-commit-message.mjs",
+    "task:commit": "node script/git/auto-task-commit.mjs",
     "hooks:install": "node script/git/install-hooks.mjs",
     "validate:agentic-workflow": "node script/validate-agentic-workflow.mjs",
     "validate:governance": "node script/validate-governance.mjs",

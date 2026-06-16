@@ -122,6 +122,7 @@ Before the final response, confirm:
 - changed files are known;
 - tests and validation outcomes are known;
 - required contracts, ADRs, memory entries, and skills are synchronized;
+- verified task changes are committed with `$auto-commit` or `npm run task:commit` unless the user explicitly disables automatic committing;
 - long-running processes are closed unless intentionally handed off with a URL;
 - residual risks or skipped checks are explicitly stated.
 

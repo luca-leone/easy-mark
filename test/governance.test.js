@@ -9,6 +9,7 @@ import {
   validateAgentDocument,
   validateAgentEntries,
   validateAgenticWorkflowGuide,
+  validateAutoCommitSkill,
   validateCodexConfig,
   validateContextBudgetSkill,
   validateDecisionMemory,
@@ -72,6 +73,22 @@ Inspect git diff --cached and require explicit approval before committing.
   assert.deepEqual(validateGenerateCommitSkill(skill, 'policy:\n  allow_implicit_invocation: false\n'), []);
   assert.ok(validateGenerateCommitSkill(skill.replace('git diff --cached', 'git status'), 'policy:\n  allow_implicit_invocation: true\n').length >= 2);
 });
+
+test('validates deterministic automatic commit skill', async () => {
+  const rootDirectory = path.resolve(import.meta.dirname, '..');
+  const skill = await fs.readFile(path.join(rootDirectory, '.agents', 'skills', 'auto-commit', 'SKILL.md'), 'utf8');
+  const metadata = await fs.readFile(
+    path.join(rootDirectory, '.agents', 'skills', 'auto-commit', 'agents', 'openai.yaml'),
+    'utf8'
+  );
+
+  assert.deepEqual(validateAutoCommitSkill(skill, metadata), []);
+  assert.ok(validateAutoCommitSkill(
+    skill.replaceAll('npm run task:commit', 'manual git commit'),
+    metadata.replace('allow_implicit_invocation: false', 'allow_implicit_invocation: true')
+  ).length >= 2);
+});
+
 
 test('requires native context telemetry in Codex status line', () => {
   const agentConfig = '[agents]\nmax_threads = 4\nmax_depth = 1\n\n';
@@ -201,6 +218,7 @@ test('uses the public @easy-mark/cli package metadata and ESM workflow scripts',
   assert.equal(packageManifest.bugs?.url, 'https://github.com/luca-leone/easy-mark/issues');
   assert.equal(packageManifest.homepage, 'https://github.com/luca-leone/easy-mark#readme');
   assert.deepEqual(packageManifest.publishConfig, { access: 'public' });
+  assert.equal(packageManifest.scripts['task:commit'], 'node script/git/auto-task-commit.mjs');
   assert.equal(packageManifest.scripts['validate:agentic-workflow'], 'node script/validate-agentic-workflow.mjs');
   assert.deepEqual(packageManifest.dependencies, lockfile.packages[''].dependencies);
   for (const dependencyName of [

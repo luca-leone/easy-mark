@@ -81,6 +81,27 @@ export function validateGenerateCommitSkill(skillContents, metadataContents) {
   return errors;
 }
 
+export function validateAutoCommitSkill(skillContents, metadataContents) {
+  const errors = [];
+  const frontmatter = skillContents.match(/^---\n([\s\S]*?)\n---\n/);
+
+  if (!frontmatter) return ['auto-commit: missing YAML frontmatter'];
+  if (!/^name: auto-commit$/m.test(frontmatter[1])) errors.push('auto-commit: invalid or missing name');
+  if (!/^description: .+/m.test(frontmatter[1])) errors.push('auto-commit: missing description');
+  for (const phrase of [
+    'npm run task:commit',
+    'git add --all',
+    'Version And Tag Proposal',
+    'Push remains manual'
+  ]) {
+    if (!skillContents.includes(phrase)) errors.push(`auto-commit: missing ${phrase}`);
+  }
+  if (!/allow_implicit_invocation:\s*false/.test(metadataContents)) {
+    errors.push('auto-commit: implicit invocation must be disabled');
+  }
+  return errors;
+}
+
 export function validateAgenticWorkflowGuide(contents) {
   const errors = [];
   const requiredPhrases = [

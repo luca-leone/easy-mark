@@ -12,6 +12,7 @@ import {
   validateAgentEntries,
   validateAdrDocument,
   validateAgentDocument,
+  validateAutoCommitSkill,
   validateCodexConfig,
   validateContextBudgetSkill,
   validateDecisionMemory,
@@ -133,6 +134,12 @@ export async function validateGovernance(rootDirectory) {
 
   errors.push(...await readPair(
     root,
+    '.agents/skills/auto-commit/SKILL.md',
+    '.agents/skills/auto-commit/agents/openai.yaml',
+    validateAutoCommitSkill
+  ));
+  errors.push(...await readPair(
+    root,
     '.agents/skills/context-budget-monitor/SKILL.md',
     '.agents/skills/context-budget-monitor/agents/openai.yaml',
     validateContextBudgetSkill
@@ -211,6 +218,7 @@ export {
   validateAdrDocument,
   validateAgentDocument,
   validateAgentEntries,
+  validateAutoCommitSkill,
   validateCodexConfig,
   validateContextBudgetSkill,
   validateDecisionMemory,

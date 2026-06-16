@@ -35,6 +35,8 @@
 - Reproduce `commit.cleanup=strip|whitespace` in hook validation. Preserve input for `default`, unset, and `verbatim`; treat `scissors` as whitespace-only because `commit-msg` cannot determine whether Git will apply the edit-only truncation. Resolve `core.commentString` and `core.commentChar` as aliases using their effective configuration order. Standalone validation treats supplied text literally and does not infer merge state.
 - Keep descriptions specific to the staged semantic change; do not derive meaning from file paths alone.
 - Install the local `commit-msg` hook with `npm run hooks:install`. Treat it as immediate feedback, not security enforcement: `--no-verify` and commits created elsewhere can bypass it.
+- After a verified task, use `$auto-commit` or `npm run task:commit` to stage all task changes and create the validated commit automatically. Push remains a human action.
+- Treat script-generated version and tag output as deterministic release guidance. Apply version bumps or tags only when the task is intended to produce a release.
 
 ## Documentation
 
