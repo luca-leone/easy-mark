@@ -18,6 +18,7 @@ import {
   validateDecisionMemory,
   validateDocumentationScope,
   validateGenerateCommitSkill,
+  validateMarkdownLineBudgets,
   validateAgenticWorkflowGuide,
   validateAgenticWorkflowPolicy,
   validateOrchestrateRequestSkill,
@@ -201,6 +202,10 @@ export async function validateGovernance(rootDirectory) {
     }
   }
   errors.push(...await validateInternalLinks(root, markdownFiles));
+  errors.push(...validateMarkdownLineBudgets(await Promise.all(markdownFiles.map(async (filePath) => ({
+    relativePath: path.relative(root, filePath),
+    contents: await fs.readFile(filePath, 'utf8')
+  })))));
 
   try {
     const scriptFiles = await listFiles(path.join(root, 'script'));
@@ -238,6 +243,7 @@ export {
   validateDecisionMemory,
   validateDocumentationScope,
   validateGenerateCommitSkill,
+  validateMarkdownLineBudgets,
   validateAgenticWorkflowGuide,
   validateAgenticWorkflowPolicy,
   validateOrchestrateRequestSkill,

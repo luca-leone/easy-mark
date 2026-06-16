@@ -6,7 +6,7 @@
 - The product name and startup log remain `easy-mark`; the published package name is `@easy-mark/cli`, the binary name is `easy-mark`, and the default visible documentation title is `Easy Mark`.
 - `easy-mark serve <content-directory>` builds and serves the documentation from an arbitrary user-selected content directory.
 - `easy-mark export <content-directory> --pdf <file.pdf>` builds the documentation in memory and writes the requested PDF file.
-- The default HTTP port is `3000`; `PORT` may override it and the CLI may pass an explicit port.
+- The default HTTP port is `3000`; `PORT` may override it and the CLI may pass an explicit port. The bundled `/logo.svg` is the default project logo.
 - Startup fails when either bundled template under `core/web/` is missing, when the content directory contains root `index.html` or `styles.css`, when a present `manifest.json` is invalid, or when all Markdown documents are missing.
 - The server starts only after the initial virtual build and navigation generation complete.
 

@@ -207,9 +207,6 @@ export function validateResourceBudgetPolicy(contents) {
 
 export function validateDocumentationScope(agentGuideContents) {
   const errors = [];
-  if (agentGuideContents.split('\n').length > 150) {
-    errors.push('AGENTS.md: keep the agent bootstrap guide at or below 150 lines');
-  }
   for (const phrase of [
     '## Implementation Constraints',
     '## Repository Map',
@@ -225,6 +222,15 @@ export function validateDocumentationScope(agentGuideContents) {
     }
   }
   return errors;
+}
+
+export function validateMarkdownLineBudgets(entries, limit = 150) {
+  return entries
+    .filter(({ contents }) => contents.split('\n').length > limit)
+    .map(({ relativePath, contents }) =>
+      `${relativePath}: Markdown files must stay at or below ${limit} lines; found ${contents.split('\n').length}`
+    )
+    .sort(compareCodeUnits);
 }
 
 export function validateOrchestrateRequestSkill(skillContents, metadataContents) {

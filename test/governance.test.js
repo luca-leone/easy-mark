@@ -17,6 +17,7 @@ import {
   validateGenerateCommitSkill,
   validateGovernance,
   validateInternalLinks,
+  validateMarkdownLineBudgets,
   validateAgenticWorkflowPolicy,
   validateOrchestrateRequestSkill,
   validateQualityGateSkill,
@@ -179,6 +180,13 @@ test('keeps scoped governance content out of the agent bootstrap guide and perso
   assert.ok(validateDocumentationScope(`${guide}\n## Commands\n`).some((error) =>
     error.includes('Commands')
   ));
+});
+
+test('enforces Markdown files at or below 150 lines', () => {
+  assert.deepEqual(validateMarkdownLineBudgets([
+    { relativePath: 'short.md', contents: Array.from({ length: 150 }, () => 'x').join('\n') },
+    { relativePath: 'long.md', contents: Array.from({ length: 151 }, () => 'x').join('\n') }
+  ]), ['long.md: Markdown files must stay at or below 150 lines; found 151']);
 });
 
 test('validates deterministic orchestration and quality gate skills', async () => {

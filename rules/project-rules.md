@@ -44,6 +44,7 @@
 - Append material decisions to `memory/decisions.md` using its defined format.
 - Use a new ADR for architectural decisions; use `Superseded` status and cross-links instead of rewriting historical decisions.
 - Write governance documentation in English. Preserve technical identifiers exactly.
+- Keep every committed Markdown file at or below 150 lines; split content into the scoped document it belongs to before exceeding the limit.
 - Keep `AGENTS.md` as a concise bootstrap guide; move detailed operating policy, command lists, and repository maps to `rules/`, invariants to `guardrails/`, observable behavior to `contracts/`, and rationale to `doc/adr/`.
 
 ## Context Management

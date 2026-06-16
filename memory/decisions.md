@@ -50,3 +50,4 @@ Entry format:
 - 2026-06-16 | Accepted | Extend deterministic task commits to create the proposed local version tag automatically and print the exact tag push command while keeping push under explicit human control. | [ADR-0034](../doc/adr/0034-deterministic-task-commit-automation.md)
 - 2026-06-16 | Accepted | Require every non-trivial agentic task to declare and enforce a deterministic resource Budget Envelope for context, concurrency, execution duration, and provider model-tier usage. | [ADR-0035](../doc/adr/0035-deterministic-resource-budgets.md)
 - 2026-06-16 | Accepted | Base automatic version-tag proposals on the highest existing local semver tag when it is ahead of `package.json`, preventing deterministic tag collisions. | [ADR-0034](../doc/adr/0034-deterministic-task-commit-automation.md)
+- 2026-06-16 | Accepted | Enforce a hard 150-line limit for committed Markdown files through governance validation and scoped-document splitting. | N/A

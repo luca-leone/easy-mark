@@ -108,7 +108,7 @@ test('applica manifest, escaping e fallback durante gli aggiornamenti live', asy
   let shell = builder.read('index.html').toString();
   assert.match(shell, /<title>Guide &lt;script&gt;alert\(1\)&lt;\/script&gt;<\/title>/);
   assert.match(shell, /class="app-header__title">Guide &lt;script&gt;alert\(1\)&lt;\/script&gt;<\/span>/);
-  assert.match(shell, /id="project-manifest"[^>]*>{"title":"Guide \\u003cscript>alert\(1\)\\u003c\/script>","logo":null}<\/script>/);
+  assert.match(shell, /id="project-manifest"[^>]*>{"title":"Guide \\u003cscript>alert\(1\)\\u003c\/script>","logo":"\/logo\.svg"}<\/script>/);
 
   await fs.writeFile(manifestPath, '{"title":"Manuale API"}');
   await builder.handleFileEvent('change', manifestPath);
@@ -122,7 +122,7 @@ test('applica manifest, escaping e fallback durante gli aggiornamenti live', asy
   await builder.handleFileEvent('unlink', manifestPath);
   shell = builder.read('index.html').toString();
   assert.match(shell, /<title>Easy Mark<\/title>/);
-  assert.match(shell, /id="project-manifest"[^>]*>{"title":"Easy Mark","logo":null}<\/script>/);
+  assert.match(shell, /id="project-manifest"[^>]*>{"title":"Easy Mark","logo":"\/logo\.svg"}<\/script>/);
 });
 
 test('usa il title CLI come fallback quando manifest.json è assente', async (context) => {
@@ -134,7 +134,7 @@ test('usa il title CLI come fallback quando manifest.json è assente', async (co
 
   const shell = builder.read('index.html').toString();
   assert.match(shell, /<title>CLI Docs<\/title>/);
-  assert.match(shell, /id="project-manifest"[^>]*>{"title":"CLI Docs","logo":null}<\/script>/);
+  assert.match(shell, /id="project-manifest"[^>]*>{"title":"CLI Docs","logo":"\/logo\.svg"}<\/script>/);
 });
 
 test('manifest.json prevale sul title CLI', async (context) => {
@@ -147,7 +147,7 @@ test('manifest.json prevale sul title CLI', async (context) => {
 
   const shell = builder.read('index.html').toString();
   assert.match(shell, /<title>Manuale<\/title>/);
-  assert.match(shell, /id="project-manifest"[^>]*>{"title":"Manuale","logo":null}<\/script>/);
+  assert.match(shell, /id="project-manifest"[^>]*>{"title":"Manuale","logo":"\/logo\.svg"}<\/script>/);
   assert.doesNotMatch(shell, /PROJECT_TITLE/);
 });
 

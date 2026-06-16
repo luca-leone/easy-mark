@@ -9,7 +9,7 @@ import {
 test('valida e normalizza il titolo del progetto', () => {
   assert.deepEqual(parseProjectMetadata('{"title":"  Documentazione API  ","future":true}'), {
     title: 'Documentazione API',
-    logo: null
+    logo: '/logo.svg'
   });
   assert.deepEqual(parseProjectMetadata('{"title":"Docs","logo":"/brand/logo caffè.svg"}'), {
     title: 'Docs',
@@ -21,8 +21,8 @@ test('valida e normalizza il titolo del progetto', () => {
     title: 'CLI Docs',
     logo: '/logo.svg'
   });
-  assert.deepEqual(defaultProjectMetadata, { title: 'Easy Mark', logo: null });
-  assert.deepEqual(createDefaultProjectMetadata('  CLI Docs  '), { title: 'CLI Docs', logo: null });
+  assert.deepEqual(defaultProjectMetadata, { title: 'Easy Mark', logo: '/logo.svg' });
+  assert.deepEqual(createDefaultProjectMetadata('  CLI Docs  '), { title: 'CLI Docs', logo: '/logo.svg' });
 });
 
 test('rifiuta manifest malformati o senza titolo valido', () => {

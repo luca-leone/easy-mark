@@ -1,12 +1,12 @@
 const logoExtensions = new Set(['.svg', '.png', '.jpg', '.jpeg', '.gif', '.webp', '.ico']);
 
-export const defaultProjectMetadata = Object.freeze({ title: 'Easy Mark', logo: null });
+export const defaultProjectMetadata = Object.freeze({ title: 'Easy Mark', logo: '/logo.svg' });
 
 export function createDefaultProjectMetadata(title = defaultProjectMetadata.title) {
   if (typeof title !== 'string' || title.trim() === '') {
     throw new Error('--title deve essere una stringa non vuota');
   }
-  return { title: title.trim(), logo: null };
+  return { title: title.trim(), logo: defaultProjectMetadata.logo };
 }
 
 function normalizeLogoPath(value, sourceName) {
@@ -64,6 +64,6 @@ export function parseProjectMetadata(contents, {
 
   return {
     title: manifest.title === undefined ? fallbackMetadata.title : manifest.title.trim(),
-    logo: normalizeLogoPath(manifest.logo, sourceName)
+    logo: manifest.logo === undefined ? fallbackMetadata.logo : normalizeLogoPath(manifest.logo, sourceName)
   };
 }
