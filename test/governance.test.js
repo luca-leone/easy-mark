@@ -12,13 +12,16 @@ import {
   validateCodexConfig,
   validateContextBudgetSkill,
   validateDecisionMemory,
+  validateDocumentationScope,
   validateGenerateCommitSkill,
   validateGovernance,
   validateInternalLinks,
+  validateAgenticWorkflowPolicy,
   validateOrchestrateRequestSkill,
   validateQualityGateSkill,
   validateWorkflowScriptPaths
 } from '../script/validate-governance.mjs';
+import { validateAgenticWorkflow } from '../script/validate-agentic-workflow.mjs';
 
 test('repository governance is valid', async () => {
   const rootDirectory = path.resolve(import.meta.dirname, '..');
@@ -98,20 +101,37 @@ Inspect and plan without editing. Follow ADR-0033.
 
 test('planner workflow requires user approval before execution', async () => {
   const rootDirectory = path.resolve(import.meta.dirname, '..');
-  const guide = await fs.readFile(path.join(rootDirectory, 'AGENTS.md'), 'utf8');
+  const workflowPolicy = await fs.readFile(path.join(rootDirectory, 'rules', 'agentic-workflow.md'), 'utf8');
   const planner = await fs.readFile(path.join(rootDirectory, '.codex', 'agents', 'planner.toml'), 'utf8');
 
-  assert.match(guide, /define the plan, get explicit user approval for that plan, then execute/);
+  assert.match(workflowPolicy, /define the plan, get explicit user approval for that plan, then execute/);
   assert.match(planner, /define the plan, wait for explicit user approval of that plan, and only then allow execution/);
 });
 
 test('requires deterministic workflow state machine, routing, repair, and handoff gates', async () => {
   const rootDirectory = path.resolve(import.meta.dirname, '..');
   const guide = await fs.readFile(path.join(rootDirectory, 'AGENTS.md'), 'utf8');
+  const policy = await fs.readFile(path.join(rootDirectory, 'rules', 'agentic-workflow.md'), 'utf8');
 
   assert.deepEqual(validateAgenticWorkflowGuide(guide), []);
-  assert.ok(validateAgenticWorkflowGuide(guide.replace('Repair Loop', 'Fixing')).some((error) =>
+  assert.deepEqual(validateAgenticWorkflowPolicy(policy), []);
+  assert.deepEqual(await validateAgenticWorkflow(rootDirectory), []);
+  assert.ok(validateAgenticWorkflowPolicy(policy.replace('Repair Loop', 'Fixing')).some((error) =>
     error.includes('Repair Loop')
+  ));
+});
+
+test('keeps scoped governance content out of the agent bootstrap guide and personal notes', async () => {
+  const rootDirectory = path.resolve(import.meta.dirname, '..');
+  const guide = await fs.readFile(path.join(rootDirectory, 'AGENTS.md'), 'utf8');
+
+  assert.deepEqual(validateDocumentationScope(guide), []);
+  await assert.rejects(fs.access(path.join(rootDirectory, 'NOTES.md')));
+  assert.ok(validateDocumentationScope(`${guide}\n## Implementation Constraints\n`).some((error) =>
+    error.includes('Implementation Constraints')
+  ));
+  assert.ok(validateDocumentationScope(`${guide}\n## Commands\n`).some((error) =>
+    error.includes('Commands')
   ));
 });
 
@@ -181,6 +201,7 @@ test('uses the public @easy-mark/cli package metadata and ESM workflow scripts',
   assert.equal(packageManifest.bugs?.url, 'https://github.com/luca-leone/easy-mark/issues');
   assert.equal(packageManifest.homepage, 'https://github.com/luca-leone/easy-mark#readme');
   assert.deepEqual(packageManifest.publishConfig, { access: 'public' });
+  assert.equal(packageManifest.scripts['validate:agentic-workflow'], 'node script/validate-agentic-workflow.mjs');
   assert.deepEqual(packageManifest.dependencies, lockfile.packages[''].dependencies);
   for (const dependencyName of [
     'chart.js',

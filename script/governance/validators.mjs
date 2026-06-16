@@ -85,6 +85,36 @@ export function validateAgenticWorkflowGuide(contents) {
   const errors = [];
   const requiredPhrases = [
     'Deterministic Agentic Workflow',
+    'rules/agentic-workflow.md',
+    '$orchestrate-request',
+    '$quality-gate',
+    'ADR-0033'
+  ];
+  for (const phrase of requiredPhrases) {
+    if (!contents.includes(phrase)) errors.push(`AGENTS.md: missing deterministic workflow phrase ${phrase}`);
+  }
+  for (const misplacedHeading of [
+    '## Implementation Constraints',
+    '## Repository Map',
+    '## Commands',
+    '## Scoped Policies',
+    '### Requirements Discovery And Reconciliation Loop',
+    '### Routing Loop',
+    '### Quality, Contract, And Guardrail Loop',
+    '### Repair Loop',
+    '### Handoff Loop'
+  ]) {
+    if (contents.includes(misplacedHeading)) {
+      errors.push(`AGENTS.md: detailed policy belongs in rules/agentic-workflow.md, not ${misplacedHeading}`);
+    }
+  }
+  return errors;
+}
+
+export function validateAgenticWorkflowPolicy(contents) {
+  const errors = [];
+  const requiredPhrases = [
+    'Deterministic Agentic Workflow',
     'intake',
     'classification',
     'requirements-discovery',
@@ -102,12 +132,37 @@ export function validateAgenticWorkflowGuide(contents) {
     'Quality, Contract, And Guardrail Loop',
     'Repair Loop',
     'Handoff Loop',
+    'Execution Template',
     '$orchestrate-request',
     '$quality-gate',
     'ADR-0033'
   ];
   for (const phrase of requiredPhrases) {
-    if (!contents.includes(phrase)) errors.push(`AGENTS.md: missing deterministic workflow phrase ${phrase}`);
+    if (!contents.includes(phrase)) {
+      errors.push(`rules/agentic-workflow.md: missing deterministic workflow phrase ${phrase}`);
+    }
+  }
+  return errors;
+}
+
+export function validateDocumentationScope(agentGuideContents) {
+  const errors = [];
+  if (agentGuideContents.split('\n').length > 150) {
+    errors.push('AGENTS.md: keep the agent bootstrap guide at or below 150 lines');
+  }
+  for (const phrase of [
+    '## Implementation Constraints',
+    '## Repository Map',
+    '## Commands',
+    '## Scoped Policies',
+    'Loop Da Introdurre',
+    'Piano D’Attuazione Completo',
+    'Piano D\\u2019Attuazione Completo',
+    'Ordine Di Implementazione Consigliato'
+  ]) {
+    if (agentGuideContents.includes(phrase)) {
+      errors.push(`AGENTS.md: out-of-scope content remains: ${phrase}`);
+    }
   }
   return errors;
 }

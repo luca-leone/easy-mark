@@ -22,3 +22,4 @@
 20. Repository-authored commit messages must follow the Conventional Commit policy; generation must inspect staged semantics rather than infer intent from file paths alone.
 21. Keep server application JavaScript under `core/server/`, bundled browser runtime and assets under `core/web/`, the NPM executable under `bin/`, and user-authored content outside package-owned runtime files.
 22. Derive document search text only from sanitized HAST text nodes after `rehypeSanitize`; never index raw Markdown, serialized HTML, attributes, URLs, comments, internal paths, or content removed by sanitization.
+23. Preserve SPA routing, hierarchical navigation, Unicode-safe anchors, live reload, and regression coverage for fixed defects.

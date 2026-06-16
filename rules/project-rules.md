@@ -3,10 +3,12 @@
 ## Engineering
 
 - Prefer root-cause fixes and minimal, focused changes.
+- Use ESM and Node.js standard APIs where practical.
 - Keep server modules in ESM and browser modules dependency-free unless a dependency is justified.
 - Support Node.js 22 and later as declared by `package.json`; develop and run required verification against the Node.js 22 baseline in `.nvmrc`.
 - Use descriptive names and avoid one-letter identifiers.
 - Normalize URL paths as POSIX paths; use `node:path` for filesystem paths.
+- Keep path handling portable across operating systems.
 - Do not add platform-specific shell assumptions to application behavior.
 - Do not change unrelated behavior while implementing a request.
 - Keep runtime server modules under `core/server/`; the public CLI under `bin/` is the application entry point.
@@ -40,6 +42,7 @@
 - Append material decisions to `memory/decisions.md` using its defined format.
 - Use a new ADR for architectural decisions; use `Superseded` status and cross-links instead of rewriting historical decisions.
 - Write governance documentation in English. Preserve technical identifiers exactly.
+- Keep `AGENTS.md` as a concise bootstrap guide; move detailed operating policy, command lists, and repository maps to `rules/`, invariants to `guardrails/`, observable behavior to `contracts/`, and rationale to `doc/adr/`.
 
 ## Context Management
 
@@ -52,6 +55,8 @@
 ## Multi-Agent Work
 
 - Start subagents only after an explicit user request for multi-agent work.
+- Available project agents are `planner`, `implementer`, `senior-implementer`, `reviewer`, and `verifier`.
+- Invoke a project agent with the practical form `Invoca <agent-name>: <precise task>. <constraints and expected output>`.
 - Choose agent capability by task risk, not by workflow stage alone.
 - Use the mini implementer only for bounded work with explicit acceptance criteria and an objective verification path.
 - Escalate ambiguous or high-risk implementation to the senior implementer.

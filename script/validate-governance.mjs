@@ -6,6 +6,7 @@ import {
   GOVERNANCE_MARKDOWN_DIRECTORIES,
   REQUIRED_FILES
 } from './governance/spec.mjs';
+import { validateAgenticWorkflow } from './validate-agentic-workflow.mjs';
 import {
   compareCodeUnits,
   validateAgentEntries,
@@ -14,8 +15,10 @@ import {
   validateCodexConfig,
   validateContextBudgetSkill,
   validateDecisionMemory,
+  validateDocumentationScope,
   validateGenerateCommitSkill,
   validateAgenticWorkflowGuide,
+  validateAgenticWorkflowPolicy,
   validateOrchestrateRequestSkill,
   validateQualityGateSkill,
   validateWorkflowScriptPaths
@@ -94,12 +97,7 @@ export async function validateGovernance(rootDirectory) {
     }
   }
 
-  try {
-    const agentsGuide = await fs.readFile(path.join(root, 'AGENTS.md'), 'utf8');
-    errors.push(...validateAgenticWorkflowGuide(agentsGuide));
-  } catch {
-    // Required-file diagnostics cover this path.
-  }
+  errors.push(...await validateAgenticWorkflow(root));
 
   try {
     const adrDirectory = path.join(root, 'doc', 'adr');
@@ -120,6 +118,19 @@ export async function validateGovernance(rootDirectory) {
     // Required-file diagnostics cover this path.
   }
 
+  try {
+    errors.push(...validateDocumentationScope(await fs.readFile(path.join(root, 'AGENTS.md'), 'utf8')));
+  } catch {
+    // Required-file diagnostics cover AGENTS.md.
+  }
+
+  try {
+    await fs.access(path.join(root, 'NOTES.md'));
+    errors.push('NOTES.md: personal notes must not be committed; move durable content into scoped governance documents');
+  } catch {
+    // Personal notes are intentionally absent from repository governance.
+  }
+
   errors.push(...await readPair(
     root,
     '.agents/skills/context-budget-monitor/SKILL.md',
@@ -132,19 +143,6 @@ export async function validateGovernance(rootDirectory) {
     '.agents/skills/generate-commit/agents/openai.yaml',
     validateGenerateCommitSkill
   ));
-  errors.push(...await readPair(
-    root,
-    '.agents/skills/orchestrate-request/SKILL.md',
-    '.agents/skills/orchestrate-request/agents/openai.yaml',
-    validateOrchestrateRequestSkill
-  ));
-  errors.push(...await readPair(
-    root,
-    '.agents/skills/quality-gate/SKILL.md',
-    '.agents/skills/quality-gate/agents/openai.yaml',
-    validateQualityGateSkill
-  ));
-
   try {
     errors.push(...validateCodexConfig(await fs.readFile(path.join(root, '.codex', 'config.toml'), 'utf8')));
   } catch {
@@ -216,9 +214,12 @@ export {
   validateCodexConfig,
   validateContextBudgetSkill,
   validateDecisionMemory,
+  validateDocumentationScope,
   validateGenerateCommitSkill,
   validateAgenticWorkflowGuide,
+  validateAgenticWorkflowPolicy,
   validateOrchestrateRequestSkill,
   validateQualityGateSkill,
   validateWorkflowScriptPaths
 } from './governance/validators.mjs';
+export { validateAgenticWorkflow } from './validate-agentic-workflow.mjs';

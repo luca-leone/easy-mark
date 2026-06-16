@@ -1,6 +1,10 @@
 export const REQUIRED_FILES = Object.freeze([
   'AGENTS.md',
+  'rules/agentic-workflow.md',
+  'rules/command-reference.md',
   'rules/project-rules.md',
+  'rules/release-process.md',
+  'rules/workspace-layout.md',
   'contracts/application-contract.md',
   'guardrails/non-negotiables.md',
   'evaluation/acceptance-checklist.md',
@@ -22,6 +26,7 @@ export const REQUIRED_FILES = Object.freeze([
   '.agents/skills/quality-gate/SKILL.md',
   '.agents/skills/quality-gate/agents/openai.yaml',
   'hooks/commit-msg',
+  'script/validate-agentic-workflow.mjs',
   'script/git/validate-commit-message.mjs',
   'script/git/install-hooks.mjs'
 ]);
