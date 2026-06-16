@@ -127,6 +127,27 @@ test('uses the public @easy-mark/cli package metadata and ESM workflow scripts',
   assert.equal(packageManifest.bugs?.url, 'https://github.com/luca-leone/easy-mark/issues');
   assert.equal(packageManifest.homepage, 'https://github.com/luca-leone/easy-mark#readme');
   assert.deepEqual(packageManifest.publishConfig, { access: 'public' });
+  assert.deepEqual(packageManifest.dependencies, lockfile.packages[''].dependencies);
+  for (const dependencyName of [
+    'chart.js',
+    'chokidar',
+    'express',
+    'github-slugger',
+    'mem-fs',
+    'mem-fs-editor',
+    'mermaid',
+    'mime-types',
+    'rehype-raw',
+    'rehype-sanitize',
+    'rehype-stringify',
+    'remark-gfm',
+    'remark-parse',
+    'remark-rehype',
+    'unified',
+    'unist-util-visit'
+  ]) {
+    assert.equal(typeof packageManifest.dependencies[dependencyName], 'string');
+  }
   assert.equal(Object.hasOwn(packageManifest.scripts, 'start'), false);
   assert.ok(packageManifest.files.includes('bin/'));
   assert.ok(packageManifest.files.includes('core/server/'));

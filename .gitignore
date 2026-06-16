@@ -5,3 +5,4 @@ reports/*
 !reports/README.md
 screenshots/*
 NOTES.md
+*.tgz

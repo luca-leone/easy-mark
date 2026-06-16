@@ -1,7 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import os from 'node:os';
 import path from 'node:path';
-import { runCli } from '../bin/easy-mark.mjs';
+import { fileURLToPath } from 'node:url';
+import { isCliEntrypoint, runCli } from '../bin/easy-mark.mjs';
 
 test('CLI serve risolve directory, title e port senza supportare build', async () => {
   const calls = [];
@@ -41,4 +44,17 @@ test('CLI export richiede --pdf e passa title al runner PDF', async () => {
     runCli(['export', './manuale'], { logger: { log() {} } }),
     /export richiede --pdf/
   );
+});
+
+test('CLI riconosce il bin anche quando npm lo esegue tramite symlink', async (context) => {
+  const temporaryDirectory = await fs.mkdtemp(path.join(os.tmpdir(), 'easy-mark-bin-link-'));
+  context.after(async () => {
+    await fs.rm(temporaryDirectory, { recursive: true, force: true });
+  });
+
+  const realEntrypoint = fileURLToPath(new URL('../bin/easy-mark.mjs', import.meta.url));
+  const linkedEntrypoint = path.join(temporaryDirectory, 'easy-mark');
+  await fs.symlink(realEntrypoint, linkedEntrypoint);
+
+  assert.equal(isCliEntrypoint(linkedEntrypoint, new URL('../bin/easy-mark.mjs', import.meta.url).href), true);
 });

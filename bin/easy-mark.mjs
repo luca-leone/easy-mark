@@ -1,6 +1,7 @@
 #!/usr/bin/env node
+import fs from 'node:fs';
 import path from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { serveSite } from '../core/server/runtime.js';
 import { exportPdf } from '../core/server/pdf-export-runner.js';
@@ -37,6 +38,16 @@ function parseCommand(argumentsList) {
     port: values.port,
     title: values.title
   };
+}
+
+export function isCliEntrypoint(entryPath = process.argv[1], importMetaUrl = import.meta.url) {
+  if (!entryPath) return false;
+  const modulePath = fileURLToPath(importMetaUrl);
+  try {
+    return fs.realpathSync(entryPath) === fs.realpathSync(modulePath);
+  } catch {
+    return path.resolve(entryPath) === modulePath;
+  }
 }
 
 export async function runCli(argumentsList = process.argv.slice(2), {
@@ -85,7 +96,7 @@ export async function runCli(argumentsList = process.argv.slice(2), {
   throw new Error(`Comando non supportato: ${request.command}`);
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (isCliEntrypoint()) {
   runCli().catch((error) => {
     fail(error instanceof Error ? error.message : 'Errore sconosciuto');
   });
