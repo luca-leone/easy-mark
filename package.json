@@ -44,7 +44,7 @@
     "hooks:install": "node script/git/install-hooks.mjs",
     "validate:agentic-workflow": "node script/validate-agentic-workflow.mjs",
     "validate:agentic-paths": "node script/validate-agentic-paths.mjs",
-    "validate:agentic-runtime-contract": "node script/validate-agentic-runtime-contract.mjs",
+    "validate:agentic-runtime-contract": "node script/validate-agentic-lean-path-runtime.mjs",
     "validate:resource-budgets": "node script/validate-resource-budgets.mjs",
     "validate:governance": "node script/validate-governance.mjs",
     "report:agentic-compliance": "node script/report-agentic-compliance.mjs",

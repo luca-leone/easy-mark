@@ -4,7 +4,7 @@ import {
   DEFAULT_RUNTIME_CONTRACT_PATH,
   readJsonFile,
   validateAgenticRuntimeContract
-} from './agentic-runtime-contract.mjs';
+} from './agentic-lean-path-runtime.mjs';
 
 export async function validateAgenticRuntimeContractFile(rootDirectory, runtimeContractPath = DEFAULT_RUNTIME_CONTRACT_PATH) {
   const root = path.resolve(rootDirectory);

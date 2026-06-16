@@ -4,8 +4,9 @@ import {
   DEFAULT_RUNTIME_CONTRACT_PATH,
   buildComplianceReport,
   readJsonFile,
+  readToolUseReport,
   validateAgenticRuntimeContract
-} from './agentic-runtime-contract.mjs';
+} from './agentic-lean-path-runtime.mjs';
 
 export async function buildAgenticComplianceReport(rootDirectory, runtimeContractPath = DEFAULT_RUNTIME_CONTRACT_PATH, options = {}) {
   const root = path.resolve(rootDirectory);
@@ -14,9 +15,11 @@ export async function buildAgenticComplianceReport(rootDirectory, runtimeContrac
     readJsonFile(path.resolve(root, runtimeContractPath))
   ]);
   const violations = validateAgenticRuntimeContract(runtimeContract, pathContract);
+  const toolUseEntries = await readToolUseReport(root);
   return buildComplianceReport(runtimeContract, {
     violations,
-    hookEnforcement: options.hookEnforcement ?? 'PreToolUse configured',
+    toolUseEntries,
+    hookEnforcement: options.hookEnforcement ?? 'PreToolUse and PostToolUse configured',
     verification: options.verification ?? runtimeContract.verification
   });
 }

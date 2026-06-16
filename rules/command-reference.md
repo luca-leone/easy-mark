@@ -12,8 +12,8 @@ This file lists repository commands for development, validation, and maintenance
 - `npm run task:commit`: stage all completed task changes, create a deterministic validated commit, create the proposed local tag when applicable, and print the tag push command without pushing.
 - `npm run validate:agentic-workflow`: validate the deterministic agentic workflow state machine, skills, and agent role wiring.
 - `npm run validate:agentic-paths`: validate the machine-readable deterministic workflow path contract.
-- `npm run validate:agentic-runtime-contract`: validate `reports/agentic-runtime-contract.json` against the path contract.
-- `npm run report:agentic-compliance`: print the current agentic runtime compliance report.
+- `npm run validate:agentic-runtime-contract`: validate the runtime JSON contract at `reports/agentic-runtime-contract.json` against the path contract.
+- `npm run report:agentic-compliance`: print the current agentic lean path compliance report, including `PostToolUse` evidence when present.
 - `npm run validate:governance`: validate governance structure and references.
 - `npm test`: validate governance and run all Node tests.
 - `npm run test:coverage`: run the Node suite with built-in coverage reporting.

@@ -24,7 +24,7 @@ Non-trivial work preserves this state order for every applicable state:
 12. `repair-loop`
 13. `handoff`
 
-Every state produces output that can be inspected. Before file edits, non-trivial commands, or project-agent runs, emit and validate the runtime contract required by `rules/agentic-paths.json`; `PreToolUse` hooks enforce that contract for governed tools.
+Every state produces output that can be inspected. Before file edits, non-trivial commands, or project-agent runs, emit and validate the JSON runtime contract required by `rules/agentic-paths.json`; `PreToolUse` and `PostToolUse` hooks enforce and report the agentic lean path for governed tools.
 
 ## Intake And Classification Loop
 

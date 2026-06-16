@@ -17,7 +17,7 @@ Collect:
 - staged and unstaged diffs relevant to the task;
 - verification commands already run;
 - declared Budget Envelope and budget handoff report;
-- agentic runtime contract and compliance report for governed tool use;
+- agentic JSON runtime contract and `PostToolUse` compliance report for governed tool use;
 - reviewer or verifier findings, when present.
 
 ## Review Loop

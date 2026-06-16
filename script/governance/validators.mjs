@@ -366,27 +366,34 @@ export function validateAgenticHookConfig(hookConfig) {
     return ['.codex/hooks.json: hook config must be a JSON object'];
   }
 
-  const preToolUse = hookConfig.hooks?.PreToolUse;
-  if (!Array.isArray(preToolUse)) return ['.codex/hooks.json: hooks.PreToolUse must be an array'];
-
-  for (const matcher of ['^Bash$', '^(apply_patch|Edit|Write)$']) {
-    const entry = preToolUse.find((hookEntry) => hookEntry.matcher === matcher);
-    if (!entry) {
-      errors.push(`.codex/hooks.json: missing PreToolUse matcher ${matcher}`);
+  for (const eventName of ['PreToolUse', 'PostToolUse']) {
+    const hookEntries = hookConfig.hooks?.[eventName];
+    if (!Array.isArray(hookEntries)) {
+      errors.push(`.codex/hooks.json: hooks.${eventName} must be an array`);
       continue;
     }
-    const commandHook = entry.hooks?.find((hook) =>
-      hook.type === 'command' &&
-      typeof hook.command === 'string' &&
-      hook.command.includes('.codex/hooks/pre-tool-use-agentic-contract.mjs')
-    );
-    if (!commandHook) {
-      errors.push(`.codex/hooks.json: matcher ${matcher} must run pre-tool-use-agentic-contract.mjs`);
-      continue;
-    }
-    if (commandHook.timeout !== 30) errors.push(`.codex/hooks.json: matcher ${matcher} timeout must be 30`);
-    if (!commandHook.statusMessage?.includes('agentic runtime contract')) {
-      errors.push(`.codex/hooks.json: matcher ${matcher} must describe agentic runtime contract enforcement`);
+    const scriptName = eventName === 'PreToolUse'
+      ? 'pre-tool-use-agentic-lean-path.mjs'
+      : 'post-tool-use-agentic-lean-path.mjs';
+    for (const matcher of ['^Bash$', '^(apply_patch|Edit|Write)$']) {
+      const entry = hookEntries.find((hookEntry) => hookEntry.matcher === matcher);
+      if (!entry) {
+        errors.push(`.codex/hooks.json: missing ${eventName} matcher ${matcher}`);
+        continue;
+      }
+      const commandHook = entry.hooks?.find((hook) =>
+        hook.type === 'command' &&
+        typeof hook.command === 'string' &&
+        hook.command.includes(`.codex/hooks/${scriptName}`)
+      );
+      if (!commandHook) {
+        errors.push(`.codex/hooks.json: matcher ${matcher} must run ${scriptName}`);
+        continue;
+      }
+      if (commandHook.timeout !== 30) errors.push(`.codex/hooks.json: matcher ${matcher} timeout must be 30`);
+      if (!commandHook.statusMessage?.includes('agentic lean path')) {
+        errors.push(`.codex/hooks.json: matcher ${matcher} must describe agentic lean path enforcement`);
+      }
     }
   }
 
@@ -396,13 +403,14 @@ export function validateAgenticHookConfig(hookConfig) {
 export function validateAgenticHookScript(contents) {
   const errors = [];
   for (const phrase of [
+    'Agentic lean path',
     'DEFAULT_RUNTIME_CONTRACT_PATH',
     'toolCallRequiresRuntimeContract',
     'validateAgenticRuntimeContract',
     'agentic-paths.json',
     'process.exit(1)'
   ]) {
-    if (!contents.includes(phrase)) errors.push(`pre-tool-use-agentic-contract: missing ${phrase}`);
+    if (!contents.includes(phrase)) errors.push(`agentic-lean-path hook script: missing ${phrase}`);
   }
   return errors;
 }

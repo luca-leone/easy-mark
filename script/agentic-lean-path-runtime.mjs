@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 
 export const DEFAULT_RUNTIME_CONTRACT_PATH = path.join('reports', 'agentic-runtime-contract.json');
+export const DEFAULT_TOOL_USE_REPORT_PATH = path.join('reports', 'agentic-tool-use-report.jsonl');
 
 const runtimeFieldMap = Object.freeze({
   'Selected Path': 'selectedPath',
@@ -74,6 +75,16 @@ export function getCommand(payload) {
   );
 }
 
+export function getToolStatus(payload) {
+  return firstString(
+    payload.status,
+    payload.result?.status,
+    payload.output?.status,
+    payload.toolResult?.status,
+    payload.tool_result?.status
+  );
+}
+
 export function isRuntimeContractBootstrap(payload, rawPayload = '') {
   const toolName = getToolName(payload);
   if (!/^(?:apply_patch|Edit|Write)$/i.test(toolName ?? '')) return false;
@@ -96,7 +107,7 @@ export function toolCallRequiresRuntimeContract(payload, rawPayload = '') {
       : { required: true, reason: 'non-trivial Bash command' };
   }
 
-  return { required: false, reason: 'tool not governed by agentic runtime hook' };
+  return { required: false, reason: 'tool not governed by agentic lean path hook' };
 }
 
 export function isReadOnlyCommand(command) {
@@ -167,8 +178,50 @@ export function validateAgenticRuntimeContract(runtimeContract, pathContract) {
   return errors;
 }
 
+export async function appendToolUseReport(root, entry, reportPath = DEFAULT_TOOL_USE_REPORT_PATH) {
+  const absoluteReportPath = path.resolve(root, reportPath);
+  await fs.mkdir(path.dirname(absoluteReportPath), { recursive: true });
+  await fs.appendFile(absoluteReportPath, `${JSON.stringify(entry)}\n`);
+}
+
+export async function readToolUseReport(root, reportPath = DEFAULT_TOOL_USE_REPORT_PATH) {
+  try {
+    const contents = await fs.readFile(path.resolve(root, reportPath), 'utf8');
+    return contents
+      .split('\n')
+      .filter(Boolean)
+      .map((line) => JSON.parse(line));
+  } catch {
+    return [];
+  }
+}
+
+export function buildToolUseReportEntry(payload, runtimeContract, validationErrors, options = {}) {
+  const requirement = options.requirement ?? toolCallRequiresRuntimeContract(payload);
+  const violations = [...validationErrors];
+  const status = getToolStatus(payload);
+  if (status && !/^(?:success|ok|completed|0)$/i.test(status)) {
+    violations.push(`tool outcome reported ${status}`);
+  }
+
+  return {
+    event: options.event ?? 'PostToolUse',
+    tool: getToolName(payload) ?? 'unknown',
+    contractPath: runtimeContract?.selectedPath ?? null,
+    required: requirement.required,
+    requirementReason: requirement.reason,
+    contractValid: validationErrors.length === 0,
+    toolOutcome: status ?? 'observed',
+    requiredRepair: violations.length > 0,
+    violations
+  };
+}
+
 export function buildComplianceReport(runtimeContract, options = {}) {
-  const violations = options.violations ?? [];
+  const contractViolations = options.violations ?? [];
+  const toolUseEntries = options.toolUseEntries ?? [];
+  const toolUseViolations = toolUseEntries.flatMap((entry) => entry.violations ?? []);
+  const violations = [...contractViolations, ...toolUseViolations];
   return {
     selectedPath: runtimeContract.selectedPath,
     escalationRulesApplied: runtimeContract.escalationRulesApplied,
@@ -177,8 +230,24 @@ export function buildComplianceReport(runtimeContract, options = {}) {
     budgetEnvelope: violations.some((violation) => violation.includes('budgetEnvelope')) ? 'failed' : 'satisfied',
     verification: options.verification ?? runtimeContract.verification,
     hookEnforcement: options.hookEnforcement ?? 'configured',
+    governedToolUses: toolUseEntries.length,
+    postToolViolations: toolUseEntries.filter((entry) => entry.requiredRepair).length,
     violations
   };
+}
+
+export async function findRepositoryRoot(startDirectory) {
+  let currentDirectory = path.resolve(startDirectory);
+  while (true) {
+    try {
+      await readJsonFile(path.join(currentDirectory, 'rules', 'agentic-paths.json'));
+      return currentDirectory;
+    } catch {
+      const parentDirectory = path.dirname(currentDirectory);
+      if (parentDirectory === currentDirectory) return path.resolve(startDirectory);
+      currentDirectory = parentDirectory;
+    }
+  }
 }
 
 function firstString(...values) {

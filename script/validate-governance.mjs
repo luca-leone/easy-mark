@@ -145,10 +145,13 @@ export async function validateGovernance(rootDirectory) {
 
   try {
     errors.push(...validateAgenticHookScript(
-      await fs.readFile(path.join(root, '.codex', 'hooks', 'pre-tool-use-agentic-contract.mjs'), 'utf8')
+      await fs.readFile(path.join(root, '.codex', 'hooks', 'pre-tool-use-agentic-lean-path.mjs'), 'utf8')
+    ));
+    errors.push(...validateAgenticHookScript(
+      await fs.readFile(path.join(root, '.codex', 'hooks', 'post-tool-use-agentic-lean-path.mjs'), 'utf8')
     ));
   } catch {
-    // Required-file diagnostics cover this path.
+    // Required-file diagnostics cover these paths.
   }
 
   try {
@@ -274,4 +277,4 @@ export {
 } from './governance/validators.mjs';
 export { validateAgenticWorkflow } from './validate-agentic-workflow.mjs';
 export { validateAgenticPaths } from './validate-agentic-paths.mjs';
-export { validateAgenticRuntimeContractFile } from './validate-agentic-runtime-contract.mjs';
+export { validateAgenticRuntimeContractFile } from './validate-agentic-lean-path-runtime.mjs';

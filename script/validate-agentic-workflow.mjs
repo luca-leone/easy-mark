@@ -66,10 +66,18 @@ export async function validateAgenticWorkflow(rootDirectory) {
 
   try {
     errors.push(...validateAgenticHookScript(
-      await fs.readFile(path.join(root, '.codex', 'hooks', 'pre-tool-use-agentic-contract.mjs'), 'utf8')
+      await fs.readFile(path.join(root, '.codex', 'hooks', 'pre-tool-use-agentic-lean-path.mjs'), 'utf8')
     ));
   } catch {
-    errors.push('.codex/hooks/pre-tool-use-agentic-contract.mjs: required for deterministic agentic workflow validation');
+    errors.push('.codex/hooks/pre-tool-use-agentic-lean-path.mjs: required for deterministic agentic workflow validation');
+  }
+
+  try {
+    errors.push(...validateAgenticHookScript(
+      await fs.readFile(path.join(root, '.codex', 'hooks', 'post-tool-use-agentic-lean-path.mjs'), 'utf8')
+    ));
+  } catch {
+    errors.push('.codex/hooks/post-tool-use-agentic-lean-path.mjs: required for deterministic agentic workflow validation');
   }
 
   errors.push(...await readPair(

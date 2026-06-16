@@ -25,7 +25,7 @@ Follow these states in order and emit the state output before moving on:
 12. `repair-loop`
 13. `handoff`
 
-Select the workflow path from `rules/agentic-paths.json`. Before file edits, non-trivial commands, or project-agent runs, emit and validate the runtime contract required by that JSON contract; `PreToolUse` hooks enforce it for governed tools.
+Select the workflow path from `rules/agentic-paths.json`. Before file edits, non-trivial commands, or project-agent runs, emit and validate the JSON runtime contract required by that contract; `PreToolUse` and `PostToolUse` hooks enforce and report the agentic lean path for governed tools.
 
 ## Intake
 

@@ -6,9 +6,9 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/pre-tool-use-agentic-contract.mjs\"",
+            "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/pre-tool-use-agentic-lean-path.mjs\"",
             "timeout": 30,
-            "statusMessage": "Checking agentic runtime contract"
+            "statusMessage": "Checking agentic lean path contract"
           }
         ]
       },
@@ -17,9 +17,33 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/pre-tool-use-agentic-contract.mjs\"",
+            "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/pre-tool-use-agentic-lean-path.mjs\"",
             "timeout": 30,
-            "statusMessage": "Checking agentic runtime contract"
+            "statusMessage": "Checking agentic lean path contract"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "^Bash$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/post-tool-use-agentic-lean-path.mjs\"",
+            "timeout": 30,
+            "statusMessage": "Recording agentic lean path compliance"
+          }
+        ]
+      },
+      {
+        "matcher": "^(apply_patch|Edit|Write)$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/post-tool-use-agentic-lean-path.mjs\"",
+            "timeout": 30,
+            "statusMessage": "Recording agentic lean path compliance"
           }
         ]
       }
