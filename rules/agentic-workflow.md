@@ -24,7 +24,7 @@ Non-trivial work preserves this state order for every applicable state:
 12. `repair-loop`
 13. `handoff`
 
-Every state produces output that can be inspected. Before file edits, non-trivial commands, or project-agent runs, emit the runtime contract required by `rules/agentic-paths.json`.
+Every state produces output that can be inspected. Before file edits, non-trivial commands, or project-agent runs, emit and validate the runtime contract required by `rules/agentic-paths.json`; `PreToolUse` hooks enforce that contract for governed tools.
 
 ## Intake And Classification Loop
 
@@ -138,6 +138,7 @@ Before the final response, confirm:
 - tests and validation outcomes are known;
 - required contracts, ADRs, memory entries, and skills are synchronized;
 - budget handoff report is complete;
+- agentic compliance report covers selected path, escalation rules, hook enforcement, verification, and violations;
 - verified task changes are committed with `$auto-commit` or `npm run task:commit` unless the user explicitly disables automatic committing;
 - long-running processes are closed unless intentionally handed off with a URL;
 - residual risks or skipped checks are explicitly stated.

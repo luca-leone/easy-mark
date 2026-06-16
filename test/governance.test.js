@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
@@ -18,6 +19,8 @@ import {
   validateGovernance,
   validateInternalLinks,
   validateMarkdownLineBudgets,
+  validateAgenticHookConfig,
+  validateAgenticHookScript,
   validateAgenticPathContract,
   validateAgenticWorkflowPolicy,
   validateOrchestrateRequestSkill,
@@ -28,6 +31,7 @@ import {
 } from '../script/validate-governance.mjs';
 import { validateAgenticWorkflow } from '../script/validate-agentic-workflow.mjs';
 import { validateAgenticPaths } from '../script/validate-agentic-paths.mjs';
+import { validateAgenticRuntimeContractFile } from '../script/validate-agentic-runtime-contract.mjs';
 import { validateResourceBudgets } from '../script/validate-resource-budgets.mjs';
 
 test('repository governance is valid', async () => {
@@ -165,6 +169,92 @@ test('validates deterministic agentic path contract', async () => {
   assert.ok(validateAgenticPathContract(missingBudgetGate).some((error) => error.includes('budget-gate')));
 });
 
+test('validates agentic runtime contract and PreToolUse hook enforcement', async (context) => {
+  const rootDirectory = path.resolve(import.meta.dirname, '..');
+  const temporaryDirectory = await fs.mkdtemp(path.join(os.tmpdir(), 'agentic-runtime-'));
+  context.after(() => fs.rm(temporaryDirectory, { recursive: true, force: true }));
+  const runtimePath = path.join(temporaryDirectory, 'runtime.json');
+  const validRuntime = {
+    selectedPath: 'high-change',
+    taskFacts: ['touches agentic-workflow governance'],
+    escalationRulesApplied: ['touches-agentic-workflow-governance'],
+    requiredStates: [
+      'intake',
+      'classification',
+      'requirements-discovery',
+      'requirements-reconciliation',
+      'budget-gate',
+      'routing',
+      'planning',
+      'execution',
+      'quality-review',
+      'contract-guardrail-check',
+      'verification',
+      'repair-loop',
+      'handoff'
+    ],
+    requiredFields: [
+      'Task Classification',
+      'Risk',
+      'Source Documents',
+      'Requirements',
+      'Budget Envelope',
+      'Routing',
+      'Acceptance Criteria',
+      'Execution Steps',
+      'Verification Matrix',
+      'Repair Triggers',
+      'Handoff Gate'
+    ],
+    budgetEnvelope: {
+      taskClass: 'high',
+      providerBudget: 'coordinator-only',
+      maxWriteAgents: 1
+    },
+    verification: ['npm test']
+  };
+  await fs.writeFile(runtimePath, JSON.stringify(validRuntime, null, 2));
+
+  assert.deepEqual(await validateAgenticRuntimeContractFile(rootDirectory, runtimePath), []);
+
+  const hookScript = path.join(rootDirectory, '.codex', 'hooks', 'pre-tool-use-agentic-contract.mjs');
+  const readOnly = spawnSync(process.execPath, [hookScript], {
+    cwd: rootDirectory,
+    input: JSON.stringify({ toolName: 'Bash', input: { command: 'git status --short' } })
+  });
+  assert.equal(readOnly.status, 0);
+
+  const missingContract = spawnSync(process.execPath, [hookScript], {
+    cwd: rootDirectory,
+    env: { ...process.env, AGENTIC_RUNTIME_CONTRACT_PATH: path.join(temporaryDirectory, 'missing.json') },
+    input: JSON.stringify({ toolName: 'apply_patch', input: { patch: '*** Begin Patch\n*** End Patch\n' } })
+  });
+  assert.equal(missingContract.status, 1);
+  assert.match(missingContract.stderr.toString(), /required before file edit/);
+
+  const validContract = spawnSync(process.execPath, [hookScript], {
+    cwd: rootDirectory,
+    env: { ...process.env, AGENTIC_RUNTIME_CONTRACT_PATH: runtimePath },
+    input: JSON.stringify({ toolName: 'apply_patch', input: { patch: '*** Begin Patch\n*** End Patch\n' } })
+  });
+  assert.equal(validContract.status, 0);
+});
+
+test('validates agentic hook configuration and script wiring', async () => {
+  const rootDirectory = path.resolve(import.meta.dirname, '..');
+  const hookConfig = JSON.parse(await fs.readFile(path.join(rootDirectory, '.codex', 'hooks.json'), 'utf8'));
+  const hookScript = await fs.readFile(
+    path.join(rootDirectory, '.codex', 'hooks', 'pre-tool-use-agentic-contract.mjs'),
+    'utf8'
+  );
+
+  assert.deepEqual(validateAgenticHookConfig(hookConfig), []);
+  assert.deepEqual(validateAgenticHookScript(hookScript), []);
+  const brokenConfig = structuredClone(hookConfig);
+  brokenConfig.hooks.PreToolUse = brokenConfig.hooks.PreToolUse.filter((entry) => entry.matcher !== '^Bash$');
+  assert.ok(validateAgenticHookConfig(brokenConfig).some((error) => error.includes('^Bash$')));
+});
+
 test('validates deterministic resource budget policy and skill', async () => {
   const rootDirectory = path.resolve(import.meta.dirname, '..');
   const policy = await fs.readFile(path.join(rootDirectory, 'rules', 'resource-budgets.md'), 'utf8');
@@ -279,6 +369,8 @@ test('uses the public @easy-mark/cli package metadata and ESM workflow scripts',
   assert.equal(packageManifest.scripts['task:commit'], 'node script/git/auto-task-commit.mjs');
   assert.equal(packageManifest.scripts['validate:agentic-workflow'], 'node script/validate-agentic-workflow.mjs');
   assert.equal(packageManifest.scripts['validate:agentic-paths'], 'node script/validate-agentic-paths.mjs');
+  assert.equal(packageManifest.scripts['validate:agentic-runtime-contract'], 'node script/validate-agentic-runtime-contract.mjs');
+  assert.equal(packageManifest.scripts['report:agentic-compliance'], 'node script/report-agentic-compliance.mjs');
   assert.equal(packageManifest.scripts['validate:resource-budgets'], 'node script/validate-resource-budgets.mjs');
   assert.deepEqual(packageManifest.dependencies, lockfile.packages[''].dependencies);
   for (const dependencyName of [

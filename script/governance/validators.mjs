@@ -140,6 +140,8 @@ export function validateAgenticWorkflowPolicy(contents) {
   const requiredPhrases = [
     'Deterministic Agentic Workflow',
     'agentic-paths.json',
+    'PreToolUse',
+    'agentic compliance report',
     'intake',
     'classification',
     'requirements-discovery',
@@ -247,6 +249,16 @@ export function validateAgenticPathContract(contract) {
     'uses-project-agents',
     'no-matching-path'
   ];
+  const complianceFields = [
+    'Selected Path',
+    'Escalation Rules Applied',
+    'Required States',
+    'Required Fields',
+    'Budget Envelope',
+    'Verification',
+    'Hook Enforcement',
+    'Violations'
+  ];
 
   if (!contract || typeof contract !== 'object' || Array.isArray(contract)) {
     return ['rules/agentic-paths.json: contract must be a JSON object'];
@@ -334,6 +346,64 @@ export function validateAgenticPathContract(contract) {
     }
   }
 
+  const requiredComplianceFields = contract.complianceReport?.requiredFields;
+  if (!Array.isArray(requiredComplianceFields)) {
+    errors.push('rules/agentic-paths.json: complianceReport.requiredFields is required');
+  } else {
+    for (const field of complianceFields) {
+      if (!requiredComplianceFields.includes(field)) {
+        errors.push(`rules/agentic-paths.json: complianceReport.requiredFields missing ${field}`);
+      }
+    }
+  }
+
+  return errors;
+}
+
+export function validateAgenticHookConfig(hookConfig) {
+  const errors = [];
+  if (!hookConfig || typeof hookConfig !== 'object' || Array.isArray(hookConfig)) {
+    return ['.codex/hooks.json: hook config must be a JSON object'];
+  }
+
+  const preToolUse = hookConfig.hooks?.PreToolUse;
+  if (!Array.isArray(preToolUse)) return ['.codex/hooks.json: hooks.PreToolUse must be an array'];
+
+  for (const matcher of ['^Bash$', '^(apply_patch|Edit|Write)$']) {
+    const entry = preToolUse.find((hookEntry) => hookEntry.matcher === matcher);
+    if (!entry) {
+      errors.push(`.codex/hooks.json: missing PreToolUse matcher ${matcher}`);
+      continue;
+    }
+    const commandHook = entry.hooks?.find((hook) =>
+      hook.type === 'command' &&
+      typeof hook.command === 'string' &&
+      hook.command.includes('.codex/hooks/pre-tool-use-agentic-contract.mjs')
+    );
+    if (!commandHook) {
+      errors.push(`.codex/hooks.json: matcher ${matcher} must run pre-tool-use-agentic-contract.mjs`);
+      continue;
+    }
+    if (commandHook.timeout !== 30) errors.push(`.codex/hooks.json: matcher ${matcher} timeout must be 30`);
+    if (!commandHook.statusMessage?.includes('agentic runtime contract')) {
+      errors.push(`.codex/hooks.json: matcher ${matcher} must describe agentic runtime contract enforcement`);
+    }
+  }
+
+  return errors;
+}
+
+export function validateAgenticHookScript(contents) {
+  const errors = [];
+  for (const phrase of [
+    'DEFAULT_RUNTIME_CONTRACT_PATH',
+    'toolCallRequiresRuntimeContract',
+    'validateAgenticRuntimeContract',
+    'agentic-paths.json',
+    'process.exit(1)'
+  ]) {
+    if (!contents.includes(phrase)) errors.push(`pre-tool-use-agentic-contract: missing ${phrase}`);
+  }
   return errors;
 }
 
@@ -375,6 +445,7 @@ export function validateOrchestrateRequestSkill(skillContents, metadataContents)
   for (const phrase of [
     'State Machine',
     'agentic-paths.json',
+    'PreToolUse',
     'requirements-discovery',
     'requirements-reconciliation',
     'budget-gate',
@@ -438,6 +509,7 @@ export function validateQualityGateSkill(skillContents, metadataContents) {
     'Contract And Guardrail Check',
     'Repair Loop',
     'Handoff Gate',
+    'agentic compliance report',
     'npm test',
     'memory/decisions.md',
     'contracts/application-contract.md'

@@ -5,6 +5,8 @@ import { AGENT_SPECIFICATIONS } from './governance/spec.mjs';
 import {
   compareCodeUnits,
   validateAgentDocument,
+  validateAgenticHookConfig,
+  validateAgenticHookScript,
   validateAgenticWorkflowGuide,
   validateAgenticWorkflowPolicy,
   validateOrchestrateRequestSkill,
@@ -53,6 +55,22 @@ export async function validateAgenticWorkflow(rootDirectory) {
   }
 
   errors.push(...await validateAgenticPaths(root));
+
+  try {
+    errors.push(...validateAgenticHookConfig(JSON.parse(await fs.readFile(path.join(root, '.codex', 'hooks.json'), 'utf8'))));
+  } catch (error) {
+    errors.push(error instanceof SyntaxError
+      ? '.codex/hooks.json: invalid JSON'
+      : '.codex/hooks.json: required for deterministic agentic workflow validation');
+  }
+
+  try {
+    errors.push(...validateAgenticHookScript(
+      await fs.readFile(path.join(root, '.codex', 'hooks', 'pre-tool-use-agentic-contract.mjs'), 'utf8')
+    ));
+  } catch {
+    errors.push('.codex/hooks/pre-tool-use-agentic-contract.mjs: required for deterministic agentic workflow validation');
+  }
 
   errors.push(...await readPair(
     root,

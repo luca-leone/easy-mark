@@ -33,6 +33,18 @@
       "Verification"
     ]
   },
+  "complianceReport": {
+    "requiredFields": [
+      "Selected Path",
+      "Escalation Rules Applied",
+      "Required States",
+      "Required Fields",
+      "Budget Envelope",
+      "Verification",
+      "Hook Enforcement",
+      "Violations"
+    ]
+  },
   "paths": {
     "trivial-read-only": {
       "rank": 0,

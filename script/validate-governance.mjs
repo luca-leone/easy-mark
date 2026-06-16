@@ -19,6 +19,8 @@ import {
   validateDocumentationScope,
   validateGenerateCommitSkill,
   validateMarkdownLineBudgets,
+  validateAgenticHookConfig,
+  validateAgenticHookScript,
   validateAgenticPathContract,
   validateAgenticWorkflowGuide,
   validateAgenticWorkflowPolicy,
@@ -136,6 +138,20 @@ export async function validateGovernance(rootDirectory) {
   }
 
   try {
+    errors.push(...validateAgenticHookConfig(JSON.parse(await fs.readFile(path.join(root, '.codex', 'hooks.json'), 'utf8'))));
+  } catch (error) {
+    if (error instanceof SyntaxError) errors.push('.codex/hooks.json: invalid JSON');
+  }
+
+  try {
+    errors.push(...validateAgenticHookScript(
+      await fs.readFile(path.join(root, '.codex', 'hooks', 'pre-tool-use-agentic-contract.mjs'), 'utf8')
+    ));
+  } catch {
+    // Required-file diagnostics cover this path.
+  }
+
+  try {
     await fs.access(path.join(root, 'NOTES.md'));
     errors.push('NOTES.md: personal notes must not be committed; move durable content into scoped governance documents');
   } catch {
@@ -245,6 +261,8 @@ export {
   validateDocumentationScope,
   validateGenerateCommitSkill,
   validateMarkdownLineBudgets,
+  validateAgenticHookConfig,
+  validateAgenticHookScript,
   validateAgenticPathContract,
   validateAgenticWorkflowGuide,
   validateAgenticWorkflowPolicy,
@@ -256,3 +274,4 @@ export {
 } from './governance/validators.mjs';
 export { validateAgenticWorkflow } from './validate-agentic-workflow.mjs';
 export { validateAgenticPaths } from './validate-agentic-paths.mjs';
+export { validateAgenticRuntimeContractFile } from './validate-agentic-runtime-contract.mjs';
