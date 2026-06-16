@@ -2,7 +2,7 @@
 
 Easy Mark is a command-line tool for turning a folder of Markdown files into a clean local documentation site, then exporting the same content to PDF when you need a shareable document.
 
-It is designed for project notes, product docs, team handbooks, technical guides, and any content set where Markdown should become something easy to browse.
+It is designed for project notes, product docs, team handbooks, technical guides, and any content set where Markdown must become something easy to browse.
 
 ## What It Does
 

@@ -16,7 +16,7 @@ Use the optional public file `src/manifest.json` for project metadata. Initially
 
 Validate the manifest before mutating virtual files or project metadata. A malformed startup manifest prevents startup. A malformed watched update preserves the previous valid state and follows the existing failed-event behavior without browser reload.
 
-Represent title insertion in the bundled shell with two `<!-- PROJECT_TITLE -->` placeholders. User-provided `src/index.html` overrides may omit or repeat this optional placeholder because they retain complete ownership of their static shell. Embed resolved metadata as JSON for the browser runtime, escaping `<`, and HTML-escape every title inserted into markup.
+Represent title insertion in the bundled shell with two `<!-- PROJECT_TITLE -->` placeholders. User-provided `src/index.html` overrides can omit or repeat this optional placeholder because they retain complete ownership of their static shell. Embed resolved metadata as JSON for the browser runtime, escaping `<`, and HTML-escape every title inserted into markup.
 
 Format dynamic browser titles as `<document title> — <project title>`. Keep the package name, product identity, and startup log as `easy-mark`.
 
@@ -33,5 +33,5 @@ Logo metadata and asset overlay behavior are added by [ADR-0025](0025-project-lo
 ## Alternatives Considered
 
 - Derive the project title from the first Markdown H1: rejected because document identity and project identity are distinct.
-- Require a custom `src/index.html`: rejected because a simple metadata change should not require maintaining the complete shell.
+- Require a custom `src/index.html`: rejected because a simple metadata change must not require maintaining the complete shell.
 - Use environment variables: rejected because documentation configuration belongs with the portable authored source tree.

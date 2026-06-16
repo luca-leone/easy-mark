@@ -75,7 +75,7 @@ Use `$orchestrate-request` for workflow intake and routing. Apply `rules/agentic
 
 Route deterministically:
 
-- `low`: bounded single-surface changes with obvious tests may remain with the coordinating agent or `implementer`;
+- `low`: bounded single-surface changes with obvious tests remain with the coordinating agent or `implementer`;
 - `medium`: cross-file implementation, packaging, release, or governance documentation requires an explicit plan before edits;
 - `high`: security, routing, sanitization, virtual filesystem, concurrency, watcher behavior, migration, architectural decisions, contract changes, or agentic-workflow governance requires `planner` before execution and `senior-implementer` for write work when project agents are invoked;
 - requested review uses `reviewer`;

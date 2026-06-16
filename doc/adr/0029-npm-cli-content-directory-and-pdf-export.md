@@ -14,7 +14,7 @@ Users also need a command that writes a final PDF artifact directly. The existin
 
 Publish `easy-mark` as an NPM package with a `bin/easy-mark.mjs` executable. Support `easy-mark serve <content-directory>` and `easy-mark export <content-directory> --pdf <file.pdf>`. Do not implement a static `build --out` command.
 
-Treat the positional directory as an arbitrary content root containing Markdown and public assets. The repository's governance `doc/` directory is unrelated to this CLI example. Keep generated Markdown fragments in `mem-fs` for serve and export; the export command may write only the requested PDF file.
+Treat the positional directory as an arbitrary content root containing Markdown and public assets. The repository's governance `doc/` directory is unrelated to this CLI example. Keep generated Markdown fragments in `mem-fs` for serve and export; the export command must write only the requested PDF file.
 
 Keep `core/web/index.template.html` and `core/web/styles.template.css` as package-owned runtime templates. They are mapped to virtual `index.html` and `styles.css` in memory and cannot be overridden by content-root `index.html` or `styles.css`; those filenames are reserved and cause deterministic errors.
 
@@ -34,7 +34,7 @@ This decision supersedes the user override portions of [ADR-0022](0022-core-serv
 
 ## Alternatives Considered
 
-- Keep `src/index.html` and `src/styles.css` overrides: rejected because package consumers should not own runtime hook compatibility.
+- Keep `src/index.html` and `src/styles.css` overrides: rejected because package consumers must not own runtime hook compatibility.
 - Implement `easy-mark build --out`: rejected to preserve the no-generated-HTML-on-disk invariant.
 - Use native print for CLI export: rejected because a CLI command needs a deterministic file artifact.
 - Use a browser automation CLI as the production export dependency: rejected in favor of a direct Playwright-compatible API adapter that is easier to mock and test.

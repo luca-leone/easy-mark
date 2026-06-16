@@ -30,5 +30,5 @@ For commit validation, resolve `core.commentString` and `core.commentChar` in ef
 
 - Move skills under `.codex/agents/`: rejected because skill discovery and agent configuration use different directories and schemas.
 - Convert skills, guardrails, and agent definitions to JavaScript: rejected because Codex and repository governance consume their declarative formats directly.
-- Keep `server.js` at the repository root: rejected because runtime ownership belongs under `lib/` and the root should remain focused on project metadata.
+- Keep `server.js` at the repository root: rejected because runtime ownership belongs under `lib/` and the root must remain focused on project metadata.
 - Allow multiple script languages by convention: rejected because it weakens determinism and increases maintenance surface without a current need.

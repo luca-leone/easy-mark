@@ -25,5 +25,5 @@ This decision supersedes the same-path generated fragment layout in [ADR-0001](0
 ## Alternatives Considered
 
 - Reserve a directory name inside the authored virtual root: rejected because authored source could use the same directory name.
-- Reject same-stem authored HTML: rejected because source mirroring should preserve valid authored files without creating a security dependency on filename policy.
+- Reject same-stem authored HTML: rejected because source mirroring must preserve valid authored files without creating a security dependency on filename policy.
 - Depend on scan or watcher ordering: rejected because it is nondeterministic and can expose unsanitized content.

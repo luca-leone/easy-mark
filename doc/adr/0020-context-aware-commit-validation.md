@@ -24,4 +24,4 @@ Validation now matches repository-specific Git cleanup behavior and merge state 
 
 - Always strip `#` comments: rejected because it conflicts with custom comment characters and verbatim cleanup.
 - Accept merge-looking subjects everywhere: rejected because standalone commits could bypass the Conventional Commit policy.
-- Add an implicit installer override or `--force`: rejected because replacing another hook manager should require a separate manual decision.
+- Add an implicit installer override or `--force`: rejected because replacing another hook manager must require a separate manual decision.

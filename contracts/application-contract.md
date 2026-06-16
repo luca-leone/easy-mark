@@ -6,7 +6,7 @@
 - The product name and startup log remain `easy-mark`; the published package name is `@easy-mark/cli`, the binary name is `easy-mark`, and the default visible documentation title is `Easy Mark`.
 - `easy-mark serve <content-directory>` builds and serves the documentation from an arbitrary user-selected content directory.
 - `easy-mark export <content-directory> --pdf <file.pdf>` builds the documentation in memory and writes the requested PDF file.
-- The default HTTP port is `3000`; `PORT` may override it and the CLI may pass an explicit port. The bundled `/logo.svg` is the default project logo.
+- The default HTTP port is `3000`; `PORT` must override it when set and the CLI must pass an explicit port when requested. The bundled `/logo.svg` is the default project logo.
 - Startup fails when either bundled template under `core/web/` is missing, when the content directory contains root `index.html` or `styles.css`, when a present `manifest.json` is invalid, or when all Markdown documents are missing.
 - The server starts only after the initial virtual build and navigation generation complete.
 
@@ -15,7 +15,7 @@
 - Browser runtime files and static assets under `core/web/` are copied into `mem-fs`; `index.template.html` and `styles.template.css` are exposed there as `index.html` and `styles.css` without exposing their `.template` names.
 - Every real file under the content directory is then copied into `mem-fs` with its relative structure preserved, except root `index.html` and `styles.css`, which are reserved package-owned runtime files and are rejected.
 - Each `**/*.md` file in the content directory additionally produces a corresponding `.html` fragment under a generated-only `mem-fs` root that is disjoint from the mirrored authored paths.
-- An authored `.html` file may coexist with the generated fragment for a same-stem Markdown file without replacing it or being exposed as document content.
+- An authored `.html` file must be allowed to coexist with the generated fragment for a same-stem Markdown file without replacing it or being exposed as document content.
 - Converted HTML fragments are never written to the real filesystem.
 - The resolved virtual `index.html` is the sole application shell and the resolved virtual `styles.css` is the sole global stylesheet.
 - Content directories cannot customize the application shell or global stylesheet by supplying root `index.html` or `styles.css`.
@@ -59,7 +59,7 @@
 - `/` resolves client-side to the first document in deterministic total path order.
 - A Markdown document maps canonically to a route derived from its first H1, preserving its containing directory; content `README.md` with `# Introduzione` maps to `/introduzione`.
 - Route path segments are normalized to Unicode NFC and percent-encoded exactly once. Reserved characters such as `#`, `?`, `%`, and spaces in source directories or filename aliases remain pathname data rather than becoming fragments or queries.
-- Title segments retain the existing GitHub-style slugging before NFC normalization and URL serialization; browsers may display decoded readable Unicode while navigation and manifest values remain valid encoded paths.
+- Title segments retain the existing GitHub-style slugging before NFC normalization and URL serialization; browsers can display decoded readable Unicode while navigation and manifest values remain valid encoded paths.
 - The original extensionless file route is retained as a private compatibility alias only when it does not collide with any canonical route or previously assigned alias; direct visits to an accepted alias are replaced client-side with the canonical title route.
 - Canonical routes are allocated before aliases in the shared normalized URL space. Duplicate or canonically equivalent NFC/NFD bases receive deterministic numeric suffixes that skip every reserved canonical base.
 - Direct document routes return the application shell.

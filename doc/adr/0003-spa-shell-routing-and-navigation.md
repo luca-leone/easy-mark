@@ -27,4 +27,4 @@ Menu label presentation and omission of the duplicated title heading are refined
 
 - Hash routing: rejected in favor of clean document URLs.
 - Standalone generated HTML pages: rejected because they duplicate the shell and stylesheet ownership.
-- CSS-selector anchor lookup: rejected because percent-encoded Unicode fragments may not be valid selectors.
+- CSS-selector anchor lookup: rejected because percent-encoded Unicode fragments are not guaranteed to be valid selectors.

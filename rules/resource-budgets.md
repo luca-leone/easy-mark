@@ -23,7 +23,7 @@ Runtime Budget Checks:
 Budget Handoff Report:
 ```
 
-The envelope is part of the task contract. Execution may not start until each field is populated.
+The envelope is part of the task contract. Execution must not start until each field is populated.
 
 ## Task Classes
 
@@ -61,7 +61,7 @@ Repository concurrency is capped by `.codex/config.toml`:
 - total project-agent threads: `max_threads = 4`;
 - project-agent depth: `max_depth = 1`;
 - write-capable agents on overlapping file scopes: `1`;
-- read-only agents may run concurrently only when their scopes are independent and the declared `Max Read Agents` allows it.
+- read-only agents must run concurrently only when their scopes are independent and the declared `Max Read Agents` allows it.
 
 Default task caps:
 
@@ -72,7 +72,7 @@ Default task caps:
 | `high` | 3 | 1 | 2 |
 | `release` | 2 | 1 | 1 |
 
-The coordinator owns final integration and may not delegate that responsibility.
+The coordinator owns final integration and must not delegate that responsibility.
 
 ## Execution Duration Budget
 

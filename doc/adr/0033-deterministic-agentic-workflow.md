@@ -8,7 +8,7 @@ Accepted — 2026-06-16
 
 The repository already defines governance documents, project-scoped skills, and explicit multi-agent roles. Those pieces prevent many classes of drift, but they do not by themselves force every non-trivial prompt through the same deterministic intake, requirements reconciliation, routing, quality, and repair loops.
 
-Relying on conversational judgment alone creates inconsistent behavior: one task may receive planner analysis and independent verification while another similar task may proceed directly to implementation; a failing guardrail may be reported instead of repaired; or a final handoff may omit which source-of-truth documents were checked.
+Relying on conversational judgment alone creates inconsistent behavior: one task can receive planner analysis and independent verification while another similar task can proceed directly to implementation; a failing guardrail can be reported instead of repaired; or a final handoff can omit which source-of-truth documents were checked.
 
 The workspace needs a versioned orchestration policy that makes the coordinating agent's behavior predictable, auditable, and testable without weakening the existing rule that subagents are started only after explicit user request or a repository-defined risk-routed workflow has been invoked.
 

@@ -93,7 +93,7 @@ Use `$resource-budget-gate` after requirements reconciliation and before routing
 - runtime budget checks;
 - budget handoff report.
 
-Execution may not begin until the envelope fits [rules/resource-budgets.md](../../../rules/resource-budgets.md).
+Execution must not begin until the envelope fits [rules/resource-budgets.md](../../../rules/resource-budgets.md).
 
 ## Routing
 

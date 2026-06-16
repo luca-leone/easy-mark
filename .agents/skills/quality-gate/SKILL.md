@@ -56,7 +56,7 @@ Report a blocker only after the same blocking condition repeats for three consec
 
 ## Handoff Gate
 
-Final response may proceed only when:
+Final response must proceed only when:
 
 - task objective is satisfied or blocked;
 - verification state is known;

@@ -5,7 +5,7 @@ description: Build and enforce deterministic Budget Envelopes for non-trivial re
 
 # Resource Budget Gate
 
-Use this skill before executing non-trivial repository work and whenever execution may exceed the declared budget.
+Use this skill before executing non-trivial repository work and whenever execution would exceed the declared budget.
 
 ## Inputs
 

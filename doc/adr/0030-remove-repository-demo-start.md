@@ -8,7 +8,7 @@ Superseded by ADR-0032 — 2026-06-16
 
 After ADR-0029, the supported product interface is the `easy-mark` binary over an arbitrary content directory. The repository still kept a compatibility `npm run start` script, a hard-coded `core/server/server.js` entry point for `./src`, and a small `src/` demo tree.
 
-That demo path made `src/` look like part of the package contract even though package consumers should provide their own content directory.
+That demo path made `src/` look like part of the package contract even though package consumers must provide their own content directory.
 
 ## Decision
 

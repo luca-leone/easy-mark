@@ -18,7 +18,7 @@ This decision refines the browser composition behavior introduced by [ADR-0014](
 
 - Ordinary browser printing continues to print the currently visible SPA.
 - Images and same-origin asset links from documents in different source directories resolve consistently in the aggregate export.
-- Printing may wait for slow images, while broken images do not prevent the dialog from opening.
+- Printing can wait for slow images, while broken images do not prevent the dialog from opening.
 - Encoded and canonically equivalent Unicode document routes resolve to the same print target.
 - Assistive technologies can observe the aggregate container only while it is active.
 - The export payload now includes an `assetBase` field for each document.

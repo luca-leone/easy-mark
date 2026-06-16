@@ -30,4 +30,4 @@ Require a user-provided `src/index.html` to contain exactly one `<!-- NAVIGATION
 
 - Keep bundled browser files in `src/`: rejected because application internals and user content remain mixed.
 - Merge user HTML or CSS into the defaults: rejected because merge semantics would be ambiguous and difficult to validate deterministically.
-- Require users to copy templates before first startup: rejected because a Markdown-only workspace should use functional defaults immediately.
+- Require users to copy templates before first startup: rejected because a Markdown-only workspace must use functional defaults immediately.

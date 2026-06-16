@@ -30,5 +30,5 @@ Replace the hamburger's visual-only translation with a layout-participating inli
 ## Alternatives Considered
 
 - Inline SVG from the manifest: rejected because it would introduce markup injection and sanitization concerns.
-- Store logos outside `src/`: rejected because user assets should remain portable with authored documentation.
+- Store logos outside `src/`: rejected because user assets must remain portable with authored documentation.
 - Keep the CSS transform and compensate with negative brand margins: rejected because independent visual offsets make layout spacing brittle.
