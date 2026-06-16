@@ -19,6 +19,7 @@ import {
   validateDocumentationScope,
   validateGenerateCommitSkill,
   validateMarkdownLineBudgets,
+  validateAgenticPathContract,
   validateAgenticWorkflowGuide,
   validateAgenticWorkflowPolicy,
   validateOrchestrateRequestSkill,
@@ -244,6 +245,7 @@ export {
   validateDocumentationScope,
   validateGenerateCommitSkill,
   validateMarkdownLineBudgets,
+  validateAgenticPathContract,
   validateAgenticWorkflowGuide,
   validateAgenticWorkflowPolicy,
   validateOrchestrateRequestSkill,
@@ -253,3 +255,4 @@ export {
   validateWorkflowScriptPaths
 } from './governance/validators.mjs';
 export { validateAgenticWorkflow } from './validate-agentic-workflow.mjs';
+export { validateAgenticPaths } from './validate-agentic-paths.mjs';

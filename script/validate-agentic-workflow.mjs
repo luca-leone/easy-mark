@@ -12,6 +12,7 @@ import {
   validateResourceBudgetGateSkill,
   validateResourceBudgetPolicy
 } from './governance/validators.mjs';
+import { validateAgenticPaths } from './validate-agentic-paths.mjs';
 
 async function readPair(root, first, second, validator) {
   try {
@@ -50,6 +51,8 @@ export async function validateAgenticWorkflow(rootDirectory) {
   } catch {
     errors.push('rules/resource-budgets.md: required for deterministic agentic workflow validation');
   }
+
+  errors.push(...await validateAgenticPaths(root));
 
   errors.push(...await readPair(
     root,

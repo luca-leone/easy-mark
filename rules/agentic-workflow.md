@@ -4,7 +4,7 @@
 
 This file is the canonical operating policy for non-trivial repository work. `AGENTS.md` bootstraps the agent and points here; [ADR-0033](../doc/adr/0033-deterministic-agentic-workflow.md) records the accepted architectural decision.
 
-Trivial requests that can be satisfied by a direct answer or a single read-only command may use the minimal applicable subset. Any task that changes files, affects behavior, touches governance, spans multiple modules, invokes a skill, or uses project agents is non-trivial.
+Select the workflow path from the deterministic contract in [agentic-paths.json](agentic-paths.json). Any task that changes files, affects behavior, touches governance, spans multiple modules, invokes a skill, or uses project agents is non-trivial.
 
 ## State Machine
 
@@ -24,7 +24,7 @@ Non-trivial work preserves this state order for every applicable state:
 12. `repair-loop`
 13. `handoff`
 
-Every state produces output that can be inspected. The next state begins only after the previous state satisfies its exit criteria.
+Every state produces output that can be inspected. Before file edits, non-trivial commands, or project-agent runs, emit the runtime contract required by `rules/agentic-paths.json`.
 
 ## Intake And Classification Loop
 
@@ -71,7 +71,7 @@ Exit criteria:
 
 ## Routing Loop
 
-Use `$orchestrate-request` for non-trivial workflow intake and routing. Use named skills whenever the user invokes them, and use clearly applicable repository skills when the task matches their description.
+Use `$orchestrate-request` for workflow intake and routing. Apply `rules/agentic-paths.json`: collect task facts, apply escalation rules, choose the minimum allowed path, prefer the highest rank when multiple paths match, and use `high-change` when none match.
 
 Route deterministically:
 

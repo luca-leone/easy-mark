@@ -139,6 +139,7 @@ export function validateAgenticWorkflowPolicy(contents) {
   const errors = [];
   const requiredPhrases = [
     'Deterministic Agentic Workflow',
+    'agentic-paths.json',
     'intake',
     'classification',
     'requirements-discovery',
@@ -205,6 +206,137 @@ export function validateResourceBudgetPolicy(contents) {
   return errors;
 }
 
+export function validateAgenticPathContract(contract) {
+  const errors = [];
+  const requiredPathOrder = [
+    'trivial-read-only',
+    'trivial-command',
+    'low-change',
+    'medium-change',
+    'high-change',
+    'release'
+  ];
+  const requiredStates = [
+    'intake',
+    'classification',
+    'requirements-discovery',
+    'requirements-reconciliation',
+    'budget-gate',
+    'routing',
+    'planning',
+    'execution',
+    'quality-review',
+    'contract-guardrail-check',
+    'verification',
+    'repair-loop',
+    'handoff'
+  ];
+  const runtimeFields = [
+    'Selected Path',
+    'Task Facts',
+    'Escalation Rules Applied',
+    'Required States',
+    'Required Fields',
+    'Budget Envelope',
+    'Verification'
+  ];
+  const escalationIds = [
+    'touches-agentic-workflow-governance',
+    'changes-observable-product-behavior',
+    'changes-contract-or-adr',
+    'uses-project-agents',
+    'no-matching-path'
+  ];
+
+  if (!contract || typeof contract !== 'object' || Array.isArray(contract)) {
+    return ['rules/agentic-paths.json: contract must be a JSON object'];
+  }
+  if (contract.version !== 1) errors.push('rules/agentic-paths.json: version must be 1');
+  if (JSON.stringify(contract.pathOrder) !== JSON.stringify(requiredPathOrder)) {
+    errors.push('rules/agentic-paths.json: pathOrder must define the deterministic path order');
+  }
+  if (!Array.isArray(contract.selectionRule?.algorithm) || contract.selectionRule.algorithm.length < 5) {
+    errors.push('rules/agentic-paths.json: selectionRule.algorithm must define deterministic selection');
+  }
+  for (const phrase of ['Apply every escalation rule', 'When no path matches, select high-change']) {
+    if (!contract.selectionRule?.algorithm?.some((step) => step.includes(phrase))) {
+      errors.push(`rules/agentic-paths.json: selectionRule.algorithm missing ${phrase}`);
+    }
+  }
+
+  const requiredBefore = contract.runtimeContract?.requiredBefore;
+  if (!Array.isArray(requiredBefore)) {
+    errors.push('rules/agentic-paths.json: runtimeContract.requiredBefore is required');
+  } else {
+    for (const action of ['file-edits', 'non-trivial-commands', 'project-agent-runs']) {
+      if (!requiredBefore.includes(action)) {
+        errors.push(`rules/agentic-paths.json: runtimeContract.requiredBefore missing ${action}`);
+      }
+    }
+  }
+  const requiredRuntimeFields = contract.runtimeContract?.requiredFields;
+  if (!Array.isArray(requiredRuntimeFields)) {
+    errors.push('rules/agentic-paths.json: runtimeContract.requiredFields is required');
+  } else {
+    for (const field of runtimeFields) {
+      if (!requiredRuntimeFields.includes(field)) {
+        errors.push(`rules/agentic-paths.json: runtimeContract.requiredFields missing ${field}`);
+      }
+    }
+  }
+
+  const paths = contract.paths && typeof contract.paths === 'object' && !Array.isArray(contract.paths)
+    ? contract.paths
+    : {};
+  if (Object.keys(paths).length === 0) errors.push('rules/agentic-paths.json: paths object is required');
+  requiredPathOrder.forEach((pathId, expectedRank) => {
+    const pathDefinition = paths[pathId];
+    if (!pathDefinition || typeof pathDefinition !== 'object' || Array.isArray(pathDefinition)) {
+      errors.push(`rules/agentic-paths.json: missing path ${pathId}`);
+      return;
+    }
+    if (pathDefinition.rank !== expectedRank) {
+      errors.push(`rules/agentic-paths.json: ${pathId} rank must be ${expectedRank}`);
+    }
+    for (const field of ['conditions', 'requiredStates', 'requiredFields', 'verification', 'forbiddenActions']) {
+      if (!Array.isArray(pathDefinition[field]) || pathDefinition[field].length === 0) {
+        errors.push(`rules/agentic-paths.json: ${pathId}.${field} must be a non-empty array`);
+      }
+    }
+  });
+
+  const highChange = paths['high-change'];
+  if (highChange) {
+    for (const state of requiredStates) {
+      if (!highChange.requiredStates?.includes(state)) {
+        errors.push(`rules/agentic-paths.json: high-change.requiredStates missing ${state}`);
+      }
+    }
+    for (const field of ['Source Documents', 'Budget Envelope', 'Verification Matrix', 'Handoff Gate']) {
+      if (!highChange.requiredFields?.includes(field)) {
+        errors.push(`rules/agentic-paths.json: high-change.requiredFields missing ${field}`);
+      }
+    }
+  }
+
+  if (!Array.isArray(contract.escalationRules)) {
+    errors.push('rules/agentic-paths.json: escalationRules must be an array');
+  } else {
+    for (const escalationId of escalationIds) {
+      if (!contract.escalationRules.some((rule) => rule.id === escalationId)) {
+        errors.push(`rules/agentic-paths.json: escalationRules missing ${escalationId}`);
+      }
+    }
+    for (const rule of contract.escalationRules) {
+      if (!requiredPathOrder.includes(rule.minimumPath)) {
+        errors.push(`rules/agentic-paths.json: ${rule.id ?? 'escalation rule'} minimumPath is invalid`);
+      }
+    }
+  }
+
+  return errors;
+}
+
 export function validateDocumentationScope(agentGuideContents) {
   const errors = [];
   for (const phrase of [
@@ -242,6 +374,7 @@ export function validateOrchestrateRequestSkill(skillContents, metadataContents)
   if (!/^description: .+/m.test(frontmatter[1])) errors.push('orchestrate-request: missing description');
   for (const phrase of [
     'State Machine',
+    'agentic-paths.json',
     'requirements-discovery',
     'requirements-reconciliation',
     'budget-gate',

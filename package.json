@@ -43,6 +43,7 @@
     "task:commit": "node script/git/auto-task-commit.mjs",
     "hooks:install": "node script/git/install-hooks.mjs",
     "validate:agentic-workflow": "node script/validate-agentic-workflow.mjs",
+    "validate:agentic-paths": "node script/validate-agentic-paths.mjs",
     "validate:resource-budgets": "node script/validate-resource-budgets.mjs",
     "validate:governance": "node script/validate-governance.mjs",
     "test:node": "node --test",

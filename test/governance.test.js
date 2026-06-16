@@ -18,6 +18,7 @@ import {
   validateGovernance,
   validateInternalLinks,
   validateMarkdownLineBudgets,
+  validateAgenticPathContract,
   validateAgenticWorkflowPolicy,
   validateOrchestrateRequestSkill,
   validateQualityGateSkill,
@@ -26,6 +27,7 @@ import {
   validateWorkflowScriptPaths
 } from '../script/validate-governance.mjs';
 import { validateAgenticWorkflow } from '../script/validate-agentic-workflow.mjs';
+import { validateAgenticPaths } from '../script/validate-agentic-paths.mjs';
 import { validateResourceBudgets } from '../script/validate-resource-budgets.mjs';
 
 test('repository governance is valid', async () => {
@@ -138,10 +140,29 @@ test('requires deterministic workflow state machine, budget, routing, repair, an
   assert.deepEqual(validateAgenticWorkflowPolicy(policy), []);
   assert.deepEqual(await validateAgenticWorkflow(rootDirectory), []);
   assert.match(policy, /budget-gate/);
+  assert.match(policy, /agentic-paths\.json/);
   assert.match(policy, /\$resource-budget-gate/);
   assert.ok(validateAgenticWorkflowPolicy(policy.replace('Repair Loop', 'Fixing')).some((error) =>
     error.includes('Repair Loop')
   ));
+});
+
+test('validates deterministic agentic path contract', async () => {
+  const rootDirectory = path.resolve(import.meta.dirname, '..');
+  const contract = JSON.parse(await fs.readFile(path.join(rootDirectory, 'rules', 'agentic-paths.json'), 'utf8'));
+
+  assert.deepEqual(validateAgenticPathContract(contract), []);
+  assert.deepEqual(await validateAgenticPaths(rootDirectory), []);
+
+  const missingRuntimeField = structuredClone(contract);
+  missingRuntimeField.runtimeContract.requiredFields =
+    missingRuntimeField.runtimeContract.requiredFields.filter((field) => field !== 'Selected Path');
+  assert.ok(validateAgenticPathContract(missingRuntimeField).some((error) => error.includes('Selected Path')));
+
+  const missingBudgetGate = structuredClone(contract);
+  missingBudgetGate.paths['high-change'].requiredStates =
+    missingBudgetGate.paths['high-change'].requiredStates.filter((state) => state !== 'budget-gate');
+  assert.ok(validateAgenticPathContract(missingBudgetGate).some((error) => error.includes('budget-gate')));
 });
 
 test('validates deterministic resource budget policy and skill', async () => {
@@ -257,6 +278,7 @@ test('uses the public @easy-mark/cli package metadata and ESM workflow scripts',
   assert.deepEqual(packageManifest.publishConfig, { access: 'public' });
   assert.equal(packageManifest.scripts['task:commit'], 'node script/git/auto-task-commit.mjs');
   assert.equal(packageManifest.scripts['validate:agentic-workflow'], 'node script/validate-agentic-workflow.mjs');
+  assert.equal(packageManifest.scripts['validate:agentic-paths'], 'node script/validate-agentic-paths.mjs');
   assert.equal(packageManifest.scripts['validate:resource-budgets'], 'node script/validate-resource-budgets.mjs');
   assert.deepEqual(packageManifest.dependencies, lockfile.packages[''].dependencies);
   for (const dependencyName of [

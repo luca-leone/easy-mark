@@ -25,7 +25,7 @@ Follow these states in order and emit the state output before moving on:
 12. `repair-loop`
 13. `handoff`
 
-Use the minimal applicable subset only for trivial read-only requests.
+Select the workflow path from `rules/agentic-paths.json`. Before file edits, non-trivial commands, or project-agent runs, emit the runtime contract required by that JSON contract.
 
 ## Intake
 
@@ -99,6 +99,9 @@ Execution may not begin until the envelope fits [rules/resource-budgets.md](../.
 
 Select skills and agents deterministically:
 
+- apply every `rules/agentic-paths.json` escalation rule;
+- choose the minimum allowed path, using the highest rank when multiple paths match;
+- use `high-change` when no path matches;
 - named skill: required;
 - clearly applicable skill: required;
 - `low`: coordinating agent or `implementer`;

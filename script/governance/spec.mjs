@@ -1,5 +1,6 @@
 export const REQUIRED_FILES = Object.freeze([
   'AGENTS.md',
+  'rules/agentic-paths.json',
   'rules/agentic-workflow.md',
   'rules/command-reference.md',
   'rules/project-rules.md',
@@ -32,6 +33,7 @@ export const REQUIRED_FILES = Object.freeze([
   '.agents/skills/resource-budget-gate/agents/openai.yaml',
   'hooks/commit-msg',
   'script/validate-agentic-workflow.mjs',
+  'script/validate-agentic-paths.mjs',
   'script/validate-resource-budgets.mjs',
   'script/git/auto-task-commit.mjs',
   'script/git/validate-commit-message.mjs',

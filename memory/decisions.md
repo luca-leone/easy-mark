@@ -51,3 +51,4 @@ Entry format:
 - 2026-06-16 | Accepted | Require every non-trivial agentic task to declare and enforce a deterministic resource Budget Envelope for context, concurrency, execution duration, and provider model-tier usage. | [ADR-0035](../doc/adr/0035-deterministic-resource-budgets.md)
 - 2026-06-16 | Accepted | Base automatic version-tag proposals on the highest existing local semver tag when it is ahead of `package.json`, preventing deterministic tag collisions. | [ADR-0034](../doc/adr/0034-deterministic-task-commit-automation.md)
 - 2026-06-16 | Accepted | Enforce a hard 150-line limit for committed Markdown files through governance validation and scoped-document splitting. | N/A
+- 2026-06-16 | Accepted | Select lean or full agentic workflow paths through a validated JSON contract and require a runtime path contract before file edits, non-trivial commands, or project-agent runs. | [ADR-0033](../doc/adr/0033-deterministic-agentic-workflow.md)

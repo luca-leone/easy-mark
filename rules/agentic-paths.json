@@ -1,0 +1,280 @@
+{
+  "version": 1,
+  "pathOrder": [
+    "trivial-read-only",
+    "trivial-command",
+    "low-change",
+    "medium-change",
+    "high-change",
+    "release"
+  ],
+  "selectionRule": {
+    "algorithm": [
+      "Collect task facts before file edits, non-trivial commands, or project-agent runs.",
+      "Apply every escalation rule.",
+      "Select the minimum path allowed by the highest matching path or escalation.",
+      "When multiple paths match, choose the path with the highest rank.",
+      "When no path matches, select high-change."
+    ]
+  },
+  "runtimeContract": {
+    "requiredBefore": [
+      "file-edits",
+      "non-trivial-commands",
+      "project-agent-runs"
+    ],
+    "requiredFields": [
+      "Selected Path",
+      "Task Facts",
+      "Escalation Rules Applied",
+      "Required States",
+      "Required Fields",
+      "Budget Envelope",
+      "Verification"
+    ]
+  },
+  "paths": {
+    "trivial-read-only": {
+      "rank": 0,
+      "conditions": [
+        "mutation is none",
+        "commands are none",
+        "project agents are none",
+        "risk is low",
+        "answer can be produced from current context or focused read-only inspection"
+      ],
+      "requiredStates": [
+        "intake",
+        "classification",
+        "handoff"
+      ],
+      "requiredFields": [
+        "Task Classification",
+        "Risk",
+        "Answer",
+        "Verification"
+      ],
+      "verification": [
+        "cite inspected file or mark not applicable"
+      ],
+      "forbiddenActions": [
+        "file-edits",
+        "project-agent-runs"
+      ]
+    },
+    "trivial-command": {
+      "rank": 1,
+      "conditions": [
+        "mutation is none",
+        "exactly one read-only command is sufficient",
+        "project agents are none",
+        "risk is low"
+      ],
+      "requiredStates": [
+        "intake",
+        "classification",
+        "execution",
+        "handoff"
+      ],
+      "requiredFields": [
+        "Task Classification",
+        "Risk",
+        "Command",
+        "Result"
+      ],
+      "verification": [
+        "report command outcome"
+      ],
+      "forbiddenActions": [
+        "file-edits",
+        "project-agent-runs"
+      ]
+    },
+    "low-change": {
+      "rank": 2,
+      "conditions": [
+        "mutation is file edit",
+        "scope is one surface",
+        "risk is low",
+        "verification is obvious and targeted"
+      ],
+      "requiredStates": [
+        "intake",
+        "classification",
+        "budget-gate",
+        "routing",
+        "planning",
+        "execution",
+        "verification",
+        "handoff"
+      ],
+      "requiredFields": [
+        "Task Class",
+        "Risk",
+        "Budget Envelope",
+        "Acceptance Criteria",
+        "Verification",
+        "Handoff"
+      ],
+      "verification": [
+        "targeted check",
+        "npm test unless explicitly limited"
+      ],
+      "forbiddenActions": [
+        "project-agent-runs unless explicitly requested"
+      ]
+    },
+    "medium-change": {
+      "rank": 3,
+      "conditions": [
+        "mutation is file edit",
+        "scope crosses files or governance documentation",
+        "risk is medium"
+      ],
+      "requiredStates": [
+        "intake",
+        "classification",
+        "requirements-discovery",
+        "requirements-reconciliation",
+        "budget-gate",
+        "routing",
+        "planning",
+        "execution",
+        "quality-review",
+        "verification",
+        "repair-loop",
+        "handoff"
+      ],
+      "requiredFields": [
+        "Task Classification",
+        "Risk",
+        "Requirements",
+        "Budget Envelope",
+        "Acceptance Criteria",
+        "Verification Matrix",
+        "Repair Triggers",
+        "Handoff Gate"
+      ],
+      "verification": [
+        "targeted check",
+        "npm test"
+      ],
+      "forbiddenActions": [
+        "overlapping writer agents"
+      ]
+    },
+    "high-change": {
+      "rank": 4,
+      "conditions": [
+        "risk is high",
+        "task touches security, routing, sanitization, virtual filesystem, concurrency, watcher behavior, migration, architecture, contract changes, or agentic-workflow governance"
+      ],
+      "requiredStates": [
+        "intake",
+        "classification",
+        "requirements-discovery",
+        "requirements-reconciliation",
+        "budget-gate",
+        "routing",
+        "planning",
+        "execution",
+        "quality-review",
+        "contract-guardrail-check",
+        "verification",
+        "repair-loop",
+        "handoff"
+      ],
+      "requiredFields": [
+        "Task Classification",
+        "Risk",
+        "Source Documents",
+        "Requirements",
+        "Budget Envelope",
+        "Routing",
+        "Acceptance Criteria",
+        "Execution Steps",
+        "Verification Matrix",
+        "Repair Triggers",
+        "Handoff Gate"
+      ],
+      "verification": [
+        "targeted validator",
+        "governance validation",
+        "npm test"
+      ],
+      "forbiddenActions": [
+        "budget expansion without explicit approval",
+        "overlapping writer agents"
+      ]
+    },
+    "release": {
+      "rank": 5,
+      "conditions": [
+        "task changes version, tag, publish, remote push, or package distribution"
+      ],
+      "requiredStates": [
+        "intake",
+        "classification",
+        "requirements-discovery",
+        "requirements-reconciliation",
+        "budget-gate",
+        "routing",
+        "planning",
+        "execution",
+        "quality-review",
+        "contract-guardrail-check",
+        "verification",
+        "repair-loop",
+        "handoff"
+      ],
+      "requiredFields": [
+        "Task Classification",
+        "Risk",
+        "Source Documents",
+        "Requirements",
+        "Budget Envelope",
+        "Routing",
+        "Acceptance Criteria",
+        "Verification Matrix",
+        "Release Checks",
+        "Manual Push Or Publish Boundary",
+        "Handoff Gate"
+      ],
+      "verification": [
+        "release validator",
+        "npm test"
+      ],
+      "forbiddenActions": [
+        "remote push or publish without explicit user request",
+        "overlapping writer agents"
+      ]
+    }
+  },
+  "escalationRules": [
+    {
+      "id": "touches-agentic-workflow-governance",
+      "when": "task touches agentic-workflow governance",
+      "minimumPath": "high-change"
+    },
+    {
+      "id": "changes-observable-product-behavior",
+      "when": "task changes observable product behavior",
+      "minimumPath": "medium-change"
+    },
+    {
+      "id": "changes-contract-or-adr",
+      "when": "task changes contracts or ADRs",
+      "minimumPath": "high-change"
+    },
+    {
+      "id": "uses-project-agents",
+      "when": "task uses project agents",
+      "minimumPath": "medium-change"
+    },
+    {
+      "id": "no-matching-path",
+      "when": "no path conditions match",
+      "minimumPath": "high-change"
+    }
+  ]
+}
