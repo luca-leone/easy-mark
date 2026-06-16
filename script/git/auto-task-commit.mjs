@@ -159,7 +159,16 @@ export async function autoTaskCommit(options = {}) {
 
   runGitChecked(['commit', '-m', plan.message], { cwd: repositoryRoot, gitRunner });
   const shaResult = runGitChecked(['rev-parse', '--short', 'HEAD'], { cwd: repositoryRoot, gitRunner });
-  return { committed: true, sha: shaResult.stdout.trim(), ...plan };
+  if (plan.versionProposal.tag) {
+    runGitChecked(['tag', plan.versionProposal.tag], { cwd: repositoryRoot, gitRunner });
+  }
+  return {
+    committed: true,
+    tagCreated: plan.versionProposal.tag,
+    tagPushCommand: plan.versionProposal.tag ? `git push origin ${plan.versionProposal.tag}` : undefined,
+    sha: shaResult.stdout.trim(),
+    ...plan
+  };
 }
 
 async function runCli(argumentsList = process.argv.slice(2)) {
@@ -178,9 +187,10 @@ async function runCli(argumentsList = process.argv.slice(2)) {
     console.log('Version proposal: no package version change and no tag for this commit type.');
   } else {
     console.log(`Version proposal: ${result.versionProposal.bump} -> ${result.versionProposal.nextVersion}`);
-    console.log(`Tag proposal: git tag ${result.versionProposal.tag}`);
+    console.log(`Created tag: ${result.tagCreated}`);
+    console.log(`Push tag: ${result.tagPushCommand}`);
   }
-  console.log('Push remains manual: git push origin main --follow-tags');
+  console.log('Push remains manual.');
   return 0;
 }
 

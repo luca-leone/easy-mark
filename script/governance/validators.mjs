@@ -92,6 +92,7 @@ export function validateAutoCommitSkill(skillContents, metadataContents) {
     'npm run task:commit',
     'git add --all',
     'Version And Tag Proposal',
+    'git push origin <tag>',
     'Push remains manual'
   ]) {
     if (!skillContents.includes(phrase)) errors.push(`auto-commit: missing ${phrase}`);

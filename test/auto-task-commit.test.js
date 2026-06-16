@@ -77,3 +77,35 @@ test('auto task commit stages all changes, commits, and reports proposal', async
     ['rev-parse', '--short', 'HEAD']
   ]);
 });
+
+test('auto task commit creates proposed version tags and reports tag push command', async () => {
+  const calls = [];
+  const gitRunner = (argumentsList) => {
+    calls.push(argumentsList);
+    if (argumentsList.join(' ') === 'diff --cached --name-only -z') {
+      return { status: 0, stdout: 'core/web/styles.template.css\0test/styles.test.js\0', stderr: '' };
+    }
+    if (argumentsList.join(' ') === 'rev-parse --short HEAD') {
+      return { status: 0, stdout: 'def5678\n', stderr: '' };
+    }
+    return { status: 0, stdout: '', stderr: '' };
+  };
+
+  const result = await autoTaskCommit({
+    repositoryRoot: '/repo',
+    currentVersion: '1.0.0',
+    message: 'fix(navigation): align markers',
+    gitRunner
+  });
+
+  assert.equal(result.committed, true);
+  assert.equal(result.tagCreated, 'v1.0.1');
+  assert.equal(result.tagPushCommand, 'git push origin v1.0.1');
+  assert.deepEqual(calls, [
+    ['add', '--all'],
+    ['diff', '--cached', '--name-only', '-z'],
+    ['commit', '-m', 'fix(navigation): align markers'],
+    ['rev-parse', '--short', 'HEAD'],
+    ['tag', 'v1.0.1']
+  ]);
+});

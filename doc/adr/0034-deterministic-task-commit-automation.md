@@ -14,24 +14,24 @@ The repository already has Conventional Commit validation, deterministic governa
 
 Add `script/git/auto-task-commit.mjs` and expose it as `npm run task:commit`. The command stages all task changes with `git add --all`, reads the staged file set, derives a Conventional Commit message from deterministic path classes, validates that message with the existing commit-message policy, creates the commit, and prints the resulting short SHA.
 
-The command also proposes versioning and tagging without applying either automatically. It proposes:
+The command also applies local tag creation when version semantics require a tag, while leaving remote publication manual. It proposes and creates:
 
 - major for breaking Conventional Commits;
 - minor for `feat`;
 - patch for `fix` and `build(package)`;
 - no package version change for `docs`, `test`, `chore`, `refactor`, and `ci` by default.
 
-Add `$auto-commit` as the repository skill for task-finalization. It must be used only after verification passes. Push remains manual and human-controlled.
+Add `$auto-commit` as the repository skill for task-finalization. It must be used only after verification passes. The command prints `git push origin <tag>` when it creates a tag. Push remains manual and human-controlled unless explicitly requested.
 
 ## Consequences
 
 - End-of-task commits become repeatable and auditable.
 - Commit messages remain validated by the same policy as human-authored messages.
-- Version and tag guidance is consistent across tasks without forcing releases for documentation or governance-only work.
+- Version and local tag creation are consistent across tasks without forcing releases for documentation or governance-only work.
 - Human control is preserved for push and for any explicit release/tag execution.
 
 ## Alternatives Considered
 
 - Keep every commit manual: rejected because the user requested automatic end-of-task staging and committing.
 - Let the language model freely choose every commit message: rejected because it is less deterministic and harder to test.
-- Automatically run `npm version`, create tags, and push: rejected because release timing and remote publication remain human decisions.
+- Automatically run `npm version` and push: rejected because package version mutation and remote publication remain human decisions.

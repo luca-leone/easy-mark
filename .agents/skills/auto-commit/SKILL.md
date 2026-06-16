@@ -1,6 +1,6 @@
 ---
 name: auto-commit
-description: Deterministically stage all completed task changes, create a validated Conventional Commit, and report version/tag proposals while leaving push under human control. Use at the end of repository tasks after verification has passed.
+description: Deterministically stage all completed task changes, create a validated Conventional Commit, create the proposed local version tag when applicable, and report the tag push command while leaving push under human control. Use at the end of repository tasks after verification has passed.
 ---
 
 # Auto Commit
@@ -11,12 +11,12 @@ Use this skill at the end of a completed repository task after `$quality-gate` a
 
 1. Confirm verification status is known.
 2. Run `npm run task:commit`.
-3. Report the commit SHA, subject, version proposal, and tag proposal printed by the script.
-4. Do not push. The human remains responsible for `git push`.
+3. Report the commit SHA, subject, version proposal, created tag, and tag push command printed by the script.
+4. Do not push unless the user explicitly requests it. The human normally remains responsible for `git push`.
 
 ## Determinism
 
-The command stages with `git add --all`, derives a Conventional Commit message from the changed path classes, validates the message with repository policy, commits with that exact message, and prints deterministic version/tag guidance.
+The command stages with `git add --all`, derives a Conventional Commit message from the changed path classes, validates the message with repository policy, commits with that exact message, creates the proposed local tag when a version bump applies, and prints deterministic version/tag guidance.
 
 If the generated message does not describe the task well enough, run:
 
@@ -28,10 +28,10 @@ The override must still validate through the repository commit-message policy.
 
 ## Version And Tag Proposal
 
-- `feat`: propose a minor version and tag.
-- `fix`: propose a patch version and tag.
-- `type!` or `BREAKING CHANGE:`: propose a major version and tag.
-- `build(package)`: propose a patch version and tag.
+- `feat`: propose a minor version and create the local tag.
+- `fix`: propose a patch version and create the local tag.
+- `type!` or `BREAKING CHANGE:`: propose a major version and create the local tag.
+- `build(package)`: propose a patch version and create the local tag.
 - `docs`, `test`, `chore`, `refactor`, and `ci`: propose no package version change by default.
 
-Push remains manual.
+The script prints `git push origin <tag>` for tag publication. Push remains manual unless explicitly requested.
