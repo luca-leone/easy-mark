@@ -46,6 +46,10 @@
 
 - Markdown supports CommonMark and GitHub Flavored Markdown.
 - Raw HTML is parsed and sanitized before serving.
+- Fenced `mermaid` code blocks render as Mermaid diagrams by default through the package-owned local Mermaid runtime. Mermaid rendering uses `startOnLoad: false`, `securityLevel: strict`, and `htmlLabels: false`; no Mermaid CDN or user-provided JavaScript is loaded.
+- Fenced `chart` and `chartjs` code blocks render as Chart.js charts from JSON configuration. Supported chart types are `bar`, `line`, `pie`, `doughnut`, `donut`, `polarArea`, `radar`, `bubble`, and `scatter`; `donut` is normalized to Chart.js `doughnut`.
+- Chart blocks must contain JSON objects with data and at least one dataset. JavaScript functions, callbacks, plugins, prototype-pollution keys, unknown chart types, and invalid JSON are rejected at render time with text-only errors.
+- Mermaid and chart source text is stored only as sanitized element attributes in generated fragments and is not included in document search text. Rendered diagrams and charts expose an image role label derived from the visual title or a safe fallback.
 - `compileMarkdown` derives collapsed search text only from sanitized HAST text nodes after sanitization and before stringification. Deterministic separators preserve visible block, table-cell, and line-break boundaries; URLs, attributes, comments, internal paths, raw Markdown, serialized HTML, and removed dangerous content are excluded.
 - Headings receive stable `doc-`-prefixed IDs, including Unicode characters.
 - Relative links ending in `.md` are rewritten to extensionless SPA routes while preserving query strings and fragments.
@@ -104,6 +108,7 @@
 - Server, SPA, navigation, and PDF route lookup use the same segment encoding and normalized route-key semantics without double encoding.
 - Same-origin relative asset URLs, including document links, image `src`, and `srcset` candidates, are resolved against the source Markdown directory before printing. External and data URLs remain unchanged.
 - Export waits for local fonts and document images to finish loading or decoding before opening the native print dialog or writing the CLI PDF.
+- Export renders Mermaid diagrams and Chart.js charts before waiting for generated visual images and before opening the print dialog or writing the CLI PDF. Chart animations are disabled for deterministic export.
 - The print-only container is removed from `aria-hidden` while export is active and restored during cleanup.
 - Print CSS replaces the SPA only while `body.export-printing` is active; ordinary browser printing through Ctrl/Cmd+P prints the current SPA rather than an empty export container.
 - Aggregate export forces a complete light print palette and `color-scheme: light` within `body.export-printing`, independently of the active application theme.

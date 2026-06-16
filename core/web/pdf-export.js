@@ -1,4 +1,5 @@
 import { normalizeRoutePath } from './routes.js';
+import { cleanupVisuals, renderVisuals as renderDocumentVisuals } from './visuals.js';
 
 function decodeFragment(fragment) {
   try {
@@ -249,7 +250,8 @@ export function initializePdfExport({
   fetchExport = fetch,
   documentObject = document,
   windowObject = window,
-  print = () => windowObject.print()
+  print = () => windowObject.print(),
+  renderVisuals = renderDocumentVisuals
 }) {
   let cleanup = () => {};
 
@@ -271,11 +273,13 @@ export function initializePdfExport({
       status.textContent = 'Documento pronto. Usa il dialogo di stampa per salvarlo come PDF.';
       cleanup = () => {
         windowObject.removeEventListener('afterprint', cleanup);
+        cleanupVisuals(container);
         setExportLifecycle(documentObject.body, container, false);
         container.replaceChildren();
         cleanup = () => {};
       };
       if (documentObject.fonts?.ready) await documentObject.fonts.ready;
+      await renderVisuals(container, { documentObject, print: true });
       await waitForExportImages(container);
       windowObject.addEventListener('afterprint', cleanup, { once: true });
       print();

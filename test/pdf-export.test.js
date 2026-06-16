@@ -337,6 +337,7 @@ test('initializePdfExport completa fetch, build, print e cleanup afterprint', as
   });
   const fetchCalls = [];
   let printCalls = 0;
+  let visualRenderCalls = 0;
 
   initializePdfExport({
     button,
@@ -347,6 +348,12 @@ test('initializePdfExport completa fetch, build, print e cleanup afterprint', as
     fetchExport(url, options) {
       fetchCalls.push({ url, options });
       return fetchPending;
+    },
+    async renderVisuals(target, options) {
+      visualRenderCalls += 1;
+      assert.equal(target, container);
+      assert.equal(options.documentObject, documentObject);
+      assert.equal(options.print, true);
     },
     print() {
       printCalls += 1;
@@ -378,6 +385,7 @@ test('initializePdfExport completa fetch, build, print e cleanup afterprint', as
 
   assert.deepEqual(fetchCalls, [{ url: '/__export', options: { headers: { Accept: 'application/json' } } }]);
   assert.equal(printCalls, 1);
+  assert.equal(visualRenderCalls, 1);
   assert.equal(button.disabled, false);
   assert.equal(button.hasAttribute('aria-busy'), false);
   assert.equal(button.textContent, 'Esporta PDF');

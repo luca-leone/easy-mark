@@ -79,3 +79,26 @@ test('serializza route canonica e alias per segmenti sorgente speciali', async (
   assert.equal(result.route, '/guide%20%231%3F/caf%C3%A9-100');
   assert.equal(result.sourceRoute, '/guide%20%231%3F/source%20%25');
 });
+
+test('serializza fence Mermaid e Chart.js come visual sicuri senza indicizzarne il sorgente', async () => {
+  const markdown = [
+    '```mermaid',
+    'flowchart TD',
+    '  A --> B',
+    '```',
+    '',
+    '```chart',
+    '{"type":"donut","title":"Revenue","data":{"labels":["Core"],"datasets":[{"data":[1]}]}}',
+    '```'
+  ].join('\n');
+  const result = await compileMarkdown(markdown, 'visuals.md');
+
+  assert.match(result.html, /class="visual visual--mermaid"/);
+  assert.match(result.html, /data-visual-kind="mermaid"/);
+  assert.match(result.html, /data-visual-source="flowchart TD\s+A --> B"/);
+  assert.match(result.html, /class="visual visual--chart"/);
+  assert.match(result.html, /data-visual-title="Revenue"/);
+  assert.match(result.html, /role="img" aria-label="Revenue"/);
+  assert.equal(result.searchText, 'Mermaid diagram Revenue');
+  assert.doesNotMatch(result.searchText, /flowchart|datasets|Core/);
+});

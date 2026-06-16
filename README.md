@@ -34,6 +34,36 @@ The visible title uses this precedence: `manifest.json` in the content directory
 
 The `serve` command does not write generated HTML to disk. The `export` command writes only the requested PDF and requires a Playwright/Chromium adapter to be available in the environment.
 
+## Diagrams and Charts
+
+Mermaid diagrams are supported through fenced Markdown blocks:
+
+````md
+```mermaid
+flowchart TD
+  A --> B
+```
+````
+
+Chart.js charts are supported through JSON fenced blocks:
+
+````md
+```chart
+{
+  "type": "donut",
+  "title": "Revenue by product",
+  "data": {
+    "labels": ["Core", "Add-ons", "Services"],
+    "datasets": [
+      { "label": "Revenue", "data": [62, 23, 15] }
+    ]
+  }
+}
+```
+````
+
+The chart block accepts `bar`, `line`, `pie`, `doughnut`, `donut`, `polarArea`, `radar`, `bubble`, and `scatter`. `donut` is a friendly alias for Chart.js `doughnut`. Chart configuration must be JSON, not JavaScript, so callbacks and custom plugins are not accepted.
+
 ## Commit Standards
 
 The repository uses Conventional Commits and includes a versioned `commit-msg` hook. After cloning, install the dependencies and configure the local hook:

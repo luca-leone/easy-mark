@@ -153,6 +153,12 @@ a { color: var(--link); text-underline-offset: 0.16em; }
 .document table { width: 100%; border-collapse: collapse; }
 .document th, .document td { padding: 0.7rem 0.8rem; border: 1px solid var(--border); text-align: left; }
 .document th { background: var(--surface-muted); font-weight: 600; }
+.visual { width: min(100%, 52rem); margin: 2rem 0; }
+.visual__stage { min-height: 18rem; display: grid; place-items: center; padding: 1rem; overflow: hidden; border: 1px solid var(--border); border-radius: 0.75rem; background: var(--surface); }
+.visual__stage canvas { width: 100% !important; height: 18rem !important; }
+.visual__image { max-width: 100%; height: auto; display: block; }
+.visual__caption { margin-top: 0.45rem; color: var(--text-muted); font-size: 0.9rem; text-align: center; }
+.visual__error { margin: 0; color: var(--inline-code); font-size: 0.95rem; text-align: center; }
 .print-export { display: none; }
 
 .search-overlay { position: fixed; z-index: 100; inset: 0; display: grid; place-items: start center; padding: min(10vh, 6rem) 1rem 1rem; }
@@ -241,4 +247,7 @@ a { color: var(--link); text-underline-offset: 0.16em; }
   body.export-printing .print-export a { color: inherit; }
   body.export-printing .print-export pre { white-space: pre-wrap; overflow-wrap: anywhere; }
   body.export-printing .print-export img, body.export-printing .print-export table { max-width: 100%; }
+  body.export-printing .visual { break-inside: avoid; width: 100%; }
+  body.export-printing .visual__stage { min-height: 14rem; }
+  body.export-printing .visual__stage canvas { height: 14rem !important; }
 }

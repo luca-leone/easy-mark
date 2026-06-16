@@ -11,6 +11,7 @@ import { visit } from 'unist-util-visit';
 import { routeFromSegments } from '../web/routes.js';
 
 const headingIdPrefix = 'doc-';
+const visualLanguages = new Set(['mermaid', 'chart', 'chartjs']);
 const searchSeparatorTagNames = new Set([
   'address', 'article', 'aside', 'blockquote', 'br', 'caption', 'dd', 'details', 'div', 'dl', 'dt',
   'fieldset', 'figcaption', 'figure', 'footer', 'form', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
@@ -20,17 +21,27 @@ const searchSeparatorTagNames = new Set([
 const schema = {
   ...defaultSchema,
   clobberPrefix: headingIdPrefix,
-  tagNames: [...defaultSchema.tagNames, 'label'],
+  tagNames: [...defaultSchema.tagNames, 'figure', 'figcaption', 'label'],
   attributes: {
     ...defaultSchema.attributes,
     '*': [
       ...(defaultSchema.attributes?.['*'] ?? []),
+      'ariaLabel',
       'ariaControls',
       'ariaDescribedBy',
       'ariaLabelledBy',
       'ariaOwns'
     ],
     a: [...(defaultSchema.attributes?.a ?? []), 'ariaCurrent'],
+    div: [...(defaultSchema.attributes?.div ?? []), 'className', 'role'],
+    figcaption: [...(defaultSchema.attributes?.figcaption ?? []), 'className'],
+    figure: [
+      ...(defaultSchema.attributes?.figure ?? []),
+      'className',
+      'dataVisualKind',
+      'dataVisualSource',
+      'dataVisualTitle'
+    ],
     h1: [...(defaultSchema.attributes?.h1 ?? []), 'id'],
     h2: [...(defaultSchema.attributes?.h2 ?? []), 'id'],
     h3: [...(defaultSchema.attributes?.h3 ?? []), 'id'],
@@ -43,6 +54,51 @@ const schema = {
 function textContent(node) {
   if (typeof node.value === 'string') return node.value;
   return (node.children ?? []).map(textContent).join('');
+}
+
+function escapeHtml(value) {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;');
+}
+
+function escapeAttribute(value) {
+  return escapeHtml(value).replaceAll('\n', '&#10;');
+}
+
+function chartTitle(source) {
+  try {
+    const parsed = JSON.parse(source);
+    return typeof parsed.title === 'string' && parsed.title.trim() ? parsed.title.trim() : 'Chart';
+  } catch {
+    return 'Chart';
+  }
+}
+
+function visualTitle(kind, source) {
+  return kind === 'chart' ? chartTitle(source) : 'Mermaid diagram';
+}
+
+function transformVisualCodeBlocks() {
+  return (tree) => {
+    visit(tree, 'code', (node, index, parent) => {
+      const language = String(node.lang ?? '').toLowerCase();
+      if (!parent || !visualLanguages.has(language)) return;
+      const kind = language === 'mermaid' ? 'mermaid' : 'chart';
+      const title = visualTitle(kind, node.value);
+      parent.children[index] = {
+        type: 'html',
+        value: [
+          `<figure class="visual visual--${kind}" data-visual-kind="${kind}" data-visual-title="${escapeAttribute(title)}" data-visual-source="${escapeAttribute(node.value)}">`,
+          `<div class="visual__stage" role="img" aria-label="${escapeAttribute(title)}"></div>`,
+          `<figcaption class="visual__caption">${escapeHtml(title)}</figcaption>`,
+          '</figure>'
+        ].join('')
+      };
+    });
+  };
 }
 
 function collectSanitizedSearchText() {
@@ -127,6 +183,7 @@ export async function compileMarkdown(markdown, relativePath) {
     .use(remarkParse)
     .use(remarkGfm)
     .use(collectMetadataAndRewriteLinks, { relativePath, headings })
+    .use(transformVisualCodeBlocks)
     .use(remarkRehype, { allowDangerousHtml: true })
     .use(rehypeRaw)
     .use(rehypeSanitize, schema)

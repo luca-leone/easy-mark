@@ -6,6 +6,7 @@ import { initializeSidebar } from './sidebar.js';
 import { initializeSearch } from './search.js';
 import { initializeTheme } from './theme.js';
 import { formatPageTitle } from './page-title.js';
+import { cleanupVisuals, renderVisuals } from './visuals.js';
 
 const content = document.querySelector('#content');
 const manifest = JSON.parse(document.querySelector('#document-manifest').textContent);
@@ -53,20 +54,26 @@ const searchController = initializeSearch({
     render(route).catch(showError);
   }
 });
+let renderToken = 0;
 
 function currentRoute() {
   return findDocument(manifest, window.location.pathname)?.route ?? manifest[0]?.route;
 }
 
 async function render(route, { push = false } = {}) {
+  const token = renderToken += 1;
   if (!route) {
+    cleanupVisuals(content);
     content.innerHTML = '<h1>Nessun documento disponibile</h1>';
     return;
   }
 
   const response = await fetch(`/__content${route}`);
   if (!response.ok) throw new Error(`Impossibile caricare ${route}`);
+  cleanupVisuals(content);
   content.innerHTML = await response.text();
+  await renderVisuals(content);
+  if (token !== renderToken) return;
 
   const targetUrl = `${route}${window.location.hash}`;
   if (push) history.pushState({}, '', targetUrl);

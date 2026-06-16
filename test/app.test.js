@@ -73,6 +73,14 @@ test('serve app shell, frammenti e asset dalla memoria', async (context) => {
   assert.equal(searchModuleResponse.status, 200);
   assert.match(await searchModuleResponse.text(), /export function initializeSearch/);
 
+  const mermaidVendorResponse = await fetch(`${baseUrl}/vendor/mermaid/mermaid.min.js`);
+  assert.equal(mermaidVendorResponse.status, 200);
+  assert.match(mermaidVendorResponse.headers.get('content-type'), /javascript/);
+
+  const chartVendorResponse = await fetch(`${baseUrl}/vendor/chart.js/chart.umd.min.js`);
+  assert.equal(chartVendorResponse.status, 200);
+  assert.match(chartVendorResponse.headers.get('content-type'), /javascript/);
+
   const logoResponse = await fetch(`${baseUrl}/logo.svg`);
   assert.equal(logoResponse.status, 200);
   assert.match(logoResponse.headers.get('content-type'), /image\/svg\+xml/);

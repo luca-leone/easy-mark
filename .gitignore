@@ -4,3 +4,4 @@ coverage/
 reports/*
 !reports/README.md
 screenshots/*
+NOTES.md
