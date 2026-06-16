@@ -1,0 +1,6 @@
+interface:
+  display_name: "Orchestrate Request"
+  short_description: "Route deterministic repo workflows"
+  default_prompt: "Use $orchestrate-request to classify this repository task, reconcile requirements, choose routing, and define acceptance criteria before execution."
+policy:
+  allow_implicit_invocation: false

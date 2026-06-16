@@ -1,0 +1,6 @@
+interface:
+  display_name: "Quality Gate"
+  short_description: "Gate repo quality and repair loops"
+  default_prompt: "Use $quality-gate to review this repository change against acceptance criteria, governance, tests, and repair triggers before handoff."
+policy:
+  allow_implicit_invocation: false

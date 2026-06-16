@@ -17,6 +17,10 @@ export const REQUIRED_FILES = Object.freeze([
   '.agents/skills/context-budget-monitor/agents/openai.yaml',
   '.agents/skills/generate-commit/SKILL.md',
   '.agents/skills/generate-commit/agents/openai.yaml',
+  '.agents/skills/orchestrate-request/SKILL.md',
+  '.agents/skills/orchestrate-request/agents/openai.yaml',
+  '.agents/skills/quality-gate/SKILL.md',
+  '.agents/skills/quality-gate/agents/openai.yaml',
   'hooks/commit-msg',
   'script/git/validate-commit-message.mjs',
   'script/git/install-hooks.mjs'

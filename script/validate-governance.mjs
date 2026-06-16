@@ -15,6 +15,9 @@ import {
   validateContextBudgetSkill,
   validateDecisionMemory,
   validateGenerateCommitSkill,
+  validateAgenticWorkflowGuide,
+  validateOrchestrateRequestSkill,
+  validateQualityGateSkill,
   validateWorkflowScriptPaths
 } from './governance/validators.mjs';
 
@@ -92,6 +95,13 @@ export async function validateGovernance(rootDirectory) {
   }
 
   try {
+    const agentsGuide = await fs.readFile(path.join(root, 'AGENTS.md'), 'utf8');
+    errors.push(...validateAgenticWorkflowGuide(agentsGuide));
+  } catch {
+    // Required-file diagnostics cover this path.
+  }
+
+  try {
     const adrDirectory = path.join(root, 'doc', 'adr');
     const adrFiles = (await fs.readdir(adrDirectory))
       .filter((fileName) => fileName !== 'README.md' && fileName.endsWith('.md'))
@@ -121,6 +131,18 @@ export async function validateGovernance(rootDirectory) {
     '.agents/skills/generate-commit/SKILL.md',
     '.agents/skills/generate-commit/agents/openai.yaml',
     validateGenerateCommitSkill
+  ));
+  errors.push(...await readPair(
+    root,
+    '.agents/skills/orchestrate-request/SKILL.md',
+    '.agents/skills/orchestrate-request/agents/openai.yaml',
+    validateOrchestrateRequestSkill
+  ));
+  errors.push(...await readPair(
+    root,
+    '.agents/skills/quality-gate/SKILL.md',
+    '.agents/skills/quality-gate/agents/openai.yaml',
+    validateQualityGateSkill
   ));
 
   try {
@@ -195,5 +217,8 @@ export {
   validateContextBudgetSkill,
   validateDecisionMemory,
   validateGenerateCommitSkill,
+  validateAgenticWorkflowGuide,
+  validateOrchestrateRequestSkill,
+  validateQualityGateSkill,
   validateWorkflowScriptPaths
 } from './governance/validators.mjs';

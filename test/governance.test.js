@@ -8,12 +8,15 @@ import {
   validateAdrDocument,
   validateAgentDocument,
   validateAgentEntries,
+  validateAgenticWorkflowGuide,
   validateCodexConfig,
   validateContextBudgetSkill,
   validateDecisionMemory,
   validateGenerateCommitSkill,
   validateGovernance,
   validateInternalLinks,
+  validateOrchestrateRequestSkill,
+  validateQualityGateSkill,
   validateWorkflowScriptPaths
 } from '../script/validate-governance.mjs';
 
@@ -82,7 +85,7 @@ model = "gpt-5.5"
 model_reasoning_effort = "high"
 sandbox_mode = "read-only"
 developer_instructions = """
-Inspect and plan without editing.
+Inspect and plan without editing. Follow ADR-0033.
 """
 `;
 
@@ -100,6 +103,57 @@ test('planner workflow requires user approval before execution', async () => {
 
   assert.match(guide, /define the plan, get explicit user approval for that plan, then execute/);
   assert.match(planner, /define the plan, wait for explicit user approval of that plan, and only then allow execution/);
+});
+
+test('requires deterministic workflow state machine, routing, repair, and handoff gates', async () => {
+  const rootDirectory = path.resolve(import.meta.dirname, '..');
+  const guide = await fs.readFile(path.join(rootDirectory, 'AGENTS.md'), 'utf8');
+
+  assert.deepEqual(validateAgenticWorkflowGuide(guide), []);
+  assert.ok(validateAgenticWorkflowGuide(guide.replace('Repair Loop', 'Fixing')).some((error) =>
+    error.includes('Repair Loop')
+  ));
+});
+
+test('validates deterministic orchestration and quality gate skills', async () => {
+  const rootDirectory = path.resolve(import.meta.dirname, '..');
+  const orchestrateSkill = await fs.readFile(
+    path.join(rootDirectory, '.agents', 'skills', 'orchestrate-request', 'SKILL.md'),
+    'utf8'
+  );
+  const orchestrateMetadata = await fs.readFile(
+    path.join(rootDirectory, '.agents', 'skills', 'orchestrate-request', 'agents', 'openai.yaml'),
+    'utf8'
+  );
+  const qualitySkill = await fs.readFile(
+    path.join(rootDirectory, '.agents', 'skills', 'quality-gate', 'SKILL.md'),
+    'utf8'
+  );
+  const qualityMetadata = await fs.readFile(
+    path.join(rootDirectory, '.agents', 'skills', 'quality-gate', 'agents', 'openai.yaml'),
+    'utf8'
+  );
+
+  assert.deepEqual(validateOrchestrateRequestSkill(orchestrateSkill, orchestrateMetadata), []);
+  assert.deepEqual(validateQualityGateSkill(qualitySkill, qualityMetadata), []);
+  assert.ok(validateOrchestrateRequestSkill(
+    orchestrateSkill.replace('Verification Matrix', 'Checks'),
+    orchestrateMetadata
+  ).some((error) => error.includes('Verification Matrix')));
+  assert.ok(validateQualityGateSkill(
+    qualitySkill.replace('Repair Loop', 'Fix Loop'),
+    qualityMetadata
+  ).some((error) => error.includes('Repair Loop')));
+});
+
+test('agent roles reference the deterministic workflow contract', async () => {
+  const rootDirectory = path.resolve(import.meta.dirname, '..');
+  for (const agentName of ['planner', 'implementer', 'senior-implementer', 'reviewer', 'verifier']) {
+    const fileName = `${agentName}.toml`;
+    const contents = await fs.readFile(path.join(rootDirectory, '.codex', 'agents', fileName), 'utf8');
+    assert.deepEqual(validateAgentDocument(fileName, contents), []);
+    assert.match(contents, /ADR-0033/);
+  }
 });
 
 test('supports Node.js 22 and later while retaining the Node.js 22 baseline', async () => {

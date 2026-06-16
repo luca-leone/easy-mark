@@ -81,6 +81,86 @@ export function validateGenerateCommitSkill(skillContents, metadataContents) {
   return errors;
 }
 
+export function validateAgenticWorkflowGuide(contents) {
+  const errors = [];
+  const requiredPhrases = [
+    'Deterministic Agentic Workflow',
+    'intake',
+    'classification',
+    'requirements-discovery',
+    'requirements-reconciliation',
+    'routing',
+    'planning',
+    'execution',
+    'quality-review',
+    'contract-guardrail-check',
+    'verification',
+    'repair-loop',
+    'handoff',
+    'Requirements Discovery And Reconciliation Loop',
+    'Routing Loop',
+    'Quality, Contract, And Guardrail Loop',
+    'Repair Loop',
+    'Handoff Loop',
+    '$orchestrate-request',
+    '$quality-gate',
+    'ADR-0033'
+  ];
+  for (const phrase of requiredPhrases) {
+    if (!contents.includes(phrase)) errors.push(`AGENTS.md: missing deterministic workflow phrase ${phrase}`);
+  }
+  return errors;
+}
+
+export function validateOrchestrateRequestSkill(skillContents, metadataContents) {
+  const errors = [];
+  const frontmatter = skillContents.match(/^---\n([\s\S]*?)\n---\n/);
+
+  if (!frontmatter) return ['orchestrate-request: missing YAML frontmatter'];
+  if (!/^name: orchestrate-request$/m.test(frontmatter[1])) errors.push('orchestrate-request: invalid or missing name');
+  if (!/^description: .+/m.test(frontmatter[1])) errors.push('orchestrate-request: missing description');
+  for (const phrase of [
+    'State Machine',
+    'requirements-discovery',
+    'requirements-reconciliation',
+    'Acceptance Criteria',
+    'Verification Matrix',
+    'Repair Triggers',
+    'planner',
+    'senior-implementer'
+  ]) {
+    if (!skillContents.includes(phrase)) errors.push(`orchestrate-request: missing ${phrase}`);
+  }
+  if (!/allow_implicit_invocation:\s*false/.test(metadataContents)) {
+    errors.push('orchestrate-request: implicit invocation must be disabled');
+  }
+  return errors;
+}
+
+export function validateQualityGateSkill(skillContents, metadataContents) {
+  const errors = [];
+  const frontmatter = skillContents.match(/^---\n([\s\S]*?)\n---\n/);
+
+  if (!frontmatter) return ['quality-gate: missing YAML frontmatter'];
+  if (!/^name: quality-gate$/m.test(frontmatter[1])) errors.push('quality-gate: invalid or missing name');
+  if (!/^description: .+/m.test(frontmatter[1])) errors.push('quality-gate: missing description');
+  for (const phrase of [
+    'Review Loop',
+    'Contract And Guardrail Check',
+    'Repair Loop',
+    'Handoff Gate',
+    'npm test',
+    'memory/decisions.md',
+    'contracts/application-contract.md'
+  ]) {
+    if (!skillContents.includes(phrase)) errors.push(`quality-gate: missing ${phrase}`);
+  }
+  if (!/allow_implicit_invocation:\s*false/.test(metadataContents)) {
+    errors.push('quality-gate: implicit invocation must be disabled');
+  }
+  return errors;
+}
+
 export function validateCodexConfig(contents) {
   const errors = [];
   if (!/^\[agents\]$/m.test(contents)) errors.push('.codex/config.toml: missing [agents] section');
@@ -114,6 +194,9 @@ export function validateAgentDocument(fileName, contents) {
   }
   if (!new RegExp(`^sandbox_mode\\s*=\\s*"${expected.sandbox}"$`, 'm').test(contents)) {
     errors.push(`.codex/agents/${fileName}: sandbox_mode must be ${expected.sandbox}`);
+  }
+  if (!contents.includes('ADR-0033')) {
+    errors.push(`.codex/agents/${fileName}: must reference ADR-0033 deterministic workflow`);
   }
   return errors;
 }

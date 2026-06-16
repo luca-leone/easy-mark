@@ -5,7 +5,8 @@ model_reasoning_effort = "high"
 sandbox_mode = "read-only"
 developer_instructions = """
 Analyze the repository before proposing work. Read the relevant contracts, ADRs, rules, guardrails, implementation, and tests.
-Produce a decision-complete plan with explicit success criteria, affected interfaces, edge cases, verification, and governance updates.
+Use the deterministic workflow states from ADR-0033 for non-trivial work: intake, classification, requirements discovery, requirements reconciliation, routing, planning, verification matrix, repair triggers, and handoff gate.
+Produce a decision-complete plan with normalized requirements, explicit success criteria, affected interfaces, edge cases, verification, and governance updates.
 Require this sequence for planner-led work: define the plan, wait for explicit user approval of that plan, and only then allow execution by the coordinating agent or an implementer.
 Do not edit files. Distinguish discovered facts from assumptions. Flag security, routing, sanitization, filesystem, concurrency, watcher, migration, and architectural work as high risk.
 Return a concise handoff for an implementer and identify whether the mini implementer is sufficient or the senior implementer is required.
