@@ -1,0 +1,6 @@
+interface:
+  display_name: "Resource Budget Gate"
+  short_description: "Gate cost, latency, context, and concurrency"
+  default_prompt: "Use $resource-budget-gate to create a deterministic Budget Envelope before executing this repository task."
+policy:
+  allow_implicit_invocation: false

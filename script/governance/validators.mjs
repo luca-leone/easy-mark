@@ -108,8 +108,10 @@ export function validateAgenticWorkflowGuide(contents) {
   const requiredPhrases = [
     'Deterministic Agentic Workflow',
     'rules/agentic-workflow.md',
+    'rules/resource-budgets.md',
     '$orchestrate-request',
     '$quality-gate',
+    '$resource-budget-gate',
     'ADR-0033'
   ];
   for (const phrase of requiredPhrases) {
@@ -141,6 +143,7 @@ export function validateAgenticWorkflowPolicy(contents) {
     'classification',
     'requirements-discovery',
     'requirements-reconciliation',
+    'budget-gate',
     'routing',
     'planning',
     'execution',
@@ -150,6 +153,7 @@ export function validateAgenticWorkflowPolicy(contents) {
     'repair-loop',
     'handoff',
     'Requirements Discovery And Reconciliation Loop',
+    'Budget Gate And Runtime Budget Loop',
     'Routing Loop',
     'Quality, Contract, And Guardrail Loop',
     'Repair Loop',
@@ -157,11 +161,45 @@ export function validateAgenticWorkflowPolicy(contents) {
     'Execution Template',
     '$orchestrate-request',
     '$quality-gate',
+    '$resource-budget-gate',
+    'Budget Envelope',
     'ADR-0033'
   ];
   for (const phrase of requiredPhrases) {
     if (!contents.includes(phrase)) {
       errors.push(`rules/agentic-workflow.md: missing deterministic workflow phrase ${phrase}`);
+    }
+  }
+  return errors;
+}
+
+export function validateResourceBudgetPolicy(contents) {
+  const errors = [];
+  const requiredPhrases = [
+    'Resource Budgets',
+    'Budget Envelope',
+    'Task Class',
+    'Context Budget',
+    'Max Concurrent Runs',
+    'Max Write Agents',
+    'Max Read Agents',
+    'Execution Budget',
+    'Provider Budget',
+    'Runtime Budget Loop',
+    'Budget Repair Loop',
+    'Handoff Report',
+    '50%',
+    '30%',
+    '15%',
+    'max_threads = 4',
+    'max_depth = 1',
+    'Do not claim monetary cost',
+    'three consecutive attempts',
+    'ADR-0035'
+  ];
+  for (const phrase of requiredPhrases) {
+    if (!contents.includes(phrase)) {
+      errors.push(`rules/resource-budgets.md: missing deterministic budget phrase ${phrase}`);
     }
   }
   return errors;
@@ -200,6 +238,9 @@ export function validateOrchestrateRequestSkill(skillContents, metadataContents)
     'State Machine',
     'requirements-discovery',
     'requirements-reconciliation',
+    'budget-gate',
+    '$resource-budget-gate',
+    'Budget Envelope',
     'Acceptance Criteria',
     'Verification Matrix',
     'Repair Triggers',
@@ -210,6 +251,38 @@ export function validateOrchestrateRequestSkill(skillContents, metadataContents)
   }
   if (!/allow_implicit_invocation:\s*false/.test(metadataContents)) {
     errors.push('orchestrate-request: implicit invocation must be disabled');
+  }
+  return errors;
+}
+
+export function validateResourceBudgetGateSkill(skillContents, metadataContents) {
+  const errors = [];
+  const frontmatter = skillContents.match(/^---\n([\s\S]*?)\n---\n/);
+
+  if (!frontmatter) return ['resource-budget-gate: missing YAML frontmatter'];
+  if (!/^name: resource-budget-gate$/m.test(frontmatter[1])) errors.push('resource-budget-gate: invalid or missing name');
+  if (!/^description: .+/m.test(frontmatter[1])) errors.push('resource-budget-gate: missing description');
+  for (const phrase of [
+    'Budget Envelope',
+    'Max Concurrent Runs',
+    'Max Write Agents',
+    'Max Read Agents',
+    'Execution Budget',
+    'Provider Budget',
+    'Runtime Budget Loop',
+    'Repair Triggers',
+    '50%',
+    '30%',
+    '15%',
+    'max_threads = 4',
+    'max_depth = 1',
+    'Do not claim monetary cost',
+    'three consecutive attempts'
+  ]) {
+    if (!skillContents.includes(phrase)) errors.push(`resource-budget-gate: missing ${phrase}`);
+  }
+  if (!/allow_implicit_invocation:\s*false/.test(metadataContents)) {
+    errors.push('resource-budget-gate: implicit invocation must be disabled');
   }
   return errors;
 }
@@ -274,6 +347,9 @@ export function validateAgentDocument(fileName, contents) {
   }
   if (!contents.includes('ADR-0033')) {
     errors.push(`.codex/agents/${fileName}: must reference ADR-0033 deterministic workflow`);
+  }
+  if (!contents.includes('ADR-0035') || !contents.includes('Budget Envelope')) {
+    errors.push(`.codex/agents/${fileName}: must reference ADR-0035 Budget Envelope policy`);
   }
   return errors;
 }

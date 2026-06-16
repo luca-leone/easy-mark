@@ -16,6 +16,7 @@ Collect:
 - changed files from `git status --short`;
 - staged and unstaged diffs relevant to the task;
 - verification commands already run;
+- declared Budget Envelope and budget handoff report;
 - reviewer or verifier findings, when present.
 
 ## Review Loop
@@ -31,7 +32,8 @@ Check each item deterministically:
 7. Tests cover fixed defects and changed behavior.
 8. Required commands have passed, including `npm test` for implementation changes.
 9. Long-running processes are stopped or intentionally handed off.
-10. Final response states skipped checks and residual risks.
+10. Budget class, skills, project agents, verification commands, approvals, and budget violations are reported.
+11. Final response states skipped checks and residual risks.
 
 ## Contract And Guardrail Check
 
@@ -57,5 +59,6 @@ Final response may proceed only when:
 - task objective is satisfied or blocked;
 - verification state is known;
 - governance updates are complete;
+- budget handoff report is complete;
 - no known contract or guardrail violation remains;
 - changed files and risks can be summarized accurately.

@@ -14,14 +14,15 @@ Non-trivial work preserves this state order for every applicable state:
 2. `classification`
 3. `requirements-discovery`
 4. `requirements-reconciliation`
-5. `routing`
-6. `planning`
-7. `execution`
-8. `quality-review`
-9. `contract-guardrail-check`
-10. `verification`
-11. `repair-loop`
-12. `handoff`
+5. `budget-gate`
+6. `routing`
+7. `planning`
+8. `execution`
+9. `quality-review`
+10. `contract-guardrail-check`
+11. `verification`
+12. `repair-loop`
+13. `handoff`
 
 Every state produces output that can be inspected. The next state begins only after the previous state satisfies its exit criteria.
 
@@ -53,6 +54,20 @@ Loop until:
 - conflicts are resolved by the source-of-truth order or reported as blocking;
 - acceptance criteria are written for every required behavioral or governance outcome;
 - each acceptance criterion has a planned verification command or inspection.
+
+## Budget Gate And Runtime Budget Loop
+
+Use `$resource-budget-gate` for non-trivial work before routing, planning, or execution. Build a `Budget Envelope` from [rules/resource-budgets.md](resource-budgets.md) after requirements are reconciled and before project agents, skills, or long-running commands are selected.
+
+During execution, repeat the runtime budget loop at phase boundaries and after unusually large tool output. Continue only when the next phase fits the declared envelope. Stop and request explicit approval before exceeding context, concurrency, duration, or provider budgets.
+
+Exit criteria:
+
+- the `Budget Envelope` is populated;
+- budget class is consistent with risk and source-of-truth requirements;
+- budget caps do not exceed `.codex/config.toml`;
+- every planned project-agent or provider run fits the provider model-tier and run-count budget;
+- budget repair triggers are known before execution begins.
 
 ## Routing Loop
 
@@ -122,22 +137,11 @@ Before the final response, confirm:
 - changed files are known;
 - tests and validation outcomes are known;
 - required contracts, ADRs, memory entries, and skills are synchronized;
+- budget handoff report is complete;
 - verified task changes are committed with `$auto-commit` or `npm run task:commit` unless the user explicitly disables automatic committing;
 - long-running processes are closed unless intentionally handed off with a URL;
 - residual risks or skipped checks are explicitly stated.
 
 ## Execution Template
 
-```text
-Task Classification:
-Risk:
-Required Skills:
-Required Agents:
-Source Documents:
-Requirements:
-Acceptance Criteria:
-Execution Steps:
-Verification Matrix:
-Repair Triggers:
-Final Handoff Checklist:
-```
+Use these fields: `Task Classification`, `Risk`, `Required Skills`, `Required Agents`, `Source Documents`, `Requirements`, `Budget Envelope`, `Acceptance Criteria`, `Execution Steps`, `Verification Matrix`, `Repair Triggers`, and `Final Handoff Checklist`.

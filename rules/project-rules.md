@@ -51,6 +51,7 @@
 - Keep `context-remaining` visible in the Codex status line.
 - Use native `/status` output for exact capacity checks.
 - Use `$context-budget-monitor` for threshold policy and pre-compact handoffs.
+- Use `$resource-budget-gate` for non-trivial tasks to declare context, concurrency, duration, and provider budgets before execution.
 - Avoid broad tool output, repeated file reads, and pasted diffs when the remaining context is at or below 50%.
 - Do not add a token-meter hook unless Codex exposes authoritative context capacity in hook payloads.
 

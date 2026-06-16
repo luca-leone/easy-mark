@@ -22,6 +22,8 @@ import {
   validateAgenticWorkflowPolicy,
   validateOrchestrateRequestSkill,
   validateQualityGateSkill,
+  validateResourceBudgetGateSkill,
+  validateResourceBudgetPolicy,
   validateWorkflowScriptPaths
 } from './governance/validators.mjs';
 
@@ -126,6 +128,12 @@ export async function validateGovernance(rootDirectory) {
   }
 
   try {
+    errors.push(...validateResourceBudgetPolicy(await fs.readFile(path.join(root, 'rules', 'resource-budgets.md'), 'utf8')));
+  } catch {
+    // Required-file diagnostics cover this path.
+  }
+
+  try {
     await fs.access(path.join(root, 'NOTES.md'));
     errors.push('NOTES.md: personal notes must not be committed; move durable content into scoped governance documents');
   } catch {
@@ -149,6 +157,12 @@ export async function validateGovernance(rootDirectory) {
     '.agents/skills/generate-commit/SKILL.md',
     '.agents/skills/generate-commit/agents/openai.yaml',
     validateGenerateCommitSkill
+  ));
+  errors.push(...await readPair(
+    root,
+    '.agents/skills/resource-budget-gate/SKILL.md',
+    '.agents/skills/resource-budget-gate/agents/openai.yaml',
+    validateResourceBudgetGateSkill
   ));
   try {
     errors.push(...validateCodexConfig(await fs.readFile(path.join(root, '.codex', 'config.toml'), 'utf8')));
@@ -228,6 +242,8 @@ export {
   validateAgenticWorkflowPolicy,
   validateOrchestrateRequestSkill,
   validateQualityGateSkill,
+  validateResourceBudgetGateSkill,
+  validateResourceBudgetPolicy,
   validateWorkflowScriptPaths
 } from './governance/validators.mjs';
 export { validateAgenticWorkflow } from './validate-agentic-workflow.mjs';

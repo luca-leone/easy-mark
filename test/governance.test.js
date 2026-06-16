@@ -20,9 +20,12 @@ import {
   validateAgenticWorkflowPolicy,
   validateOrchestrateRequestSkill,
   validateQualityGateSkill,
+  validateResourceBudgetGateSkill,
+  validateResourceBudgetPolicy,
   validateWorkflowScriptPaths
 } from '../script/validate-governance.mjs';
 import { validateAgenticWorkflow } from '../script/validate-agentic-workflow.mjs';
+import { validateResourceBudgets } from '../script/validate-resource-budgets.mjs';
 
 test('repository governance is valid', async () => {
   const rootDirectory = path.resolve(import.meta.dirname, '..');
@@ -105,7 +108,7 @@ model = "gpt-5.5"
 model_reasoning_effort = "high"
 sandbox_mode = "read-only"
 developer_instructions = """
-Inspect and plan without editing. Follow ADR-0033.
+Inspect and plan without editing. Follow ADR-0033 and ADR-0035. Emit a Budget Envelope.
 """
 `;
 
@@ -125,7 +128,7 @@ test('planner workflow requires user approval before execution', async () => {
   assert.match(planner, /define the plan, wait for explicit user approval of that plan, and only then allow execution/);
 });
 
-test('requires deterministic workflow state machine, routing, repair, and handoff gates', async () => {
+test('requires deterministic workflow state machine, budget, routing, repair, and handoff gates', async () => {
   const rootDirectory = path.resolve(import.meta.dirname, '..');
   const guide = await fs.readFile(path.join(rootDirectory, 'AGENTS.md'), 'utf8');
   const policy = await fs.readFile(path.join(rootDirectory, 'rules', 'agentic-workflow.md'), 'utf8');
@@ -133,9 +136,35 @@ test('requires deterministic workflow state machine, routing, repair, and handof
   assert.deepEqual(validateAgenticWorkflowGuide(guide), []);
   assert.deepEqual(validateAgenticWorkflowPolicy(policy), []);
   assert.deepEqual(await validateAgenticWorkflow(rootDirectory), []);
+  assert.match(policy, /budget-gate/);
+  assert.match(policy, /\$resource-budget-gate/);
   assert.ok(validateAgenticWorkflowPolicy(policy.replace('Repair Loop', 'Fixing')).some((error) =>
     error.includes('Repair Loop')
   ));
+});
+
+test('validates deterministic resource budget policy and skill', async () => {
+  const rootDirectory = path.resolve(import.meta.dirname, '..');
+  const policy = await fs.readFile(path.join(rootDirectory, 'rules', 'resource-budgets.md'), 'utf8');
+  const skill = await fs.readFile(
+    path.join(rootDirectory, '.agents', 'skills', 'resource-budget-gate', 'SKILL.md'),
+    'utf8'
+  );
+  const metadata = await fs.readFile(
+    path.join(rootDirectory, '.agents', 'skills', 'resource-budget-gate', 'agents', 'openai.yaml'),
+    'utf8'
+  );
+
+  assert.deepEqual(validateResourceBudgetPolicy(policy), []);
+  assert.deepEqual(validateResourceBudgetGateSkill(skill, metadata), []);
+  assert.deepEqual(await validateResourceBudgets(rootDirectory), []);
+  assert.ok(validateResourceBudgetPolicy(policy.replaceAll('Budget Envelope', 'Budget Note')).some((error) =>
+    error.includes('Budget Envelope')
+  ));
+  assert.ok(validateResourceBudgetGateSkill(
+    skill.replace('Runtime Budget Loop', 'Runtime Review'),
+    metadata.replace('allow_implicit_invocation: false', 'allow_implicit_invocation: true')
+  ).length >= 2);
 });
 
 test('keeps scoped governance content out of the agent bootstrap guide and personal notes', async () => {
@@ -220,6 +249,7 @@ test('uses the public @easy-mark/cli package metadata and ESM workflow scripts',
   assert.deepEqual(packageManifest.publishConfig, { access: 'public' });
   assert.equal(packageManifest.scripts['task:commit'], 'node script/git/auto-task-commit.mjs');
   assert.equal(packageManifest.scripts['validate:agentic-workflow'], 'node script/validate-agentic-workflow.mjs');
+  assert.equal(packageManifest.scripts['validate:resource-budgets'], 'node script/validate-resource-budgets.mjs');
   assert.deepEqual(packageManifest.dependencies, lockfile.packages[''].dependencies);
   for (const dependencyName of [
     'chart.js',

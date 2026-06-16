@@ -15,14 +15,15 @@ Follow these states in order and emit the state output before moving on:
 2. `classification`
 3. `requirements-discovery`
 4. `requirements-reconciliation`
-5. `routing`
-6. `planning`
-7. `execution`
-8. `quality-review`
-9. `contract-guardrail-check`
-10. `verification`
-11. `repair-loop`
-12. `handoff`
+5. `budget-gate`
+6. `routing`
+7. `planning`
+8. `execution`
+9. `quality-review`
+10. `contract-guardrail-check`
+11. `verification`
+12. `repair-loop`
+13. `handoff`
 
 Use the minimal applicable subset only for trivial read-only requests.
 
@@ -77,6 +78,23 @@ Exit only when every requirement has:
 - acceptance criterion;
 - verification method.
 
+## Budget Gate
+
+Use `$resource-budget-gate` after requirements reconciliation and before routing. Emit a `Budget Envelope` covering:
+
+- task class;
+- context budget;
+- max concurrent runs;
+- max write agents;
+- max read agents;
+- execution-duration budget;
+- provider model-tier and run-count budget;
+- approval boundary for budget expansion;
+- runtime budget checks;
+- budget handoff report.
+
+Execution may not begin until the envelope fits [rules/resource-budgets.md](../../../rules/resource-budgets.md).
+
 ## Routing
 
 Select skills and agents deterministically:
@@ -100,6 +118,7 @@ Required Skills:
 Required Agents:
 Source Documents:
 Requirements:
+Budget Envelope:
 Acceptance Criteria:
 Execution Steps:
 Verification Matrix:
