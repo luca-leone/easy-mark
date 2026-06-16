@@ -124,7 +124,7 @@ a { color: var(--link); text-underline-offset: 0.16em; }
 .navigation > ol { padding-left: 1.85rem; list-style: decimal; }
 .navigation ul { padding-left: 1.15rem; list-style: disc; }
 .navigation__document { margin-bottom: 1.2rem; }
-.navigation a { display: inline-block; padding-block: 0.16rem; color: var(--text); line-height: 1.4; text-decoration: none; }
+.navigation a { display: inline; padding-block: 0.16rem; color: var(--text); line-height: 1.4; text-decoration: none; }
 .navigation__document > a { font-weight: 600; }
 .navigation a:hover { color: var(--link); }
 .navigation a[aria-current] { color: var(--link-active); font-weight: 600; text-decoration: underline; }

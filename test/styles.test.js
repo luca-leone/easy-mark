@@ -23,6 +23,8 @@ test('usa Google Sans locale con una scala tipografica leggibile', async () => {
   assert.match(styles, /\.app-sidebar > \.navigation\s*{[^}]*width:\s*calc\(var\(--sidebar-width\) - \(2 \* var\(--navigation-gutter\)\)\)/s);
   assert.match(styles, /\.navigation > ol\s*{[^}]*padding-left:\s*1\.85rem[^}]*list-style:\s*decimal/s);
   assert.match(styles, /\.navigation ul\s*{[^}]*padding-left:\s*1\.15rem[^}]*list-style:\s*disc/s);
+  assert.match(styles, /\.navigation a\s*{[^}]*display:\s*inline;/s);
+  assert.doesNotMatch(styles, /\.navigation a\s*{[^}]*display:\s*inline-block/s);
   assert.doesNotMatch(styles, /\.navigation > ol\s*{[^}]*list-style:\s*none/s);
   assert.match(styles, /\.app-header\s*{[^}]*gap:\s*0\.325rem/s);
   assert.match(styles, /\.app-header__menu\s*{[^}]*margin-inline-start:\s*calc\(var\(--navigation-gutter\) - var\(--header-inline-padding\) - var\(--menu-toggle-glyph-offset\)\)/s);
