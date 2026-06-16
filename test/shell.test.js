@@ -40,9 +40,9 @@ test('mantiene invariata l’icona close-outline di Ionicons 8.0.13', async () =
 
 test('documents content directories and the reserved runtime files', async () => {
   const readme = await fs.readFile(new URL('../README.md', import.meta.url), 'utf8');
-  assert.match(readme, /easy-mark serve \.\/doc/);
-  assert.match(readme, /easy-mark export \.\/doc --pdf \.\/guide\.pdf/);
-  assert.match(readme, /The manifest is optional/);
+  assert.match(readme, /easy-mark serve \.\/demo/);
+  assert.match(readme, /easy-mark export \.\/demo --pdf \.\/handbook\.pdf/);
+  assert.match(readme, /A manifest is optional/);
   assert.match(readme, /cannot replace them with its own `index\.html` or `styles\.css`/);
   assert.doesNotMatch(readme, /Esempio HTML alternativo|<!-- NAVIGATION -->|<!-- DOCUMENT_MANIFEST -->/);
 });

@@ -112,20 +112,26 @@ test('supports Node.js 22 and later while retaining the Node.js 22 baseline', as
   assert.equal(baseline, '22');
 });
 
-test('uses the easy-mark package name and ESM workflow scripts', async () => {
+test('uses the public @easy-mark/cli package metadata and ESM workflow scripts', async () => {
   const packageManifest = JSON.parse(await fs.readFile(new URL('../package.json', import.meta.url), 'utf8'));
   const lockfile = JSON.parse(await fs.readFile(new URL('../package-lock.json', import.meta.url), 'utf8'));
 
-  assert.equal(packageManifest.name, 'easy-mark');
-  assert.equal(lockfile.name, 'easy-mark');
-  assert.equal(lockfile.packages[''].name, 'easy-mark');
+  assert.equal(packageManifest.name, '@easy-mark/cli');
+  assert.equal(lockfile.name, '@easy-mark/cli');
+  assert.equal(lockfile.packages[''].name, '@easy-mark/cli');
   assert.equal(packageManifest.private, false);
-  assert.deepEqual(packageManifest.bin, { 'easy-mark': './bin/easy-mark.mjs' });
+  assert.deepEqual(packageManifest.bin, { 'easy-mark': 'bin/easy-mark.mjs' });
   assert.deepEqual(lockfile.packages[''].bin, { 'easy-mark': 'bin/easy-mark.mjs' });
+  assert.equal(packageManifest.license, 'MIT');
+  assert.equal(packageManifest.repository?.url, 'git+https://github.com/luca-leone/easy-mark.git');
+  assert.equal(packageManifest.bugs?.url, 'https://github.com/luca-leone/easy-mark/issues');
+  assert.equal(packageManifest.homepage, 'https://github.com/luca-leone/easy-mark#readme');
+  assert.deepEqual(packageManifest.publishConfig, { access: 'public' });
   assert.equal(Object.hasOwn(packageManifest.scripts, 'start'), false);
   assert.ok(packageManifest.files.includes('bin/'));
   assert.ok(packageManifest.files.includes('core/server/'));
   assert.ok(packageManifest.files.includes('core/web/'));
+  assert.equal(packageManifest.files.includes('demo/'), false);
   await assert.rejects(fs.access(new URL('../server.js', import.meta.url)));
   await assert.rejects(fs.access(new URL('../core/server/server.js', import.meta.url)));
   assert.deepEqual(validateWorkflowScriptPaths([

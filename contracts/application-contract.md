@@ -3,7 +3,7 @@
 ## Startup
 
 - The application supports Node.js 22 and later; Node.js 22 remains the development and verification baseline.
-- The product name, package name, binary name, and startup log remain `easy-mark`; the default visible documentation title is `Easy Mark`.
+- The product name and startup log remain `easy-mark`; the published package name is `@easy-mark/cli`, the binary name is `easy-mark`, and the default visible documentation title is `Easy Mark`.
 - `easy-mark serve <content-directory>` builds and serves the documentation from an arbitrary user-selected content directory.
 - `easy-mark export <content-directory> --pdf <file.pdf>` builds the documentation in memory and writes the requested PDF file.
 - The default HTTP port is `3000`; `PORT` may override it and the CLI may pass an explicit port.

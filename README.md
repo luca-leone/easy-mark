@@ -1,27 +1,46 @@
-# easy-mark
+# Easy Mark
 
-`easy-mark` converts a Markdown directory into sanitised HTML fragments held in `mem-fs`, presents them through a single-page application, and can export an aggregate PDF.
+A lightweight CLI to compile, sanitise, preview, and export Markdown directories as production-ready HTML and PDFs.
 
-## CLI
+## Key Features
 
-It requires Node.js 22 or later. `.nvmrc` keeps Node.js 22 as the development baseline.
+- **Directory-driven:** Process entire nested Markdown structures without a project-specific `src/` convention.
+- **Sanitised output:** Generate deterministic, secure HTML previews held in memory instead of writing compiled fragments to disk.
+- **Built-in visuals:** Render Mermaid diagrams and Chart.js charts from Markdown fences by default.
+- **PDF export:** Export the complete documentation set through the same sanitised rendering pipeline.
+- **Local runtime:** Serve the bundled app shell, styles, fonts, icons, Mermaid, and Chart.js assets without CDNs.
+
+`easy-mark` is published as `@easy-mark/cli` while keeping the terminal binary name `easy-mark`.
+
+## Installation
+
+Install the published package:
 
 ```sh
-nvm use
-npm install
+npm install @easy-mark/cli
 ```
 
-Use the local binary against any content directory:
+The package exposes the `easy-mark` binary on `node_modules/.bin/` and, when installed globally, on your shell `PATH`.
+
+## Usage
+
+From a repository checkout, run the local binary against any content directory:
 
 ```sh
-easy-mark serve ./doc
-easy-mark serve ./doc --title "My Documentation"
-easy-mark export ./doc --pdf ./guide.pdf
+node bin/easy-mark.mjs serve ./demo
 ```
 
-`./doc` is only an example: the path may be any directory containing Markdown and public assets. The port can be changed with `PORT` or with `--port` on the `serve` command.
+After installation, use the terminal binary directly:
 
-The visible title uses this precedence: `manifest.json` in the content directory, then `--title`, then `Easy Mark`. The manifest is optional:
+```sh
+easy-mark serve ./demo
+easy-mark serve ./demo --title "Team Handbook"
+easy-mark export ./demo --pdf ./handbook.pdf
+```
+
+`./demo` is a repository-only sample directory. Your own content directory can be anywhere and may contain Markdown files plus public assets. The `serve` command keeps generated HTML in memory, and `export` writes only the requested PDF file.
+
+The visible project title uses this precedence: `manifest.json` in the content directory, then `--title`, then `Easy Mark`. A manifest is optional:
 
 ```json
 {
@@ -30,41 +49,74 @@ The visible title uses this precedence: `manifest.json` in the content directory
 }
 ```
 
-`core/server/` contains the server and CLI logic, while `core/web/` contains the browser runtime, assets, and default templates. `core/web/index.template.html` and `core/web/styles.template.css` are always loaded into memory as `index.html` and `styles.css`; the content directory cannot replace them with its own `index.html` or `styles.css`.
+## Demo
 
-The `serve` command does not write generated HTML to disk. The `export` command writes only the requested PDF and requires a Playwright/Chromium adapter to be available in the environment.
+The bundled demo at `./demo` shows the supported visual features working together:
 
-## Diagrams and Charts
+- A Mermaid flowchart
+- A Chart.js line chart
+- A Chart.js pie chart
 
-Mermaid diagrams are supported through fenced Markdown blocks:
+Open it locally with:
+
+```sh
+node bin/easy-mark.mjs serve ./demo
+```
+
+## Visual Examples
+
+Mermaid diagrams are written as fenced Markdown blocks:
 
 ````md
 ```mermaid
 flowchart TD
-  A --> B
+  Author[Write Markdown] --> Render[Render in memory]
+  Render --> Serve[Serve the SPA]
+  Render --> Export[Print to PDF]
 ```
 ````
 
-Chart.js charts are supported through JSON fenced blocks:
+Chart.js charts use JSON fenced blocks:
 
 ````md
 ```chart
 {
-  "type": "donut",
-  "title": "Revenue by product",
+  "type": "line",
+  "title": "Documents rendered",
   "data": {
-    "labels": ["Core", "Add-ons", "Services"],
+    "labels": ["Mon", "Tue", "Wed", "Thu", "Fri"],
     "datasets": [
-      { "label": "Revenue", "data": [62, 23, 15] }
+      {
+        "label": "Pages",
+        "data": [4, 7, 11, 13, 18]
+      }
+    ]
+  }
+}
+```
+
+```chart
+{
+  "type": "pie",
+  "title": "Content mix",
+  "data": {
+    "labels": ["Guides", "Notes", "Assets"],
+    "datasets": [
+      {
+        "label": "Share",
+        "data": [55, 30, 15]
+      }
     ]
   }
 }
 ```
 ````
 
-The chart block accepts `bar`, `line`, `pie`, `doughnut`, `donut`, `polarArea`, `radar`, `bubble`, and `scatter`. `donut` is a friendly alias for Chart.js `doughnut`. Chart configuration must be JSON, not JavaScript, so callbacks and custom plugins are not accepted.
+The chart block accepts `bar`, `line`, `pie`, `doughnut`, `donut`, `polarArea`, `radar`, `bubble`, and `scatter`. `donut` is a friendly alias for Chart.js `doughnut`. Chart configuration must be valid JSON, not JavaScript, so callbacks and custom plugins are not accepted.
 
-## Commit Standards
+## Repository Notes
+
+`core/server/` contains the server and CLI logic, while `core/web/` contains the browser runtime, assets, and default templates. `core/web/index.template.html` and `core/web/styles.template.css` are always loaded into memory as `index.html` and `styles.css`; the content directory cannot replace them with its own `index.html` or `styles.css`.
 
 The repository uses Conventional Commits and includes a versioned `commit-msg` hook. After cloning, install the dependencies and configure the local hook:
 
@@ -91,14 +143,6 @@ The directories whose names include `agents` have different responsibilities:
 - `.codex/agents/` contains the TOML configuration for the project's subagent roles.
 
 They must not be merged. Codex starts subagents only when explicitly requested; after configuration changes, use a new thread.
-
-Examples:
-
-```text
-Use the multi-agent workflow: have the planner analyse the requirements, route implementation by risk, and verify the result with the verifier.
-
-Review this change with the reviewer and use the verifier to run checks without automatically fixing failures.
-```
 
 Narrow changes can be delegated to `implementer`; security, routing, sanitisation, virtual filesystems, concurrency, watchers, and architecture require `senior-implementer`.
 

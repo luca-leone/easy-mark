@@ -1,16 +1,39 @@
 {
-  "name": "easy-mark",
+  "name": "@easy-mark/cli",
   "version": "1.0.0",
   "private": false,
   "type": "module",
+  "description": "Lightweight CLI to compile, sanitise, preview, and export Markdown directories as HTML and PDFs.",
+  "license": "MIT",
   "bin": {
-    "easy-mark": "./bin/easy-mark.mjs"
+    "easy-mark": "bin/easy-mark.mjs"
   },
   "files": [
     "bin/",
     "core/server/",
     "core/web/",
     "README.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/luca-leone/easy-mark.git"
+  },
+  "bugs": {
+    "url": "https://github.com/luca-leone/easy-mark/issues"
+  },
+  "homepage": "https://github.com/luca-leone/easy-mark#readme",
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "markdown",
+    "cli",
+    "documentation",
+    "pdf",
+    "mermaid",
+    "chartjs",
+    "sanitised",
+    "preview"
   ],
   "engines": {
     "node": ">=22"
