@@ -102,8 +102,19 @@ test('renderizza Mermaid e Chart.js con adapter fake e pulisce le chart', async 
   let destroyed = false;
   const charts = [];
   class FakeChart {
+    static BasicPlatform = class {};
+
     constructor(canvas, config) {
+      this.canvas = canvas;
+      this.config = config;
       charts.push({ canvas, config });
+    }
+
+    update() {
+    }
+
+    toBase64Image() {
+      return 'data:image/png;base64,pie';
     }
 
     destroy() {
@@ -131,7 +142,13 @@ test('renderizza Mermaid e Chart.js con adapter fake e pulisce le chart', async 
   assert.match(mermaidVisual.stage.children[0].src, /^data:image\/svg\+xml;base64,/);
   assert.equal(charts.length, 1);
   assert.equal(charts[0].config.type, 'pie');
-  assert.equal(charts[0].canvas.getAttribute('role'), 'img');
+  assert.equal(charts[0].config.platform, FakeChart.BasicPlatform);
+  assert.equal(charts[0].config.options.responsive, false);
+  assert.equal(charts[0].config.options.maintainAspectRatio, false);
+  assert.equal(charts[0].canvas.getAttribute('width'), '832');
+  assert.equal(charts[0].canvas.getAttribute('height'), '288');
+  assert.equal(chartVisual.stage.children[0].tagName, 'img');
+  assert.equal(chartVisual.stage.children[0].src, 'data:image/png;base64,pie');
 
   cleanupVisuals(root);
   assert.equal(destroyed, true);
@@ -147,14 +164,12 @@ test('converte Chart.js in immagine stabile durante il rendering per stampa', as
 
   const calls = [];
   class FakeChart {
+    static BasicPlatform = class {};
+
     constructor(canvas, config) {
       this.canvas = canvas;
       this.config = config;
-      calls.push(['create', config.options.devicePixelRatio]);
-    }
-
-    resize() {
-      calls.push(['resize']);
+      calls.push(['create', config.options.devicePixelRatio, config.options.responsive, config.platform === FakeChart.BasicPlatform]);
     }
 
     update(mode) {
@@ -180,7 +195,7 @@ test('converte Chart.js in immagine stabile durante il rendering per stampa', as
     print: true
   });
 
-  assert.deepEqual(calls, [['create', 2], ['resize'], ['update', 'none'], ['image'], ['destroy']]);
+  assert.deepEqual(calls, [['create', 2, false, true], ['update', 'none'], ['image'], ['destroy']]);
   assert.equal(chartVisual.stage.children[0].tagName, 'img');
   assert.equal(chartVisual.stage.children[0].className, 'visual__image');
   assert.equal(chartVisual.stage.children[0].alt, 'Print chart');

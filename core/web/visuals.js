@@ -97,6 +97,48 @@ function waitForVisualFrame(documentObject) {
   return new Promise((resolve) => frame(resolve));
 }
 
+function chartRenderSize(stage, { print }) {
+  const bounds = stage.getBoundingClientRect?.();
+  return {
+    width: Math.max(1, Math.round(bounds?.width || stage.clientWidth || (print ? 768 : 832))),
+    height: Math.max(1, Math.round(bounds?.height || stage.clientHeight || (print ? 224 : 288)))
+  };
+}
+
+function createChartCanvas(documentObject, size) {
+  const OffscreenCanvasConstructor = documentObject.defaultView?.OffscreenCanvas ?? globalThis.OffscreenCanvas;
+  if (OffscreenCanvasConstructor) return new OffscreenCanvasConstructor(size.width, size.height);
+  const canvas = documentObject.createElement('canvas');
+  canvas.setAttribute('width', String(size.width));
+  canvas.setAttribute('height', String(size.height));
+  return canvas;
+}
+
+async function blobToDataUrl(blob, documentObject) {
+  const FileReaderConstructor = documentObject.defaultView?.FileReader ?? globalThis.FileReader;
+  if (!FileReaderConstructor) throw new Error('Chart image export is unavailable.');
+  return await new Promise((resolve, reject) => {
+    const reader = new FileReaderConstructor();
+    reader.addEventListener('load', () => resolve(reader.result));
+    reader.addEventListener('error', () => reject(reader.error));
+    reader.readAsDataURL(blob);
+  });
+}
+
+async function chartImageSource(chart, canvas, documentObject) {
+  try {
+    const source = chart.toBase64Image?.();
+    if (typeof source === 'string' && source.startsWith('data:image/')) return source;
+  } catch {
+    // OffscreenCanvas has no toDataURL API, so use convertToBlob below.
+  }
+  if (typeof canvas.toDataURL === 'function') return canvas.toDataURL('image/png');
+  if (typeof canvas.convertToBlob === 'function') {
+    return blobToDataUrl(await canvas.convertToBlob({ type: 'image/png' }), documentObject);
+  }
+  throw new Error('Chart image export is unavailable.');
+}
+
 function initializeMermaid(mermaid) {
   if (mermaidInitialized) return;
   mermaid.initialize({
@@ -123,25 +165,23 @@ async function renderMermaid(figure, stage, source, { mermaid, documentObject })
 async function renderChart(figure, stage, source, { Chart, documentObject, print }) {
   if (!Chart) throw new Error('Chart.js runtime is unavailable.');
   const { config, title } = normalizeChartConfig(source, { print });
-  const canvas = documentObject.createElement('canvas');
-  canvas.setAttribute('role', 'img');
   const label = figure.getAttribute('data-visual-title') || title;
-  canvas.setAttribute('aria-label', label);
-  stage.replaceChildren(canvas);
+  const canvas = createChartCanvas(documentObject, chartRenderSize(stage, { print }));
+  config.platform = Chart.BasicPlatform ?? Chart.platforms?.BasicPlatform ?? config.platform;
+  config.options = {
+    ...config.options,
+    responsive: false,
+    maintainAspectRatio: false
+  };
   const chart = new Chart(canvas, config);
-  stage[chartInstance] = chart;
-  if (!print) return;
-
-  chart.resize?.();
   chart.update?.('none');
   await waitForVisualFrame(documentObject);
   const image = documentObject.createElement('img');
   image.className = 'visual__image';
   image.alt = label;
   image.decoding = 'async';
-  image.src = chart.toBase64Image?.() ?? canvas.toDataURL('image/png');
+  image.src = await chartImageSource(chart, canvas, documentObject);
   chart.destroy?.();
-  delete stage[chartInstance];
   stage.replaceChildren(image);
 }
 
