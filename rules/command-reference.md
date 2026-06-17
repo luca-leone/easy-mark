@@ -15,6 +15,7 @@ This file lists repository commands for development, validation, and maintenance
 - `npm run validate:agentic-runtime-contract`: validate the runtime JSON contract at `reports/agentic-runtime-contract.json` against the path contract.
 - `npm run validate:versioning`: validate the deterministic versioning contract.
 - `npm run workflow:start -- --task "..."`: start the active deterministic workflow run and write the runtime contract.
+- `npm run workflow:run`: invoke configured read-only workflow agents and record their reports.
 - `npm run workflow:verify`: verify active run intake, start, routing, and completion gates.
 - `npm run pack:dry-run`: validate package/tag alignment, then run `npm pack --dry-run`.
 - `npm run report:agentic-compliance`: print the current agentic lean path compliance report, including `PostToolUse` evidence when present.

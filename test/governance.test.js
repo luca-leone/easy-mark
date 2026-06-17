@@ -438,13 +438,28 @@ test('validates observable workflow intake, routing, and stop gates', async (con
     env: hookEnvironment
   });
   assert.equal(started.status, 0, started.stderr.toString());
+  const dryRunAgents = spawnSync(process.execPath, [
+    workflowRuntimePath,
+    'run',
+    '--agents',
+    'planner,verifier',
+    '--events',
+    eventsPath,
+    '--dry-run'
+  ], {
+    cwd: rootDirectory,
+    env: hookEnvironment
+  });
+  assert.equal(dryRunAgents.status, 0, dryRunAgents.stderr.toString());
+  assert.match(dryRunAgents.stdout.toString(), /planner: completed/);
+  assert.match(dryRunAgents.stdout.toString(), /verifier: completed/);
   const missingAgents = spawnSync(process.execPath, [preHookPath], {
     cwd: rootDirectory,
     env: hookEnvironment,
     input: JSON.stringify({ toolName: 'apply_patch', input: { patch: '*** Begin Patch\n*** End Patch\n' } })
   });
   assert.equal(missingAgents.status, 0);
-  assert.match(missingAgents.stderr.toString(), /planner\.agent\.completed/);
+  assert.match(missingAgents.stderr.toString(), /implementer\.agent\.started/);
   const repairEvents = await readWorkflowEvents(rootDirectory, eventsPath);
   const repairStatus = buildWorkflowStatus(
     repairEvents,
@@ -452,7 +467,7 @@ test('validates observable workflow intake, routing, and stop gates', async (con
     contract
   );
   assert.equal(repairStatus.currentState, 'repair-loop');
-  assert.ok(repairStatus.activeViolations.some((violation) => violation.includes('planner.agent.completed')));
+  assert.ok(repairStatus.activeViolations.some((violation) => violation.includes('implementer.agent.started')));
 
   assert.equal(spawnSync(process.execPath, [subagentStopHookPath], {
     cwd: rootDirectory,
@@ -471,18 +486,6 @@ test('validates observable workflow intake, routing, and stop gates', async (con
   });
   assert.equal(allowedMutation.status, 0, allowedMutation.stderr.toString());
 
-  const missingVerifier = spawnSync(process.execPath, [stopHookPath], {
-    cwd: rootDirectory,
-    env: hookEnvironment,
-    input: JSON.stringify({})
-  });
-  assert.equal(missingVerifier.status, 0);
-  assert.match(missingVerifier.stderr.toString(), /verifier\.agent\.completed/);
-  assert.equal(spawnSync(process.execPath, [subagentStopHookPath], {
-    cwd: rootDirectory,
-    env: hookEnvironment,
-    input: JSON.stringify({ agent: 'verifier' })
-  }).status, 0);
   assert.equal(spawnSync(process.execPath, [stopHookPath], {
     cwd: rootDirectory,
     env: hookEnvironment,
@@ -495,11 +498,13 @@ test('validates observable workflow intake, routing, and stop gates', async (con
     'workflow.violation',
     'intake.started',
     'workflow.started',
+    'agent.started',
+    'agent.completed',
+    'agent.started',
+    'agent.completed',
     'workflow.violation',
     'agent.completed',
     'agent.started',
-    'workflow.violation',
-    'agent.completed',
     'workflow.completed'
   ]);
   assert.ok(events.filter((event) => event.runId === currentRun.runId).length >= 5);
@@ -704,6 +709,7 @@ test('uses the public @easy-mark/cli package metadata and ESM workflow scripts',
   assert.equal(packageManifest.scripts['validate:agentic-runtime-contract'], 'node script/validate-agentic-lean-path-runtime.mjs');
   assert.equal(packageManifest.scripts['validate:versioning'], 'node script/versioning-runtime.mjs validate-contract');
   assert.equal(packageManifest.scripts['workflow:start'], 'node script/agentic-workflow-runtime.mjs start');
+  assert.equal(packageManifest.scripts['workflow:run'], 'node script/agentic-workflow-runtime.mjs run');
   assert.equal(packageManifest.scripts['workflow:verify'], 'node script/agentic-workflow-runtime.mjs verify');
   assert.equal(packageManifest.scripts['workflow:status'], 'node script/agentic-workflow-runtime.mjs status');
   assert.equal(packageManifest.scripts['pack:dry-run'], 'node script/versioning-runtime.mjs pack-check && npm pack --dry-run');

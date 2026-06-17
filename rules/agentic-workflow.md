@@ -24,7 +24,7 @@ Non-trivial work preserves this state order for every applicable state:
 12. `repair-loop`
 13. `handoff`
 
-Every state produces output that can be inspected. `UserPromptSubmit` records `intake.started`; `workflow:start` writes the runtime contract and records `workflow.started`; `workflow:verify` checks active-run gates before handoff. Before file edits, non-trivial commands, or project-agent runs, `PreToolUse` and `PostToolUse` hooks detect and report agentic lean path violations.
+Every state produces output that can be inspected. `UserPromptSubmit` records `intake.started`; `workflow:start` writes the runtime contract and records `workflow.started`; `workflow:run` invokes configured read-only agents; `workflow:verify` checks active-run gates before handoff. Before file edits, non-trivial commands, or project-agent runs, hooks detect and report violations.
 
 ## Intake And Classification Loop
 

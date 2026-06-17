@@ -58,6 +58,13 @@
         "agent"
       ]
     },
+    "agent.failed": {
+      "source": "workflow:run",
+      "requiredFields": [
+        "agent",
+        "exitCode"
+      ]
+    },
     "workflow.completed": {
       "state": "handoff",
       "source": "Stop"

@@ -1,5 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
   DEFAULT_RUNTIME_CONTRACT_PATH,
@@ -75,7 +76,7 @@ export function validateWorkflowEventsContract(contract) {
       errors.push(`contracts/governance/agentic-workflow-events.json: report.requiredFields missing ${field}`);
     }
   }
-  for (const eventName of ['intake.started', 'workflow.started', 'agent.started', 'agent.completed', 'workflow.completed', 'workflow.violation']) {
+  for (const eventName of ['intake.started', 'workflow.started', 'agent.started', 'agent.completed', 'agent.failed', 'workflow.completed', 'workflow.violation']) {
     if (!contract.events?.[eventName]) {
       errors.push(`contracts/governance/agentic-workflow-events.json: events missing ${eventName}`);
     }
@@ -153,9 +154,22 @@ export function buildWorkflowStatus(events, runtimeContract = null, contract = n
     agents,
     missingBeforeMutatingToolUse: missingMutating,
     missingBeforeWorkflowCompletion: missingCompletion,
-    activeViolations: uniqueSorted(events.slice(lastWorkflowStartIndex(events))
-      .filter((event) => event.event === 'workflow.violation')
-      .flatMap((event) => event.violations ?? []))
+    activeViolations: uniqueSorted([
+      ...missingMutating.map((requirement) =>
+        `agentic workflow: ${selectedPath} requires ${requirement.agent}.${requirement.event} before beforeMutatingToolUse`
+      ),
+      ...missingCompletion.map((requirement) =>
+        `agentic workflow: ${selectedPath} requires ${requirement.agent}.${requirement.event} before beforeWorkflowCompletion`
+      ),
+      ...events.slice(lastWorkflowStartIndex(events))
+        .filter((event, index, scopedEvents) =>
+          event.event === 'agent.failed' &&
+          !scopedEvents.slice(index + 1).some((laterEvent) =>
+            laterEvent.event === 'agent.completed' && laterEvent.agent === event.agent
+          )
+        )
+        .map((event) => `agentic workflow: ${event.agent} failed with exit code ${event.exitCode}`)
+    ])
   };
 }
 
@@ -305,6 +319,52 @@ export async function startWorkflow(root, options = {}) {
   return { currentRun, runtimeContract };
 }
 
+export async function runWorkflowAgents(root, options = {}) {
+  const repositoryRoot = path.resolve(root);
+  const eventsPath = options.eventsPath ?? DEFAULT_WORKFLOW_EVENTS_PATH;
+  const currentRunPath = options.currentRunPath ?? currentRunPathForEvents(eventsPath);
+  const currentRun = await readCurrentWorkflowRun(repositoryRoot, currentRunPath);
+  if (!currentRun?.runId) throw new Error('workflow:run requires an active workflow run; run npm run workflow:start first');
+  const agents = options.agents ?? ['planner', 'verifier'];
+  const results = [];
+  for (const agent of agents) {
+    const agentConfig = await readAgentConfig(repositoryRoot, agent);
+    await appendWorkflowEvent(repositoryRoot, {
+      event: 'agent.started',
+      source: 'workflow:run',
+      runId: currentRun.runId,
+      agent,
+      state: stateForAgent(agent)
+    }, eventsPath);
+    const result = options.dryRun
+      ? dryRunAgent(agent)
+      : runCodexAgent(repositoryRoot, currentRun, agentConfig, options.runner ?? spawnSync, options.timeoutMs ?? 120000);
+    await writeAgentRunReport(repositoryRoot, currentRun.runId, agent, result);
+    if (result.status === 0) {
+      await appendWorkflowEvent(repositoryRoot, {
+        event: 'agent.completed',
+        source: 'workflow:run',
+        runId: currentRun.runId,
+        agent,
+        state: stateForAgent(agent)
+      }, eventsPath);
+    } else {
+      await appendWorkflowEvent(repositoryRoot, {
+        event: 'agent.failed',
+        source: 'workflow:run',
+        runId: currentRun.runId,
+        agent,
+        state: 'repair-loop',
+        exitCode: result.status,
+        reportPath: agentReportPath(currentRun.runId, agent)
+      }, eventsPath);
+    }
+    results.push({ agent, ...result, reportPath: agentReportPath(currentRun.runId, agent) });
+    if (result.status !== 0 && !options.continueOnFailure) break;
+  }
+  return results;
+}
+
 async function readOptionalJson(filePath) {
   try {
     return await readJsonFile(filePath);
@@ -368,6 +428,119 @@ function buildRuntimeContract(selectedPath, pathDefinition, task = '') {
     },
     verification: pathDefinition.verification
   };
+}
+
+async function readAgentConfig(root, agent) {
+  const filePath = path.join(root, '.codex', 'agents', `${agent}.toml`);
+  const contents = await fs.readFile(filePath, 'utf8');
+  return {
+    name: agent,
+    model: tomlString(contents, 'model'),
+    effort: tomlString(contents, 'model_reasoning_effort'),
+    sandbox: tomlString(contents, 'sandbox_mode'),
+    instructions: tomlBlock(contents, 'developer_instructions')
+  };
+}
+
+function runCodexAgent(root, currentRun, agentConfig, runner, timeoutMs) {
+  const prompt = [
+    `Act as the ${agentConfig.name} project agent for workflow run ${currentRun.runId}.`,
+    agentConfig.instructions,
+    'Do not edit files unless the agent configuration explicitly permits it.',
+    'Read AGENTS.md and relevant governance before reporting.',
+    'Return concise findings and exact verification evidence.'
+  ].join('\n\n');
+  const result = runner('codex', [
+    'exec',
+    '--skip-git-repo-check',
+    '--ephemeral',
+    '-s',
+    agentConfig.sandbox,
+    '-m',
+    agentConfig.model,
+    '-c',
+    `model_reasoning_effort=${JSON.stringify(agentConfig.effort)}`,
+    '-C',
+    root,
+    prompt
+  ], {
+    cwd: root,
+    encoding: 'utf8',
+    input: '',
+    timeout: timeoutMs,
+    env: {
+      ...process.env,
+      AGENTIC_WORKFLOW_EVENTS_PATH: nestedAgentEventsPath(currentRun.runId, agentConfig.name),
+      AGENTIC_WORKFLOW_CURRENT_RUN_PATH: nestedAgentCurrentRunPath(currentRun.runId, agentConfig.name),
+      AGENTIC_TOOL_USE_REPORT_PATH: nestedAgentToolUsePath(currentRun.runId, agentConfig.name),
+      AGENTIC_RUNTIME_CONTRACT_PATH: process.env.AGENTIC_RUNTIME_CONTRACT_PATH ?? DEFAULT_RUNTIME_CONTRACT_PATH
+    }
+  });
+  const failedByRunner = Boolean(result.error || result.signal);
+  return {
+    status: failedByRunner ? 1 : typeof result.status === 'number' ? result.status : 1,
+    stdout: result.stdout ?? '',
+    stderr: [
+      result.stderr ?? '',
+      result.error?.message ? `Runner error: ${result.error.message}` : '',
+      result.signal ? `Signal: ${result.signal}` : ''
+    ].filter(Boolean).join('\n')
+  };
+}
+
+function dryRunAgent(agent) {
+  return {
+    status: 0,
+    stdout: `Dry run completed for ${agent}.\n`,
+    stderr: ''
+  };
+}
+
+async function writeAgentRunReport(root, runId, agent, result) {
+  const reportPath = path.join(root, agentReportPath(runId, agent));
+  await fs.mkdir(path.dirname(reportPath), { recursive: true });
+  await fs.writeFile(reportPath, [
+    `# ${agent} Agent Run`,
+    '',
+    `Status: ${result.status}`,
+    '',
+    '## Stdout',
+    '',
+    result.stdout || '(empty)',
+    '',
+    '## Stderr',
+    '',
+    result.stderr || '(empty)',
+    ''
+  ].join('\n'));
+}
+
+function agentReportPath(runId, agent) {
+  return path.join('reports', 'agent-runs', `${runId}-${agent}.txt`);
+}
+
+function nestedAgentEventsPath(runId, agent) {
+  return path.join('reports', 'agent-runs', `${runId}-${agent}-events.jsonl`);
+}
+
+function nestedAgentCurrentRunPath(runId, agent) {
+  return path.join('reports', 'agent-runs', `${runId}-${agent}-current.json`);
+}
+
+function nestedAgentToolUsePath(runId, agent) {
+  return path.join('reports', 'agent-runs', `${runId}-${agent}-tool-use.jsonl`);
+}
+
+function tomlString(contents, key) {
+  const match = contents.match(new RegExp(`^${key}\\s*=\\s*"([^"]+)"`, 'm'));
+  if (!match) throw new Error(`Agent config missing ${key}`);
+  return match[1];
+}
+
+function tomlBlock(contents, key) {
+  const match = contents.match(new RegExp(`^${key}\\s*=\\s*"""\\n([\\s\\S]*?)\\n"""`, 'm'));
+  if (!match) throw new Error(`Agent config missing ${key}`);
+  return match[1];
 }
 
 function lastWorkflowStartIndex(events) {
@@ -447,6 +620,15 @@ async function runCli() {
     console.log(`Runtime contract: ${options.runtimeContractPath ?? DEFAULT_RUNTIME_CONTRACT_PATH}`);
     return;
   }
+  if (command === 'run') {
+    const options = parseRunArguments(process.argv.slice(3));
+    const results = await runWorkflowAgents(root, options);
+    for (const result of results) {
+      console.log(`${result.agent}: ${result.status === 0 ? 'completed' : `failed (${result.status})`} -> ${result.reportPath}`);
+    }
+    if (results.some((result) => result.status !== 0)) process.exitCode = 1;
+    return;
+  }
   if (command === 'validate' || command === 'verify') {
     const errors = validateWorkflowEvents(events, contract, runtimeContract, { requireIntake: events.length > 0 });
     if (command === 'verify') {
@@ -482,6 +664,20 @@ function parseStartArguments(argumentsList) {
     else if (argument === '--runtime-contract') options.runtimeContractPath = argumentsList[index += 1];
     else if (argument === '--events') options.eventsPath = argumentsList[index += 1];
     else throw new Error(`Unknown workflow:start argument: ${argument}`);
+  }
+  return options;
+}
+
+function parseRunArguments(argumentsList) {
+  const options = {};
+  for (let index = 0; index < argumentsList.length; index += 1) {
+    const argument = argumentsList[index];
+    if (argument === '--agents') options.agents = argumentsList[index += 1].split(',').map((agent) => agent.trim()).filter(Boolean);
+    else if (argument === '--events') options.eventsPath = argumentsList[index += 1];
+    else if (argument === '--timeout-ms') options.timeoutMs = Number(argumentsList[index += 1]);
+    else if (argument === '--dry-run') options.dryRun = true;
+    else if (argument === '--continue-on-failure') options.continueOnFailure = true;
+    else throw new Error(`Unknown workflow:run argument: ${argument}`);
   }
   return options;
 }

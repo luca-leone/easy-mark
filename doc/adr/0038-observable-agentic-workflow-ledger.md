@@ -26,11 +26,15 @@ For `high-change`, `planner.completed` and `implementer.started` are required be
 
 Expose `npm run workflow:status` for human-readable status and include workflow status in the agentic compliance report. Status is scoped to the active run and must show `repair-loop` plus active violations when hooks detect missing routing.
 
+Expose `npm run workflow:run` as the deterministic orchestrator command. It invokes configured read-only Codex agents, records `agent.started`, `agent.completed`, and `agent.failed`, isolates nested hook reports, and stores agent output as ignored text reports.
+
 ## Consequences
 
 The workflow becomes visible and auditable while keeping report files out of Git. Hook violations remain repair triggers, and the same runtime event contract is used by hooks, status, validation, and compliance reporting.
 
 High-change work now requires explicit agent routing evidence. If Codex does not start the required subagents, governed mutating work enters repair mode instead of continuing as a single-agent hidden flow.
+
+Planner and verifier routing can now be driven through a repository command instead of relying only on manual subagent starts. Failed agent execution remains visible as active workflow status until the agent completes successfully.
 
 ## Alternatives Considered
 

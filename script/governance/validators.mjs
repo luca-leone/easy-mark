@@ -151,6 +151,7 @@ export function validateAgenticWorkflowPolicy(contents) {
     'UserPromptSubmit',
     'repair mode',
     'workflow:start',
+    'workflow:run',
     'workflow:verify',
     'workflow:status',
     'agentic compliance report',
