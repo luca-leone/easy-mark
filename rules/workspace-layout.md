@@ -9,8 +9,9 @@ This file defines repository structure and ownership boundaries. It is a working
 - `core/server/`: server runtime, conversion, virtual filesystem, navigation, and HTTP behavior.
 - `core/web/`: bundled app shell and stylesheet templates, browser runtime, and default static assets.
 - `test/`: Node unit and integration tests.
-- `rules/`: repository engineering, release, context, multi-agent, command, layout, and deterministic workflow rules.
-- `contracts/`: normative application behavior.
+- `rules/`: repository engineering, release, context, multi-agent, command, layout, and deterministic workflow explanations.
+- `contracts/`: normative product and governance contracts.
+- `contracts/governance/`: machine-readable governance contracts consumed by deterministic validators and hooks.
 - `guardrails/`: non-negotiable system invariants.
 - `script/`: repository validation and maintenance scripts.
 - `hooks/`: versioned Git hooks installed through `npm run hooks:install`.

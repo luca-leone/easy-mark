@@ -53,3 +53,4 @@ Entry format:
 - 2026-06-16 | Accepted | Enforce a hard 150-line limit for committed Markdown files through governance validation and scoped-document splitting. | N/A
 - 2026-06-16 | Accepted | Select lean or full agentic workflow paths through a validated JSON contract and require a runtime path contract before file edits, non-trivial commands, or project-agent runs. | [ADR-0033](../doc/adr/0033-deterministic-agentic-workflow.md)
 - 2026-06-16 | Accepted | Enforce the agentic lean path with project-local `PreToolUse` and `PostToolUse` hooks for governed tool calls and require a compliance report at handoff. | [ADR-0033](../doc/adr/0033-deterministic-agentic-workflow.md)
+- 2026-06-17 | Accepted | Store machine-readable governance contracts under `contracts/governance/`, keep rules explanatory, keep guardrails as the explicit invariant index, and install versioned Git hooks from `hooks/git/`. | [ADR-0036](../doc/adr/0036-governance-contract-layout.md)

@@ -2,7 +2,7 @@
 
 ## Contract
 
-`rules/markdown-governance.json` is the executable contract for governed Markdown files. The Markdown rule explains the contract but does not override it.
+[`markdown-governance.json`](../contracts/governance/markdown-governance.json) is the executable contract for governed Markdown files. The Markdown rule explains the contract but does not override it.
 
 ## Scope
 

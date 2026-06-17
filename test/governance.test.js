@@ -39,6 +39,7 @@ import { validateAgenticWorkflow } from '../script/validate-agentic-workflow.mjs
 import { validateAgenticPaths } from '../script/validate-agentic-paths.mjs';
 import { validateAgenticRuntimeContractFile } from '../script/validate-agentic-lean-path-runtime.mjs';
 import { validateResourceBudgets } from '../script/validate-resource-budgets.mjs';
+import { buildAgenticComplianceReport } from '../script/report-agentic-compliance.mjs';
 
 test('repository governance is valid', async () => {
   const rootDirectory = path.resolve(import.meta.dirname, '..');
@@ -159,7 +160,7 @@ test('requires deterministic workflow state machine, budget, routing, repair, an
 
 test('validates deterministic agentic path contract', async () => {
   const rootDirectory = path.resolve(import.meta.dirname, '..');
-  const contract = JSON.parse(await fs.readFile(path.join(rootDirectory, 'rules', 'agentic-paths.json'), 'utf8'));
+  const contract = JSON.parse(await fs.readFile(path.join(rootDirectory, 'contracts', 'governance', 'agentic-paths.json'), 'utf8'));
 
   assert.deepEqual(validateAgenticPathContract(contract), []);
   assert.deepEqual(await validateAgenticPaths(rootDirectory), []);
@@ -261,6 +262,12 @@ test('validates agentic runtime contract and lean path hook monitoring', async (
   assert.equal(reportEntries.length, 1);
   assert.equal(reportEntries[0].event, 'PostToolUse');
   assert.equal(reportEntries[0].requiredRepair, false);
+  const complianceReport = await buildAgenticComplianceReport(rootDirectory, runtimePath, {
+    toolUseReportPath: reportPath
+  });
+  assert.equal(complianceReport.governedToolUses, 1);
+  assert.equal(complianceReport.postToolViolations, 0);
+  assert.deepEqual(complianceReport.violations, []);
 
   const invalidRuntimePath = path.join(temporaryDirectory, 'invalid-runtime.json');
   await fs.writeFile(invalidRuntimePath, JSON.stringify({ ...validRuntime, selectedPath: 'low-change' }, null, 2));
@@ -301,7 +308,7 @@ test('validates Markdown governance contract, hooks, reports, and repair trigger
   const rootDirectory = path.resolve(import.meta.dirname, '..');
   const temporaryDirectory = await fs.mkdtemp(path.join(os.tmpdir(), 'markdown-governance-'));
   context.after(() => fs.rm(temporaryDirectory, { recursive: true, force: true }));
-  const contract = JSON.parse(await fs.readFile(path.join(rootDirectory, 'rules', 'markdown-governance.json'), 'utf8'));
+  const contract = JSON.parse(await fs.readFile(path.join(rootDirectory, 'contracts', 'governance', 'markdown-governance.json'), 'utf8'));
   const policy = await fs.readFile(path.join(rootDirectory, 'rules', 'markdown-governance.md'), 'utf8');
   const hookConfig = JSON.parse(await fs.readFile(path.join(rootDirectory, '.codex', 'hooks.json'), 'utf8'));
   const preHookScript = await fs.readFile(

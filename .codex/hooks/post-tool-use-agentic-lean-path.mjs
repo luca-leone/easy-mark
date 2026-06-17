@@ -26,7 +26,7 @@ const toolUseReportPath = process.env.AGENTIC_TOOL_USE_REPORT_PATH ?? DEFAULT_TO
 
 try {
   const [pathContract, runtimeContract] = await Promise.all([
-    readJsonFile(path.join(root, 'rules', 'agentic-paths.json')),
+    readJsonFile(path.join(root, 'contracts', 'governance', 'agentic-paths.json')),
     readJsonFile(path.resolve(root, runtimeContractPath))
   ]);
   const validationErrors = validateAgenticRuntimeContract(runtimeContract, pathContract);

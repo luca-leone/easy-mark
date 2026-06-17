@@ -24,3 +24,6 @@
 22. Derive document search text only from sanitized HAST text nodes after `rehypeSanitize`; never index raw Markdown, serialized HTML, attributes, URLs, comments, internal paths, or content removed by sanitization.
 23. Preserve SPA routing, hierarchical navigation, Unicode-safe anchors, live reload, and regression coverage for fixed defects.
 24. Keep every committed Markdown file at or below 150 lines; split content by scope instead of growing oversized Markdown files.
+25. Keep machine-readable governance contracts under `contracts/governance/`; `rules/` explains how to apply them and does not own JSON contracts.
+26. Keep versioned Git hook adapters under `hooks/git/` and install them through `core.hooksPath=hooks/git`; do not treat `.git/hooks` as repository source.
+27. Treat `guardrails/` as the explicit invariant index for product, governance, hook, contract, and budget constraints.

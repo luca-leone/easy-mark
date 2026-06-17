@@ -22,7 +22,7 @@ const runtimeContractPath = process.env.AGENTIC_RUNTIME_CONTRACT_PATH ?? DEFAULT
 
 try {
   const [pathContract, runtimeContract] = await Promise.all([
-    readJsonFile(path.join(root, 'rules', 'agentic-paths.json')),
+    readJsonFile(path.join(root, 'contracts', 'governance', 'agentic-paths.json')),
     readJsonFile(path.resolve(root, runtimeContractPath))
   ]);
   const errors = validateAgenticRuntimeContract(runtimeContract, pathContract);

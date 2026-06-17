@@ -14,7 +14,7 @@ Supersede ADR-0019's validation details with context-aware hook behavior. Standa
 
 Accept Git revert subjects with outer quotes even when the reverted subject contains quotes. Accept native `fixup!`, `squash!`, and `amend!` subjects only when their target is a valid Conventional Commit header. Treat `!` and breaking footers as independent indicators; every present `BREAKING CHANGE:` or `BREAKING-CHANGE:` footer must contain exactly a colon, one separating space, and a non-empty description.
 
-The hook installer sets local `core.hooksPath=hooks` only when absent, remains idempotent when already equal, and refuses to overwrite any different value. The hook reports a direct Node.js PATH requirement instead of embedding a machine-specific executable path.
+The hook installer sets local `core.hooksPath=hooks/git` only when absent, remains idempotent when already equal, and refuses to overwrite any different value. The hook reports a direct Node.js PATH requirement instead of embedding a machine-specific executable path.
 
 ## Consequences
 

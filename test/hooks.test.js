@@ -30,21 +30,21 @@ async function createRepository(context) {
   context.after(() => fs.rm(repository, { recursive: true, force: true }));
   assert.equal(git(repository, 'init', '--quiet').status, 0);
 
-  await fs.mkdir(path.join(repository, 'hooks'), { recursive: true });
+  await fs.mkdir(path.join(repository, 'hooks', 'git'), { recursive: true });
   await fs.mkdir(path.join(repository, 'script', 'git'), { recursive: true });
-  await fs.copyFile(path.join(rootDirectory, 'hooks', 'commit-msg'), path.join(repository, 'hooks', 'commit-msg'));
+  await fs.copyFile(path.join(rootDirectory, 'hooks', 'git', 'commit-msg'), path.join(repository, 'hooks', 'git', 'commit-msg'));
   await fs.copyFile(
     path.join(rootDirectory, 'script', 'git', 'validate-commit-message.mjs'),
     path.join(repository, 'script', 'git', 'validate-commit-message.mjs')
   );
-  await fs.chmod(path.join(repository, 'hooks', 'commit-msg'), 0o755);
+  await fs.chmod(path.join(repository, 'hooks', 'git', 'commit-msg'), 0o755);
   return repository;
 }
 
 async function runHook(repository, message, environment = gitEnvironment) {
   const messageFile = path.join(repository, 'COMMIT_EDITMSG.test');
   await fs.writeFile(messageFile, message);
-  return spawnSync(path.join(repository, 'hooks', 'commit-msg'), [messageFile], {
+  return spawnSync(path.join(repository, 'hooks', 'git', 'commit-msg'), [messageFile], {
     cwd: repository,
     encoding: 'utf8',
     env: environment
@@ -52,7 +52,7 @@ async function runHook(repository, message, environment = gitEnvironment) {
 }
 
 test('versioned commit-msg hook is executable and uses LF endings', async () => {
-  const hookPath = path.join(rootDirectory, 'hooks', 'commit-msg');
+  const hookPath = path.join(rootDirectory, 'hooks', 'git', 'commit-msg');
   const [contents, stats] = await Promise.all([fs.readFile(hookPath), fs.stat(hookPath)]);
   assert.equal(contents.includes(Buffer.from('\r\n')), false);
   assert.notEqual(stats.mode & 0o111, 0);
@@ -72,12 +72,12 @@ test('installer configures an absent path and remains idempotent before HEAD', a
   const repository = await createRepository(context);
   assert.notEqual(git(repository, 'rev-parse', '--verify', 'HEAD').status, 0);
 
-  assert.deepEqual(installHooks(repository), { repositoryRoot: repository, hooksPath: 'hooks', changed: true });
-  assert.deepEqual(installHooks(repository), { repositoryRoot: repository, hooksPath: 'hooks', changed: false });
+  assert.deepEqual(installHooks(repository), { repositoryRoot: repository, hooksPath: 'hooks/git', changed: true });
+  assert.deepEqual(installHooks(repository), { repositoryRoot: repository, hooksPath: 'hooks/git', changed: false });
 
   const cliResult = spawnSync(process.execPath, [installerPath], { cwd: repository, encoding: 'utf8' });
   assert.equal(cliResult.status, 0, cliResult.stderr);
-  assert.match(cliResult.stdout, /Already configured core\.hooksPath=hooks/);
+  assert.match(cliResult.stdout, /Already configured core\.hooksPath=hooks\/git/);
 });
 
 test('installer refuses to overwrite a different effective hooks path', async (context) => {

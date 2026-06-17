@@ -44,7 +44,7 @@
 - Append material decisions to `memory/decisions.md` using its defined format.
 - Use a new ADR for architectural decisions; use `Superseded` status and cross-links instead of rewriting historical decisions.
 - Write governance documentation in English. Preserve technical identifiers exactly.
-- Follow [Markdown Governance](markdown-governance.md) and `rules/markdown-governance.json` for governed Markdown scope, line limits, modal wording, hooks, reports, and repair mode.
+- Follow [Markdown Governance](markdown-governance.md) and `contracts/governance/markdown-governance.json` for governed Markdown scope, line limits, modal wording, hooks, reports, and repair mode.
 - Keep `AGENTS.md` as a concise bootstrap guide; move detailed operating policy, command lists, and repository maps to `rules/`, invariants to `guardrails/`, observable behavior to `contracts/`, and rationale to `doc/adr/`.
 
 ## Context Management

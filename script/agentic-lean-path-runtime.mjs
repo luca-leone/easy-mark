@@ -125,7 +125,7 @@ export function validateAgenticRuntimeContract(runtimeContract, pathContract) {
   const selectedPath = runtimeContract.selectedPath;
   const pathDefinition = pathContract?.paths?.[selectedPath];
   if (!pathDefinition) {
-    errors.push(`runtime contract: selectedPath ${String(selectedPath)} is not defined in rules/agentic-paths.json`);
+    errors.push(`runtime contract: selectedPath ${String(selectedPath)} is not defined in contracts/governance/agentic-paths.json`);
     return errors;
   }
 
@@ -241,7 +241,7 @@ export async function findRepositoryRoot(startDirectory) {
   let currentDirectory = path.resolve(startDirectory);
   while (true) {
     try {
-      await readJsonFile(path.join(currentDirectory, 'rules', 'agentic-paths.json'));
+      await readJsonFile(path.join(currentDirectory, 'contracts', 'governance', 'agentic-paths.json'));
       return currentDirectory;
     } catch {
       const parentDirectory = path.dirname(currentDirectory);

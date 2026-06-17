@@ -25,7 +25,7 @@ Follow these states in order and emit the state output before moving on:
 12. `repair-loop`
 13. `handoff`
 
-Select the workflow path from `rules/agentic-paths.json`. Before file edits, non-trivial commands, or project-agent runs, emit and validate the JSON runtime contract required by that contract; `PreToolUse` and `PostToolUse` hooks detect and report agentic lean path violations for governed tools.
+Select the workflow path from `contracts/governance/agentic-paths.json`. Before file edits, non-trivial commands, or project-agent runs, emit and validate the JSON runtime contract required by that contract; `PreToolUse` and `PostToolUse` hooks detect and report agentic lean path violations for governed tools.
 
 ## Intake
 
@@ -99,7 +99,7 @@ Execution must not begin until the envelope fits [rules/resource-budgets.md](../
 
 Select skills and agents deterministically:
 
-- apply every `rules/agentic-paths.json` escalation rule;
+- apply every `contracts/governance/agentic-paths.json` escalation rule;
 - choose the minimum allowed path, using the highest rank when multiple paths match;
 - use `high-change` when no path matches;
 - named skill: required;

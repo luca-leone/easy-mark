@@ -19,11 +19,12 @@ export function findRepositoryRoot(startDirectory = process.cwd(), gitRunner = r
 
 export function installHooks(repositoryRoot, gitRunner = runGit) {
   const root = path.resolve(repositoryRoot);
+  const repositoryHooksPath = 'hooks/git';
   const current = gitRunner(['config', '--get', 'core.hooksPath'], { cwd: root });
   if (current.status === 0) {
     const configuredPath = current.stdout.trim();
-    if (configuredPath === 'hooks') {
-      return { repositoryRoot: root, hooksPath: 'hooks', changed: false };
+    if (configuredPath === repositoryHooksPath) {
+      return { repositoryRoot: root, hooksPath: repositoryHooksPath, changed: false };
     }
     throw new Error(
       `Refusing to replace effective core.hooksPath=${configuredPath}. Remove or change it explicitly in the applicable Git configuration before installing repository hooks.`
@@ -31,13 +32,13 @@ export function installHooks(repositoryRoot, gitRunner = runGit) {
   }
   if (current.status !== 1) throw new Error(current.stderr.trim() || 'Unable to read effective core.hooksPath.');
 
-  const result = gitRunner(['config', '--local', 'core.hooksPath', 'hooks'], { cwd: root });
+  const result = gitRunner(['config', '--local', 'core.hooksPath', repositoryHooksPath], { cwd: root });
   if (result.status !== 0) throw new Error(result.stderr.trim() || 'Unable to configure core.hooksPath.');
   const effective = gitRunner(['config', '--get', 'core.hooksPath'], { cwd: root });
-  if (effective.status !== 0 || effective.stdout.trim() !== 'hooks') {
-    throw new Error('Configured local core.hooksPath=hooks, but another applicable Git setting still takes precedence.');
+  if (effective.status !== 0 || effective.stdout.trim() !== repositoryHooksPath) {
+    throw new Error('Configured local core.hooksPath=hooks/git, but another applicable Git setting still takes precedence.');
   }
-  return { repositoryRoot: root, hooksPath: 'hooks', changed: true };
+  return { repositoryRoot: root, hooksPath: repositoryHooksPath, changed: true };
 }
 
 export function runCli(startDirectory = process.cwd()) {

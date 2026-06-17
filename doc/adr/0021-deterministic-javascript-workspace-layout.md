@@ -10,7 +10,7 @@ The workspace used `.agents/skills/` for repository skills and `.codex/agents/` 
 
 ## Decision
 
-Keep `.agents/skills/` and `.codex/agents/` as separate Codex surfaces. Preserve required declarative formats: `SKILL.md`, skill metadata YAML, agent TOML, governance Markdown, and the extensionless Git hook entry point. Put executable workflow and maintenance logic under `script/` and require ESM `.mjs`; keep `hooks/commit-msg` as a minimal POSIX adapter that invokes the JavaScript validator.
+Keep `.agents/skills/` and `.codex/agents/` as separate Codex surfaces. Preserve required declarative formats: `SKILL.md`, skill metadata YAML, agent TOML, governance Markdown, and the extensionless Git hook entry point. Put executable workflow and maintenance logic under `script/` and require ESM `.mjs`; keep `hooks/git/commit-msg` as a minimal POSIX adapter that invokes the JavaScript validator.
 
 Move the application entry point to `lib/server.js`, rename the product and package to `easy-mark`, and split governance validation into immutable specifications, pure validators, and filesystem orchestration. Sort recursive scans and final diagnostics explicitly so repeated runs produce stable results.
 

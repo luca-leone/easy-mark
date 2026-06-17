@@ -9,7 +9,7 @@ import {
   readStdin
 } from './agentic-lean-path-runtime.mjs';
 
-export const DEFAULT_MARKDOWN_GOVERNANCE_CONTRACT_PATH = path.join('rules', 'markdown-governance.json');
+export const DEFAULT_MARKDOWN_GOVERNANCE_CONTRACT_PATH = path.join('contracts', 'governance', 'markdown-governance.json');
 export const DEFAULT_MARKDOWN_GOVERNANCE_REPORT_PATH = path.join('reports', 'markdown-governance-report.jsonl');
 
 export async function readMarkdownGovernanceContract(root, contractPath = DEFAULT_MARKDOWN_GOVERNANCE_CONTRACT_PATH) {
@@ -19,62 +19,62 @@ export async function readMarkdownGovernanceContract(root, contractPath = DEFAUL
 export function validateMarkdownGovernanceContract(contract) {
   const errors = [];
   if (!contract || typeof contract !== 'object' || Array.isArray(contract)) {
-    return ['rules/markdown-governance.json: contract must be a JSON object'];
+    return ['contracts/governance/markdown-governance.json: contract must be a JSON object'];
   }
-  if (contract.version !== 1) errors.push('rules/markdown-governance.json: version must be 1');
+  if (contract.version !== 1) errors.push('contracts/governance/markdown-governance.json: version must be 1');
   if (contract.contractName !== 'Markdown Governance') {
-    errors.push('rules/markdown-governance.json: contractName must be Markdown Governance');
+    errors.push('contracts/governance/markdown-governance.json: contractName must be Markdown Governance');
   }
 
   const governedMarkdown = contract.governedMarkdown;
   if (!governedMarkdown || typeof governedMarkdown !== 'object' || Array.isArray(governedMarkdown)) {
-    errors.push('rules/markdown-governance.json: governedMarkdown is required');
+    errors.push('contracts/governance/markdown-governance.json: governedMarkdown is required');
   } else {
     for (const exactFile of ['AGENTS.md']) {
       if (!governedMarkdown.exactFiles?.includes(exactFile)) {
-        errors.push(`rules/markdown-governance.json: governedMarkdown.exactFiles missing ${exactFile}`);
+        errors.push(`contracts/governance/markdown-governance.json: governedMarkdown.exactFiles missing ${exactFile}`);
       }
     }
     for (const directory of ['.agents', 'contracts', 'doc', 'evaluation', 'guardrails', 'memory', 'reports', 'rules']) {
       if (!governedMarkdown.directories?.includes(directory)) {
-        errors.push(`rules/markdown-governance.json: governedMarkdown.directories missing ${directory}`);
+        errors.push(`contracts/governance/markdown-governance.json: governedMarkdown.directories missing ${directory}`);
       }
     }
     if (governedMarkdown.extension !== '.md') {
-      errors.push('rules/markdown-governance.json: governedMarkdown.extension must be .md');
+      errors.push('contracts/governance/markdown-governance.json: governedMarkdown.extension must be .md');
     }
   }
 
   const rules = Array.isArray(contract.rules) ? contract.rules : [];
   const maxLineRule = rules.find((rule) => rule.id === 'markdown.max-lines');
   if (maxLineRule?.maxLines !== 150) {
-    errors.push('rules/markdown-governance.json: markdown.max-lines maxLines must be 150');
+    errors.push('contracts/governance/markdown-governance.json: markdown.max-lines maxLines must be 150');
   }
   const bannedModalRule = rules.find((rule) => rule.id === 'markdown.banned-modals');
   if (JSON.stringify(bannedModalRule?.bannedWords) !== JSON.stringify(['should', 'may'])) {
-    errors.push('rules/markdown-governance.json: markdown.banned-modals bannedWords must be ["should","may"]');
+    errors.push('contracts/governance/markdown-governance.json: markdown.banned-modals bannedWords must be ["should","may"]');
   }
   const obligationRule = rules.find((rule) => rule.id === 'markdown.obligation-modal');
   if (obligationRule?.requiredWord !== 'must') {
-    errors.push('rules/markdown-governance.json: markdown.obligation-modal requiredWord must be must');
+    errors.push('contracts/governance/markdown-governance.json: markdown.obligation-modal requiredWord must be must');
   }
 
   if (!contract.hookPolicy?.semantics?.includes('not a guaranteed hard stop')) {
-    errors.push('rules/markdown-governance.json: hookPolicy.semantics must avoid hard-stop assumptions');
+    errors.push('contracts/governance/markdown-governance.json: hookPolicy.semantics must avoid hard-stop assumptions');
   }
   if (!contract.hookPolicy?.violationPolicy?.includes('repair mode')) {
-    errors.push('rules/markdown-governance.json: hookPolicy.violationPolicy must require repair mode');
+    errors.push('contracts/governance/markdown-governance.json: hookPolicy.violationPolicy must require repair mode');
   }
   if (contract.report?.path !== DEFAULT_MARKDOWN_GOVERNANCE_REPORT_PATH) {
-    errors.push(`rules/markdown-governance.json: report.path must be ${DEFAULT_MARKDOWN_GOVERNANCE_REPORT_PATH}`);
+    errors.push(`contracts/governance/markdown-governance.json: report.path must be ${DEFAULT_MARKDOWN_GOVERNANCE_REPORT_PATH}`);
   }
   for (const field of ['event', 'tool', 'file', 'line', 'ruleId', 'expected', 'actual', 'repairRequired']) {
     if (!contract.report?.requiredFields?.includes(field)) {
-      errors.push(`rules/markdown-governance.json: report.requiredFields missing ${field}`);
+      errors.push(`contracts/governance/markdown-governance.json: report.requiredFields missing ${field}`);
     }
   }
   if (contract.repairPolicy?.script !== 'script/repair-markdown-governance.mjs') {
-    errors.push('rules/markdown-governance.json: repairPolicy.script must be script/repair-markdown-governance.mjs');
+    errors.push('contracts/governance/markdown-governance.json: repairPolicy.script must be script/repair-markdown-governance.mjs');
   }
 
   return errors.sort(compareCodeUnits);

@@ -109,7 +109,7 @@ export function validateAgenticWorkflowGuide(contents) {
     'Deterministic Agentic Workflow',
     'rules/agentic-workflow.md',
     'rules/markdown-governance.md',
-    'rules/markdown-governance.json',
+    'contracts/governance/markdown-governance.json',
     'rules/resource-budgets.md',
     '$orchestrate-request',
     '$quality-gate',
@@ -266,38 +266,38 @@ export function validateAgenticPathContract(contract) {
   ];
 
   if (!contract || typeof contract !== 'object' || Array.isArray(contract)) {
-    return ['rules/agentic-paths.json: contract must be a JSON object'];
+    return ['contracts/governance/agentic-paths.json: contract must be a JSON object'];
   }
-  if (contract.version !== 1) errors.push('rules/agentic-paths.json: version must be 1');
+  if (contract.version !== 1) errors.push('contracts/governance/agentic-paths.json: version must be 1');
   if (JSON.stringify(contract.pathOrder) !== JSON.stringify(requiredPathOrder)) {
-    errors.push('rules/agentic-paths.json: pathOrder must define the deterministic path order');
+    errors.push('contracts/governance/agentic-paths.json: pathOrder must define the deterministic path order');
   }
   if (!Array.isArray(contract.selectionRule?.algorithm) || contract.selectionRule.algorithm.length < 5) {
-    errors.push('rules/agentic-paths.json: selectionRule.algorithm must define deterministic selection');
+    errors.push('contracts/governance/agentic-paths.json: selectionRule.algorithm must define deterministic selection');
   }
   for (const phrase of ['Apply every escalation rule', 'When no path matches, select high-change']) {
     if (!contract.selectionRule?.algorithm?.some((step) => step.includes(phrase))) {
-      errors.push(`rules/agentic-paths.json: selectionRule.algorithm missing ${phrase}`);
+      errors.push(`contracts/governance/agentic-paths.json: selectionRule.algorithm missing ${phrase}`);
     }
   }
 
   const requiredBefore = contract.runtimeContract?.requiredBefore;
   if (!Array.isArray(requiredBefore)) {
-    errors.push('rules/agentic-paths.json: runtimeContract.requiredBefore is required');
+    errors.push('contracts/governance/agentic-paths.json: runtimeContract.requiredBefore is required');
   } else {
     for (const action of ['file-edits', 'non-trivial-commands', 'project-agent-runs']) {
       if (!requiredBefore.includes(action)) {
-        errors.push(`rules/agentic-paths.json: runtimeContract.requiredBefore missing ${action}`);
+        errors.push(`contracts/governance/agentic-paths.json: runtimeContract.requiredBefore missing ${action}`);
       }
     }
   }
   const requiredRuntimeFields = contract.runtimeContract?.requiredFields;
   if (!Array.isArray(requiredRuntimeFields)) {
-    errors.push('rules/agentic-paths.json: runtimeContract.requiredFields is required');
+    errors.push('contracts/governance/agentic-paths.json: runtimeContract.requiredFields is required');
   } else {
     for (const field of runtimeFields) {
       if (!requiredRuntimeFields.includes(field)) {
-        errors.push(`rules/agentic-paths.json: runtimeContract.requiredFields missing ${field}`);
+        errors.push(`contracts/governance/agentic-paths.json: runtimeContract.requiredFields missing ${field}`);
       }
     }
   }
@@ -305,19 +305,19 @@ export function validateAgenticPathContract(contract) {
   const paths = contract.paths && typeof contract.paths === 'object' && !Array.isArray(contract.paths)
     ? contract.paths
     : {};
-  if (Object.keys(paths).length === 0) errors.push('rules/agentic-paths.json: paths object is required');
+  if (Object.keys(paths).length === 0) errors.push('contracts/governance/agentic-paths.json: paths object is required');
   requiredPathOrder.forEach((pathId, expectedRank) => {
     const pathDefinition = paths[pathId];
     if (!pathDefinition || typeof pathDefinition !== 'object' || Array.isArray(pathDefinition)) {
-      errors.push(`rules/agentic-paths.json: missing path ${pathId}`);
+      errors.push(`contracts/governance/agentic-paths.json: missing path ${pathId}`);
       return;
     }
     if (pathDefinition.rank !== expectedRank) {
-      errors.push(`rules/agentic-paths.json: ${pathId} rank must be ${expectedRank}`);
+      errors.push(`contracts/governance/agentic-paths.json: ${pathId} rank must be ${expectedRank}`);
     }
     for (const field of ['conditions', 'requiredStates', 'requiredFields', 'verification', 'forbiddenActions']) {
       if (!Array.isArray(pathDefinition[field]) || pathDefinition[field].length === 0) {
-        errors.push(`rules/agentic-paths.json: ${pathId}.${field} must be a non-empty array`);
+        errors.push(`contracts/governance/agentic-paths.json: ${pathId}.${field} must be a non-empty array`);
       }
     }
   });
@@ -326,47 +326,47 @@ export function validateAgenticPathContract(contract) {
   if (highChange) {
     for (const state of requiredStates) {
       if (!highChange.requiredStates?.includes(state)) {
-        errors.push(`rules/agentic-paths.json: high-change.requiredStates missing ${state}`);
+        errors.push(`contracts/governance/agentic-paths.json: high-change.requiredStates missing ${state}`);
       }
     }
     for (const field of ['Source Documents', 'Budget Envelope', 'Verification Matrix', 'Handoff Gate']) {
       if (!highChange.requiredFields?.includes(field)) {
-        errors.push(`rules/agentic-paths.json: high-change.requiredFields missing ${field}`);
+        errors.push(`contracts/governance/agentic-paths.json: high-change.requiredFields missing ${field}`);
       }
     }
   }
 
   if (!Array.isArray(contract.escalationRules)) {
-    errors.push('rules/agentic-paths.json: escalationRules must be an array');
+    errors.push('contracts/governance/agentic-paths.json: escalationRules must be an array');
   } else {
     for (const escalationId of escalationIds) {
       if (!contract.escalationRules.some((rule) => rule.id === escalationId)) {
-        errors.push(`rules/agentic-paths.json: escalationRules missing ${escalationId}`);
+        errors.push(`contracts/governance/agentic-paths.json: escalationRules missing ${escalationId}`);
       }
     }
     for (const rule of contract.escalationRules) {
       if (!requiredPathOrder.includes(rule.minimumPath)) {
-        errors.push(`rules/agentic-paths.json: ${rule.id ?? 'escalation rule'} minimumPath is invalid`);
+        errors.push(`contracts/governance/agentic-paths.json: ${rule.id ?? 'escalation rule'} minimumPath is invalid`);
       }
     }
   }
 
   const requiredComplianceFields = contract.complianceReport?.requiredFields;
   if (!Array.isArray(requiredComplianceFields)) {
-    errors.push('rules/agentic-paths.json: complianceReport.requiredFields is required');
+    errors.push('contracts/governance/agentic-paths.json: complianceReport.requiredFields is required');
   } else {
     for (const field of complianceFields) {
       if (!requiredComplianceFields.includes(field)) {
-        errors.push(`rules/agentic-paths.json: complianceReport.requiredFields missing ${field}`);
+        errors.push(`contracts/governance/agentic-paths.json: complianceReport.requiredFields missing ${field}`);
       }
     }
   }
 
   if (!contract.hookPolicy?.semantics?.includes('not a guaranteed hard stop')) {
-    errors.push('rules/agentic-paths.json: hookPolicy.semantics must avoid hard-stop assumptions');
+    errors.push('contracts/governance/agentic-paths.json: hookPolicy.semantics must avoid hard-stop assumptions');
   }
   if (!contract.hookPolicy?.violationPolicy?.includes('repair mode')) {
-    errors.push('rules/agentic-paths.json: hookPolicy.violationPolicy must require repair mode');
+    errors.push('contracts/governance/agentic-paths.json: hookPolicy.violationPolicy must require repair mode');
   }
 
   return errors;
@@ -470,7 +470,7 @@ export function validateMarkdownGovernancePolicy(contents) {
   const errors = [];
   for (const phrase of [
     'Markdown Governance',
-    'rules/markdown-governance.json',
+    'contracts/governance/markdown-governance.json',
     'Governed Markdown',
     'markdown.banned-modals',
     'must',

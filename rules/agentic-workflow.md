@@ -4,7 +4,7 @@
 
 This file is the canonical operating policy for non-trivial repository work. `AGENTS.md` bootstraps the agent and points here; [ADR-0033](../doc/adr/0033-deterministic-agentic-workflow.md) records the accepted architectural decision.
 
-Select the workflow path from the deterministic contract in [agentic-paths.json](agentic-paths.json). Any task that changes files, affects behavior, touches governance, spans multiple modules, invokes a skill, or uses project agents is non-trivial.
+Select the workflow path from the deterministic contract in [agentic-paths.json](../contracts/governance/agentic-paths.json). Any task that changes files, affects behavior, touches governance, spans multiple modules, invokes a skill, or uses project agents is non-trivial.
 
 ## State Machine
 
@@ -24,7 +24,7 @@ Non-trivial work preserves this state order for every applicable state:
 12. `repair-loop`
 13. `handoff`
 
-Every state produces output that can be inspected. Before file edits, non-trivial commands, or project-agent runs, emit and validate the JSON runtime contract required by `rules/agentic-paths.json`; `PreToolUse` and `PostToolUse` hooks detect and report agentic lean path violations for governed tools.
+Every state produces output that can be inspected. Before file edits, non-trivial commands, or project-agent runs, emit and validate the JSON runtime contract required by `contracts/governance/agentic-paths.json`; `PreToolUse` and `PostToolUse` hooks detect and report agentic lean path violations for governed tools.
 
 ## Intake And Classification Loop
 
@@ -57,7 +57,7 @@ Loop until:
 
 ## Budget Gate And Runtime Budget Loop
 
-Use `$resource-budget-gate` for non-trivial work before routing, planning, or execution. Build a `Budget Envelope` from [rules/resource-budgets.md](resource-budgets.md) after requirements are reconciled and before project agents, skills, or long-running commands are selected.
+Use `$resource-budget-gate` for non-trivial work before routing, planning, or execution. Build a `Budget Envelope` from [resource-budgets.md](resource-budgets.md) after requirements are reconciled and before project agents, skills, or long-running commands are selected.
 
 During execution, repeat the runtime budget loop at phase boundaries and after unusually large tool output. Continue only when the next phase fits the declared envelope. Stop and request explicit approval before exceeding context, concurrency, duration, or provider budgets.
 
@@ -71,7 +71,7 @@ Exit criteria:
 
 ## Routing Loop
 
-Use `$orchestrate-request` for workflow intake and routing. Apply `rules/agentic-paths.json`: collect task facts, apply escalation rules, choose the minimum allowed path, prefer the highest rank when multiple paths match, and use `high-change` when none match.
+Use `$orchestrate-request` for workflow intake and routing. Apply `contracts/governance/agentic-paths.json`: collect task facts, apply escalation rules, choose the minimum allowed path, prefer the highest rank when multiple paths match, and use `high-change` when none match.
 
 Route deterministically:
 

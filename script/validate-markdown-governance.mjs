@@ -18,8 +18,8 @@ export async function validateMarkdownGovernance(rootDirectory) {
     }
   } catch (error) {
     errors.push(error instanceof SyntaxError
-      ? 'rules/markdown-governance.json: invalid JSON'
-      : 'rules/markdown-governance.json: required for Markdown governance validation');
+      ? 'contracts/governance/markdown-governance.json: invalid JSON'
+      : 'contracts/governance/markdown-governance.json: required for Markdown governance validation');
   }
   return errors.sort();
 }

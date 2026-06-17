@@ -7,13 +7,13 @@ export async function validateAgenticPaths(rootDirectory) {
   const root = path.resolve(rootDirectory);
   const errors = [];
   try {
-    const contract = JSON.parse(await fs.readFile(path.join(root, 'rules', 'agentic-paths.json'), 'utf8'));
+    const contract = JSON.parse(await fs.readFile(path.join(root, 'contracts', 'governance', 'agentic-paths.json'), 'utf8'));
     errors.push(...validateAgenticPathContract(contract));
   } catch (error) {
     if (error instanceof SyntaxError) {
-      errors.push('rules/agentic-paths.json: invalid JSON');
+      errors.push('contracts/governance/agentic-paths.json: invalid JSON');
     } else {
-      errors.push('rules/agentic-paths.json: required for deterministic path validation');
+      errors.push('contracts/governance/agentic-paths.json: required for deterministic path validation');
     }
   }
   return errors.sort();

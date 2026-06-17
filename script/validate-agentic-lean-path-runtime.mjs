@@ -11,7 +11,7 @@ export async function validateAgenticRuntimeContractFile(rootDirectory, runtimeC
   const errors = [];
   try {
     const [pathContract, runtimeContract] = await Promise.all([
-      readJsonFile(path.join(root, 'rules', 'agentic-paths.json')),
+      readJsonFile(path.join(root, 'contracts', 'governance', 'agentic-paths.json')),
       readJsonFile(path.resolve(root, runtimeContractPath))
     ]);
     errors.push(...validateAgenticRuntimeContract(runtimeContract, pathContract));

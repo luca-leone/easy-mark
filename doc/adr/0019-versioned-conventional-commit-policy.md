@@ -12,7 +12,7 @@ Commit messages need a consistent machine-checkable shape without importing anot
 
 Adopt a dependency-free Node.js 22 validator for the repository's Conventional Commit subset. Accept the types `feat`, `fix`, `docs`, `chore`, `test`, `refactor`, `build`, and `ci`, optional scopes, `!`, and breaking-change footers. Explicitly permit Git-generated merge and revert subjects and autosquash `fixup!` and `squash!` subjects whose targets are valid Conventional Commit headers.
 
-Keep `hooks/commit-msg` under version control and configure each clone explicitly with an idempotent `npm run hooks:install` command that sets local `core.hooksPath=hooks`. Provide a non-implicit Codex skill that reads status and the full staged diff, proposes a semantic message, validates it, and stages or commits only after explicit user instruction.
+Keep `hooks/git/commit-msg` under version control and configure each clone explicitly with an idempotent `npm run hooks:install` command that sets local `core.hooksPath=hooks/git`. Provide a non-implicit Codex skill that reads status and the full staged diff, proposes a semantic message, validates it, and stages or commits only after explicit user instruction.
 
 ## Consequences
 
