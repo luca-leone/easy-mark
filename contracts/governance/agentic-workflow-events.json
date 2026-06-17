@@ -38,6 +38,14 @@
       "state": "intake",
       "source": "UserPromptSubmit"
     },
+    "workflow.started": {
+      "state": "routing",
+      "source": "workflow:start",
+      "requiredFields": [
+        "selectedPath",
+        "runtimeContractPath"
+      ]
+    },
     "agent.started": {
       "source": "SubagentStart",
       "requiredFields": [
@@ -84,7 +92,8 @@
   },
   "hookPolicy": {
     "intakeTrigger": "UserPromptSubmit must append intake.started before governed work begins.",
-    "routingGate": "PreToolUse must require path agent events before mutating tools or non-trivial commands.",
+    "startGate": "workflow:start must append workflow.started and write the runtime contract before governed work begins.",
+    "routingGate": "PreToolUse must require workflow.started and path agent events before mutating tools or non-trivial commands.",
     "completionGate": "Stop must report incomplete required agent events before workflow completion."
   }
 }

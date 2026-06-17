@@ -8,7 +8,8 @@ import {
   parseHookPayload,
   readJsonFile,
   readStdin,
-  toolCallRequiresRuntimeContract
+  toolCallRequiresRuntimeContract,
+  validateAgenticRuntimeContract
 } from './agentic-lean-path-runtime.mjs';
 import { compareCodeUnits } from './governance/validators.mjs';
 
@@ -74,7 +75,7 @@ export function validateWorkflowEventsContract(contract) {
       errors.push(`contracts/governance/agentic-workflow-events.json: report.requiredFields missing ${field}`);
     }
   }
-  for (const eventName of ['intake.started', 'agent.started', 'agent.completed', 'workflow.completed', 'workflow.violation']) {
+  for (const eventName of ['intake.started', 'workflow.started', 'agent.started', 'agent.completed', 'workflow.completed', 'workflow.violation']) {
     if (!contract.events?.[eventName]) {
       errors.push(`contracts/governance/agentic-workflow-events.json: events missing ${eventName}`);
     }
@@ -109,6 +110,9 @@ export function validateWorkflowEvents(events, contract, runtimeContract = null,
 
   if (options.requireIntake && !hasEvent(events, { event: 'intake.started' })) {
     errors.push('agentic workflow: intake.started is required before governed work');
+  }
+  if (options.requireStarted && !hasEvent(events, { event: 'workflow.started' })) {
+    errors.push('agentic workflow: workflow.started is required before governed work');
   }
 
   const selectedPath = runtimeContract?.selectedPath;
@@ -149,7 +153,7 @@ export function buildWorkflowStatus(events, runtimeContract = null, contract = n
     agents,
     missingBeforeMutatingToolUse: missingMutating,
     missingBeforeWorkflowCompletion: missingCompletion,
-    activeViolations: uniqueSorted(events
+    activeViolations: uniqueSorted(events.slice(lastWorkflowStartIndex(events))
       .filter((event) => event.event === 'workflow.violation')
       .flatMap((event) => event.violations ?? []))
   };
@@ -227,6 +231,7 @@ export async function runWorkflowHook(eventName, rawPayload, options = {}) {
     if (!requirement.required) return [];
     const errors = validateWorkflowEvents(events, contract, runtimeContract, {
       requireIntake: true,
+      requireStarted: true,
       phase: 'beforeMutatingToolUse'
     });
     if (errors.length > 0) await appendWorkflowViolation(root, currentRun, 'beforeMutatingToolUse', errors, eventsPath);
@@ -236,6 +241,7 @@ export async function runWorkflowHook(eventName, rawPayload, options = {}) {
   if (eventName === 'Stop') {
     const errors = validateWorkflowEvents(events, contract, runtimeContract, {
       requireIntake: true,
+      requireStarted: true,
       phase: 'beforeWorkflowCompletion'
     });
     if (errors.length > 0) await appendWorkflowViolation(root, currentRun, 'beforeWorkflowCompletion', errors, eventsPath);
@@ -251,6 +257,52 @@ export async function runWorkflowHook(eventName, rawPayload, options = {}) {
   }
 
   return [];
+}
+
+export async function startWorkflow(root, options = {}) {
+  const repositoryRoot = path.resolve(root);
+  const workflowContract = await readJsonFile(path.resolve(repositoryRoot, DEFAULT_WORKFLOW_EVENTS_CONTRACT_PATH));
+  const pathContract = await readJsonFile(path.resolve(repositoryRoot, 'contracts', 'governance', 'agentic-paths.json'));
+  const selectedPath = options.selectedPath ?? 'high-change';
+  const pathDefinition = pathContract.paths?.[selectedPath];
+  if (!pathDefinition) throw new Error(`Unknown workflow path: ${selectedPath}`);
+
+  const eventsPath = options.eventsPath ?? DEFAULT_WORKFLOW_EVENTS_PATH;
+  const currentRunPath = options.currentRunPath ?? currentRunPathForEvents(eventsPath);
+  const runtimeContractPath = options.runtimeContractPath ?? DEFAULT_RUNTIME_CONTRACT_PATH;
+  let currentRun = await readCurrentWorkflowRun(repositoryRoot, currentRunPath);
+  if (!currentRun?.runId) {
+    const promptHash = hashString(options.task ?? selectedPath);
+    currentRun = {
+      runId: `${Date.now()}-${promptHash}`,
+      promptHash,
+      startedAt: new Date().toISOString()
+    };
+    await writeCurrentWorkflowRun(repositoryRoot, currentRun, currentRunPath);
+    await appendWorkflowEvent(repositoryRoot, {
+      event: 'intake.started',
+      source: 'workflow:start',
+      runId: currentRun.runId,
+      promptHash,
+      state: 'intake'
+    }, eventsPath);
+  }
+
+  const runtimeContract = buildRuntimeContract(selectedPath, pathDefinition, options.task);
+  const runtimeAbsolutePath = path.resolve(repositoryRoot, runtimeContractPath);
+  await fs.mkdir(path.dirname(runtimeAbsolutePath), { recursive: true });
+  await fs.writeFile(runtimeAbsolutePath, `${JSON.stringify(runtimeContract, null, 2)}\n`);
+  const validationErrors = validateAgenticRuntimeContract(runtimeContract, pathContract);
+  if (validationErrors.length > 0) throw new Error(validationErrors.join('\n'));
+  await appendWorkflowEvent(repositoryRoot, {
+    event: 'workflow.started',
+    source: 'workflow:start',
+    runId: currentRun.runId,
+    state: workflowContract.events?.['workflow.started']?.state ?? 'routing',
+    selectedPath,
+    runtimeContractPath
+  }, eventsPath);
+  return { currentRun, runtimeContract };
 }
 
 async function readOptionalJson(filePath) {
@@ -298,6 +350,29 @@ function eventsForRun(events, currentRun) {
   if (!currentRun?.runId) return events;
   const scopedEvents = events.filter((event) => event.runId === currentRun.runId);
   return scopedEvents.length === 0 ? events : scopedEvents;
+}
+
+function buildRuntimeContract(selectedPath, pathDefinition, task = '') {
+  return {
+    selectedPath,
+    taskFacts: [task || `workflow:start selected ${selectedPath}`],
+    escalationRulesApplied: selectedPath === 'release'
+      ? ['no-matching-path']
+      : ['touches-agentic-workflow-governance'],
+    requiredStates: pathDefinition.requiredStates,
+    requiredFields: pathDefinition.requiredFields,
+    budgetEnvelope: {
+      taskClass: selectedPath === 'release' ? 'release' : selectedPath.replace(/-change$/, ''),
+      providerBudget: 'coordinator-only',
+      maxWriteAgents: 1
+    },
+    verification: pathDefinition.verification
+  };
+}
+
+function lastWorkflowStartIndex(events) {
+  const index = events.findLastIndex((event) => event.event === 'workflow.started');
+  return index === -1 ? 0 : index;
 }
 
 function currentRunPathForEvents(eventsPath) {
@@ -364,8 +439,23 @@ async function runCli() {
   const eventsPath = process.env.AGENTIC_WORKFLOW_EVENTS_PATH ?? DEFAULT_WORKFLOW_EVENTS_PATH;
   const currentRun = await readCurrentWorkflowRun(root, process.env.AGENTIC_WORKFLOW_CURRENT_RUN_PATH ?? currentRunPathForEvents(eventsPath));
   const events = eventsForRun(await readWorkflowEvents(root, eventsPath), currentRun);
-  if (command === 'validate') {
+  if (command === 'start') {
+    const options = parseStartArguments(process.argv.slice(3));
+    const result = await startWorkflow(root, options);
+    console.log(`Workflow started: ${result.currentRun.runId}`);
+    console.log(`Path: ${result.runtimeContract.selectedPath}`);
+    console.log(`Runtime contract: ${options.runtimeContractPath ?? DEFAULT_RUNTIME_CONTRACT_PATH}`);
+    return;
+  }
+  if (command === 'validate' || command === 'verify') {
     const errors = validateWorkflowEvents(events, contract, runtimeContract, { requireIntake: events.length > 0 });
+    if (command === 'verify') {
+      errors.push(...validateWorkflowEvents(events, contract, runtimeContract, {
+        requireIntake: true,
+        requireStarted: true,
+        phase: 'beforeWorkflowCompletion'
+      }));
+    }
     if (errors.length > 0) {
       console.error('Agentic workflow events validation failed:');
       for (const error of errors) console.error(`- ${error}`);
@@ -381,6 +471,19 @@ async function runCli() {
     return;
   }
   console.log(formatWorkflowStatus(buildWorkflowStatus(events, runtimeContract, contract)));
+}
+
+function parseStartArguments(argumentsList) {
+  const options = {};
+  for (let index = 0; index < argumentsList.length; index += 1) {
+    const argument = argumentsList[index];
+    if (argument === '--path') options.selectedPath = argumentsList[index += 1];
+    else if (argument === '--task') options.task = argumentsList[index += 1];
+    else if (argument === '--runtime-contract') options.runtimeContractPath = argumentsList[index += 1];
+    else if (argument === '--events') options.eventsPath = argumentsList[index += 1];
+    else throw new Error(`Unknown workflow:start argument: ${argument}`);
+  }
+  return options;
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) await runCli();

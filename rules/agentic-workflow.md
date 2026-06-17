@@ -24,11 +24,11 @@ Non-trivial work preserves this state order for every applicable state:
 12. `repair-loop`
 13. `handoff`
 
-Every state produces output that can be inspected. `UserPromptSubmit` must record `intake.started` in the workflow ledger before governed work begins. Before file edits, non-trivial commands, or project-agent runs, emit and validate the JSON runtime contract required by `contracts/governance/agentic-paths.json`; `PreToolUse` and `PostToolUse` hooks detect and report agentic lean path violations for governed tools.
+Every state produces output that can be inspected. `UserPromptSubmit` records `intake.started`; `workflow:start` writes the runtime contract and records `workflow.started`; `workflow:verify` checks active-run gates before handoff. Before file edits, non-trivial commands, or project-agent runs, `PreToolUse` and `PostToolUse` hooks detect and report agentic lean path violations.
 
 ## Intake And Classification Loop
 
-For non-trivial work, first classify the request as one or more of: `question`, `implementation`, `debug`, `review`, `planning`, `governance`, `documentation`, `release`, `packaging`, `runtime`, or `agentic-workflow`.
+For non-trivial work, first classify the request as one or more of: `question`, `implementation`, `debug`, `review`, `planning`, `governance`, `documentation`, `release`, `packaging`, `runtime`, or `agentic-workflow`; then run `npm run workflow:start -- --task "..."` before governed mutation.
 
 Record risk as:
 

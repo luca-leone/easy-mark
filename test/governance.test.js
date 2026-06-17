@@ -408,6 +408,7 @@ test('validates observable workflow intake, routing, and stop gates', async (con
   const subagentStartHookPath = path.join(rootDirectory, '.codex', 'hooks', 'subagent-start-agentic-workflow.mjs');
   const subagentStopHookPath = path.join(rootDirectory, '.codex', 'hooks', 'subagent-stop-agentic-workflow.mjs');
   const stopHookPath = path.join(rootDirectory, '.codex', 'hooks', 'stop-agentic-workflow.mjs');
+  const workflowRuntimePath = path.join(rootDirectory, 'script', 'agentic-workflow-runtime.mjs');
 
   assert.deepEqual(validateWorkflowEventsContract(contract), []);
   const missingIntake = spawnSync(process.execPath, [preHookPath], {
@@ -423,6 +424,20 @@ test('validates observable workflow intake, routing, and stop gates', async (con
     env: hookEnvironment,
     input: JSON.stringify({ prompt: 'Implement deterministic workflow events.' })
   }).status, 0);
+  const started = spawnSync(process.execPath, [
+    workflowRuntimePath,
+    'start',
+    '--task',
+    'Implement deterministic workflow events.',
+    '--runtime-contract',
+    runtimePath,
+    '--events',
+    eventsPath
+  ], {
+    cwd: rootDirectory,
+    env: hookEnvironment
+  });
+  assert.equal(started.status, 0, started.stderr.toString());
   const missingAgents = spawnSync(process.execPath, [preHookPath], {
     cwd: rootDirectory,
     env: hookEnvironment,
@@ -479,6 +494,7 @@ test('validates observable workflow intake, routing, and stop gates', async (con
   assert.deepEqual(events.map(({ event }) => event), [
     'workflow.violation',
     'intake.started',
+    'workflow.started',
     'workflow.violation',
     'agent.completed',
     'agent.started',
@@ -487,6 +503,11 @@ test('validates observable workflow intake, routing, and stop gates', async (con
     'workflow.completed'
   ]);
   assert.ok(events.filter((event) => event.runId === currentRun.runId).length >= 5);
+  const verified = spawnSync(process.execPath, ['script/agentic-workflow-runtime.mjs', 'verify'], {
+    cwd: rootDirectory,
+    env: hookEnvironment
+  });
+  assert.equal(verified.status, 0, verified.stderr.toString());
 });
 
 test('validates Markdown governance contract, hooks, reports, and repair trigger', async (context) => {
@@ -682,6 +703,8 @@ test('uses the public @easy-mark/cli package metadata and ESM workflow scripts',
   assert.equal(packageManifest.scripts['validate:agentic-paths'], 'node script/validate-agentic-paths.mjs');
   assert.equal(packageManifest.scripts['validate:agentic-runtime-contract'], 'node script/validate-agentic-lean-path-runtime.mjs');
   assert.equal(packageManifest.scripts['validate:versioning'], 'node script/versioning-runtime.mjs validate-contract');
+  assert.equal(packageManifest.scripts['workflow:start'], 'node script/agentic-workflow-runtime.mjs start');
+  assert.equal(packageManifest.scripts['workflow:verify'], 'node script/agentic-workflow-runtime.mjs verify');
   assert.equal(packageManifest.scripts['workflow:status'], 'node script/agentic-workflow-runtime.mjs status');
   assert.equal(packageManifest.scripts['pack:dry-run'], 'node script/versioning-runtime.mjs pack-check && npm pack --dry-run');
   assert.equal(packageManifest.scripts['report:agentic-compliance'], 'node script/report-agentic-compliance.mjs');
