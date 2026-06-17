@@ -27,8 +27,11 @@ import {
   validateMarkdownGovernancePolicy,
   validateAgenticHookConfig,
   validateAgenticHookScript,
+  validateAgenticWorkflowHookConfig,
+  validateAgenticWorkflowHookScript,
   validateAgenticPathContract,
   validateAgenticWorkflowPolicy,
+  validateWorkflowEventsContract,
   validateOrchestrateRequestSkill,
   validateQualityGateSkill,
   validateResourceBudgetGateSkill,
@@ -40,6 +43,7 @@ import { validateAgenticPaths } from '../script/validate-agentic-paths.mjs';
 import { validateAgenticRuntimeContractFile } from '../script/validate-agentic-lean-path-runtime.mjs';
 import { validateResourceBudgets } from '../script/validate-resource-budgets.mjs';
 import { buildAgenticComplianceReport } from '../script/report-agentic-compliance.mjs';
+import { readWorkflowEvents } from '../script/agentic-workflow-runtime.mjs';
 
 test('repository governance is valid', async () => {
   const rootDirectory = path.resolve(import.meta.dirname, '..');
@@ -295,13 +299,153 @@ test('validates agentic hook configuration and script wiring', async () => {
     path.join(rootDirectory, '.codex', 'hooks', 'post-tool-use-agentic-lean-path.mjs'),
     'utf8'
   );
+  const workflowHookScripts = await Promise.all([
+    'pre-tool-use-agentic-workflow.mjs',
+    'user-prompt-submit-agentic-workflow.mjs',
+    'subagent-start-agentic-workflow.mjs',
+    'subagent-stop-agentic-workflow.mjs',
+    'stop-agentic-workflow.mjs'
+  ].map((scriptName) => fs.readFile(path.join(rootDirectory, '.codex', 'hooks', scriptName), 'utf8')));
 
   assert.deepEqual(validateAgenticHookConfig(hookConfig), []);
+  assert.deepEqual(validateAgenticWorkflowHookConfig(hookConfig), []);
   assert.deepEqual(validateAgenticHookScript(preHookScript), []);
   assert.deepEqual(validateAgenticHookScript(postHookScript), []);
+  for (const workflowHookScript of workflowHookScripts) {
+    assert.deepEqual(validateAgenticWorkflowHookScript(workflowHookScript), []);
+  }
   const brokenConfig = structuredClone(hookConfig);
   brokenConfig.hooks.PreToolUse = brokenConfig.hooks.PreToolUse.filter((entry) => entry.matcher !== '^Bash$');
   assert.ok(validateAgenticHookConfig(brokenConfig).some((error) => error.includes('^Bash$')));
+  assert.ok(validateAgenticWorkflowHookConfig(brokenConfig).some((error) =>
+    error.includes('pre-tool-use-agentic-workflow.mjs')
+  ));
+});
+
+test('validates observable workflow intake, routing, and stop gates', async (context) => {
+  const rootDirectory = path.resolve(import.meta.dirname, '..');
+  const temporaryDirectory = await fs.mkdtemp(path.join(os.tmpdir(), 'agentic-workflow-events-'));
+  context.after(() => fs.rm(temporaryDirectory, { recursive: true, force: true }));
+  const contract = JSON.parse(await fs.readFile(
+    path.join(rootDirectory, 'contracts', 'governance', 'agentic-workflow-events.json'),
+    'utf8'
+  ));
+  const eventsPath = path.join(temporaryDirectory, 'events.jsonl');
+  const runtimePath = path.join(temporaryDirectory, 'runtime.json');
+  await fs.writeFile(runtimePath, JSON.stringify({
+    selectedPath: 'high-change',
+    taskFacts: ['touches agentic-workflow governance'],
+    escalationRulesApplied: ['touches-agentic-workflow-governance'],
+    requiredStates: [
+      'intake',
+      'classification',
+      'requirements-discovery',
+      'requirements-reconciliation',
+      'budget-gate',
+      'routing',
+      'planning',
+      'execution',
+      'quality-review',
+      'contract-guardrail-check',
+      'verification',
+      'repair-loop',
+      'handoff'
+    ],
+    requiredFields: [
+      'Task Classification',
+      'Risk',
+      'Source Documents',
+      'Requirements',
+      'Budget Envelope',
+      'Routing',
+      'Acceptance Criteria',
+      'Execution Steps',
+      'Verification Matrix',
+      'Repair Triggers',
+      'Handoff Gate'
+    ],
+    budgetEnvelope: {
+      taskClass: 'high',
+      providerBudget: 'coordinator-only',
+      maxWriteAgents: 1
+    },
+    verification: ['npm test']
+  }, null, 2));
+  const hookEnvironment = {
+    ...process.env,
+    AGENTIC_RUNTIME_CONTRACT_PATH: runtimePath,
+    AGENTIC_WORKFLOW_EVENTS_PATH: eventsPath
+  };
+  const preHookPath = path.join(rootDirectory, '.codex', 'hooks', 'pre-tool-use-agentic-workflow.mjs');
+  const userPromptHookPath = path.join(rootDirectory, '.codex', 'hooks', 'user-prompt-submit-agentic-workflow.mjs');
+  const subagentStartHookPath = path.join(rootDirectory, '.codex', 'hooks', 'subagent-start-agentic-workflow.mjs');
+  const subagentStopHookPath = path.join(rootDirectory, '.codex', 'hooks', 'subagent-stop-agentic-workflow.mjs');
+  const stopHookPath = path.join(rootDirectory, '.codex', 'hooks', 'stop-agentic-workflow.mjs');
+
+  assert.deepEqual(validateWorkflowEventsContract(contract), []);
+  const missingIntake = spawnSync(process.execPath, [preHookPath], {
+    cwd: rootDirectory,
+    env: hookEnvironment,
+    input: JSON.stringify({ toolName: 'apply_patch', input: { patch: '*** Begin Patch\n*** End Patch\n' } })
+  });
+  assert.equal(missingIntake.status, 1);
+  assert.match(missingIntake.stderr.toString(), /intake\.started is required/);
+
+  assert.equal(spawnSync(process.execPath, [userPromptHookPath], {
+    cwd: rootDirectory,
+    env: hookEnvironment,
+    input: JSON.stringify({ prompt: 'Implement deterministic workflow events.' })
+  }).status, 0);
+  const missingAgents = spawnSync(process.execPath, [preHookPath], {
+    cwd: rootDirectory,
+    env: hookEnvironment,
+    input: JSON.stringify({ toolName: 'apply_patch', input: { patch: '*** Begin Patch\n*** End Patch\n' } })
+  });
+  assert.equal(missingAgents.status, 1);
+  assert.match(missingAgents.stderr.toString(), /planner\.agent\.completed/);
+
+  assert.equal(spawnSync(process.execPath, [subagentStopHookPath], {
+    cwd: rootDirectory,
+    env: hookEnvironment,
+    input: JSON.stringify({ agent: 'planner' })
+  }).status, 0);
+  assert.equal(spawnSync(process.execPath, [subagentStartHookPath], {
+    cwd: rootDirectory,
+    env: hookEnvironment,
+    input: JSON.stringify({ agent: 'implementer' })
+  }).status, 0);
+  const allowedMutation = spawnSync(process.execPath, [preHookPath], {
+    cwd: rootDirectory,
+    env: hookEnvironment,
+    input: JSON.stringify({ toolName: 'apply_patch', input: { patch: '*** Begin Patch\n*** End Patch\n' } })
+  });
+  assert.equal(allowedMutation.status, 0, allowedMutation.stderr.toString());
+
+  const missingVerifier = spawnSync(process.execPath, [stopHookPath], {
+    cwd: rootDirectory,
+    env: hookEnvironment,
+    input: JSON.stringify({})
+  });
+  assert.equal(missingVerifier.status, 1);
+  assert.match(missingVerifier.stderr.toString(), /verifier\.agent\.completed/);
+  assert.equal(spawnSync(process.execPath, [subagentStopHookPath], {
+    cwd: rootDirectory,
+    env: hookEnvironment,
+    input: JSON.stringify({ agent: 'verifier' })
+  }).status, 0);
+  assert.equal(spawnSync(process.execPath, [stopHookPath], {
+    cwd: rootDirectory,
+    env: hookEnvironment,
+    input: JSON.stringify({})
+  }).status, 0);
+  const events = await readWorkflowEvents(rootDirectory, eventsPath);
+  assert.deepEqual(events.map(({ event }) => event), [
+    'intake.started',
+    'agent.completed',
+    'agent.started',
+    'agent.completed',
+    'workflow.completed'
+  ]);
 });
 
 test('validates Markdown governance contract, hooks, reports, and repair trigger', async (context) => {
@@ -493,8 +637,10 @@ test('uses the public @easy-mark/cli package metadata and ESM workflow scripts',
   assert.deepEqual(packageManifest.publishConfig, { access: 'public' });
   assert.equal(packageManifest.scripts['task:commit'], 'node script/git/auto-task-commit.mjs');
   assert.equal(packageManifest.scripts['validate:agentic-workflow'], 'node script/validate-agentic-workflow.mjs');
+  assert.equal(packageManifest.scripts['validate:agentic-workflow-events'], 'node script/agentic-workflow-runtime.mjs validate-contract');
   assert.equal(packageManifest.scripts['validate:agentic-paths'], 'node script/validate-agentic-paths.mjs');
   assert.equal(packageManifest.scripts['validate:agentic-runtime-contract'], 'node script/validate-agentic-lean-path-runtime.mjs');
+  assert.equal(packageManifest.scripts['workflow:status'], 'node script/agentic-workflow-runtime.mjs status');
   assert.equal(packageManifest.scripts['report:agentic-compliance'], 'node script/report-agentic-compliance.mjs');
   assert.equal(packageManifest.scripts['validate:resource-budgets'], 'node script/validate-resource-budgets.mjs');
   assert.equal(packageManifest.scripts['validate:markdown-governance'], 'node script/validate-markdown-governance.mjs');

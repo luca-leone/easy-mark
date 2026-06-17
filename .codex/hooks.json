@@ -6,6 +6,12 @@
         "hooks": [
           {
             "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/pre-tool-use-agentic-workflow.mjs\"",
+            "timeout": 30,
+            "statusMessage": "Checking agentic workflow state"
+          },
+          {
+            "type": "command",
             "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/pre-tool-use-agentic-lean-path.mjs\"",
             "timeout": 30,
             "statusMessage": "Checking agentic lean path contract"
@@ -17,6 +23,12 @@
         "hooks": [
           {
             "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/pre-tool-use-agentic-workflow.mjs\"",
+            "timeout": 30,
+            "statusMessage": "Checking agentic workflow state"
+          },
+          {
+            "type": "command",
             "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/pre-tool-use-agentic-lean-path.mjs\"",
             "timeout": 30,
             "statusMessage": "Checking agentic lean path contract"
@@ -26,6 +38,54 @@
             "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/pre-tool-use-markdown-governance.mjs\"",
             "timeout": 30,
             "statusMessage": "Checking markdown governance contract"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/user-prompt-submit-agentic-workflow.mjs\"",
+            "timeout": 30,
+            "statusMessage": "Starting agentic workflow intake"
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/subagent-start-agentic-workflow.mjs\"",
+            "timeout": 30,
+            "statusMessage": "Recording agentic workflow subagent start"
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/subagent-stop-agentic-workflow.mjs\"",
+            "timeout": 30,
+            "statusMessage": "Recording agentic workflow subagent completion"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/stop-agentic-workflow.mjs\"",
+            "timeout": 30,
+            "statusMessage": "Checking agentic workflow completion"
           }
         ]
       }

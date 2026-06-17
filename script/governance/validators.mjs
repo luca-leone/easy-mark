@@ -108,6 +108,7 @@ export function validateAgenticWorkflowGuide(contents) {
   const requiredPhrases = [
     'Deterministic Agentic Workflow',
     'rules/agentic-workflow.md',
+    'contracts/governance/agentic-workflow-events.json',
     'rules/markdown-governance.md',
     'contracts/governance/markdown-governance.json',
     'rules/resource-budgets.md',
@@ -142,9 +143,12 @@ export function validateAgenticWorkflowPolicy(contents) {
   const requiredPhrases = [
     'Deterministic Agentic Workflow',
     'agentic-paths.json',
+    'agentic-workflow-events.json',
     'PreToolUse',
     'PostToolUse',
+    'UserPromptSubmit',
     'repair mode',
+    'workflow:status',
     'agentic compliance report',
     'intake',
     'classification',
@@ -412,6 +416,47 @@ export function validateAgenticHookConfig(hookConfig) {
   return errors;
 }
 
+export function validateAgenticWorkflowHookConfig(hookConfig) {
+  const errors = [];
+  if (!hookConfig || typeof hookConfig !== 'object' || Array.isArray(hookConfig)) {
+    return ['.codex/hooks.json: hook config must be a JSON object'];
+  }
+
+  for (const matcher of ['^Bash$', '^(apply_patch|Edit|Write)$']) {
+    const entry = hookConfig.hooks?.PreToolUse?.find((hookEntry) => hookEntry.matcher === matcher);
+    if (!entry?.hooks?.some((hook) =>
+      hook.type === 'command' &&
+      hook.command?.includes('.codex/hooks/pre-tool-use-agentic-workflow.mjs') &&
+      hook.statusMessage?.includes('agentic workflow')
+    )) {
+      errors.push(`.codex/hooks.json: ${matcher} must run pre-tool-use-agentic-workflow.mjs`);
+    }
+  }
+
+  for (const [eventName, scriptName] of [
+    ['UserPromptSubmit', 'user-prompt-submit-agentic-workflow.mjs'],
+    ['SubagentStart', 'subagent-start-agentic-workflow.mjs'],
+    ['SubagentStop', 'subagent-stop-agentic-workflow.mjs'],
+    ['Stop', 'stop-agentic-workflow.mjs']
+  ]) {
+    const hookEntries = hookConfig.hooks?.[eventName];
+    if (!Array.isArray(hookEntries)) {
+      errors.push(`.codex/hooks.json: hooks.${eventName} must be an array`);
+      continue;
+    }
+    if (!hookEntries.some((entry) => entry.hooks?.some((hook) =>
+      hook.type === 'command' &&
+      hook.command?.includes(`.codex/hooks/${scriptName}`) &&
+      hook.timeout === 30 &&
+      hook.statusMessage?.includes('agentic workflow')
+    ))) {
+      errors.push(`.codex/hooks.json: hooks.${eventName} must run ${scriptName}`);
+    }
+  }
+
+  return errors;
+}
+
 export function validateMarkdownGovernanceHookConfig(hookConfig) {
   const errors = [];
   if (!hookConfig || typeof hookConfig !== 'object' || Array.isArray(hookConfig)) {
@@ -462,6 +507,19 @@ export function validateAgenticHookScript(contents) {
     'process.exit(1)'
   ]) {
     if (!contents.includes(phrase)) errors.push(`agentic-lean-path hook script: missing ${phrase}`);
+  }
+  return errors;
+}
+
+export function validateAgenticWorkflowHookScript(contents) {
+  const errors = [];
+  for (const phrase of [
+    'Agentic workflow',
+    'runWorkflowHook',
+    'repair mode',
+    'process.exit(1)'
+  ]) {
+    if (!contents.includes(phrase)) errors.push(`agentic-workflow hook script: missing ${phrase}`);
   }
   return errors;
 }

@@ -7,6 +7,8 @@ import {
   validateAgentDocument,
   validateAgenticHookConfig,
   validateAgenticHookScript,
+  validateAgenticWorkflowHookConfig,
+  validateAgenticWorkflowHookScript,
   validateAgenticWorkflowGuide,
   validateAgenticWorkflowPolicy,
   validateMarkdownGovernanceHookConfig,
@@ -17,6 +19,7 @@ import {
   validateResourceBudgetPolicy
 } from './governance/validators.mjs';
 import { validateAgenticPaths } from './validate-agentic-paths.mjs';
+import { validateWorkflowEventsContract } from './agentic-workflow-runtime.mjs';
 
 async function readPair(root, first, second, validator) {
   try {
@@ -59,7 +62,19 @@ export async function validateAgenticWorkflow(rootDirectory) {
   errors.push(...await validateAgenticPaths(root));
 
   try {
+    errors.push(...validateWorkflowEventsContract(JSON.parse(await fs.readFile(
+      path.join(root, 'contracts', 'governance', 'agentic-workflow-events.json'),
+      'utf8'
+    ))));
+  } catch (error) {
+    errors.push(error instanceof SyntaxError
+      ? 'contracts/governance/agentic-workflow-events.json: invalid JSON'
+      : 'contracts/governance/agentic-workflow-events.json: required for deterministic agentic workflow validation');
+  }
+
+  try {
     errors.push(...validateAgenticHookConfig(JSON.parse(await fs.readFile(path.join(root, '.codex', 'hooks.json'), 'utf8'))));
+    errors.push(...validateAgenticWorkflowHookConfig(JSON.parse(await fs.readFile(path.join(root, '.codex', 'hooks.json'), 'utf8'))));
     errors.push(...validateMarkdownGovernanceHookConfig(JSON.parse(await fs.readFile(path.join(root, '.codex', 'hooks.json'), 'utf8'))));
   } catch (error) {
     errors.push(error instanceof SyntaxError
@@ -68,6 +83,21 @@ export async function validateAgenticWorkflow(rootDirectory) {
   }
 
   try {
+    errors.push(...validateAgenticWorkflowHookScript(
+      await fs.readFile(path.join(root, '.codex', 'hooks', 'pre-tool-use-agentic-workflow.mjs'), 'utf8')
+    ));
+    errors.push(...validateAgenticWorkflowHookScript(
+      await fs.readFile(path.join(root, '.codex', 'hooks', 'user-prompt-submit-agentic-workflow.mjs'), 'utf8')
+    ));
+    errors.push(...validateAgenticWorkflowHookScript(
+      await fs.readFile(path.join(root, '.codex', 'hooks', 'subagent-start-agentic-workflow.mjs'), 'utf8')
+    ));
+    errors.push(...validateAgenticWorkflowHookScript(
+      await fs.readFile(path.join(root, '.codex', 'hooks', 'subagent-stop-agentic-workflow.mjs'), 'utf8')
+    ));
+    errors.push(...validateAgenticWorkflowHookScript(
+      await fs.readFile(path.join(root, '.codex', 'hooks', 'stop-agentic-workflow.mjs'), 'utf8')
+    ));
     errors.push(...validateAgenticHookScript(
       await fs.readFile(path.join(root, '.codex', 'hooks', 'pre-tool-use-agentic-lean-path.mjs'), 'utf8')
     ));

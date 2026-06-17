@@ -24,7 +24,7 @@ Non-trivial work preserves this state order for every applicable state:
 12. `repair-loop`
 13. `handoff`
 
-Every state produces output that can be inspected. Before file edits, non-trivial commands, or project-agent runs, emit and validate the JSON runtime contract required by `contracts/governance/agentic-paths.json`; `PreToolUse` and `PostToolUse` hooks detect and report agentic lean path violations for governed tools.
+Every state produces output that can be inspected. `UserPromptSubmit` must record `intake.started` in the workflow ledger before governed work begins. Before file edits, non-trivial commands, or project-agent runs, emit and validate the JSON runtime contract required by `contracts/governance/agentic-paths.json`; `PreToolUse` and `PostToolUse` hooks detect and report agentic lean path violations for governed tools.
 
 ## Intake And Classification Loop
 
@@ -71,13 +71,13 @@ Exit criteria:
 
 ## Routing Loop
 
-Use `$orchestrate-request` for workflow intake and routing. Apply `contracts/governance/agentic-paths.json`: collect task facts, apply escalation rules, choose the minimum allowed path, prefer the highest rank when multiple paths match, and use `high-change` when none match.
+Use `$orchestrate-request` for workflow intake and routing. Apply `contracts/governance/agentic-paths.json` and `contracts/governance/agentic-workflow-events.json`: collect task facts, apply escalation rules, choose the minimum allowed path, prefer the highest rank when multiple paths match, and use `high-change` when none match.
 
 Route deterministically:
 
 - `low`: bounded single-surface changes with obvious tests remain with the coordinating agent or `implementer`;
 - `medium`: cross-file implementation, packaging, release, or governance documentation requires an explicit plan before edits;
-- `high`: security, routing, sanitization, virtual filesystem, concurrency, watcher behavior, migration, architectural decisions, contract changes, or agentic-workflow governance requires `planner` before execution and `senior-implementer` for write work when project agents are invoked;
+- `high`: security, routing, sanitization, virtual filesystem, concurrency, watcher behavior, migration, architectural decisions, contract changes, or agentic-workflow governance requires `planner.completed` and `implementer.started` workflow events before mutating tool use;
 - requested review uses `reviewer`;
 - material verification after implementation uses `verifier`.
 
@@ -87,6 +87,7 @@ Exit criteria:
 
 - selected skill set is named;
 - selected agent route is named;
+- required agent workflow events are recorded;
 - any required user approval has been obtained;
 - one writer is assigned for each overlapping file scope.
 
@@ -140,10 +141,9 @@ Before the final response, confirm:
 - required contracts, ADRs, memory entries, and skills are synchronized;
 - budget handoff report is complete;
 - agentic compliance report covers selected path, escalation rules, hook monitoring, hook violation policy, verification, and violations;
+- `workflow:status` reports the final workflow state and missing required agent events;
 - verified task changes are committed with `$auto-commit` or `npm run task:commit` unless the user explicitly disables automatic committing;
 - long-running processes are closed unless intentionally handed off with a URL;
 - residual risks or skipped checks are explicitly stated.
 
-## Execution Template
-
-Use these fields: `Task Classification`, `Risk`, `Required Skills`, `Required Agents`, `Source Documents`, `Requirements`, `Budget Envelope`, `Acceptance Criteria`, `Execution Steps`, `Verification Matrix`, `Repair Triggers`, and `Final Handoff Checklist`.
+## Execution Template: use `Task Classification`, `Risk`, `Required Skills`, `Required Agents`, `Source Documents`, `Requirements`, `Budget Envelope`, `Acceptance Criteria`, `Execution Steps`, `Verification Matrix`, `Repair Triggers`, and `Final Handoff Checklist`.

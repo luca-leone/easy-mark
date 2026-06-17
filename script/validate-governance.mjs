@@ -24,6 +24,8 @@ import {
   validateMarkdownGovernancePolicy,
   validateAgenticHookConfig,
   validateAgenticHookScript,
+  validateAgenticWorkflowHookConfig,
+  validateAgenticWorkflowHookScript,
   validateAgenticPathContract,
   validateAgenticWorkflowGuide,
   validateAgenticWorkflowPolicy,
@@ -37,6 +39,7 @@ import {
   validateMarkdownGovernanceContract,
   validateMarkdownGovernanceEntries
 } from './markdown-governance-runtime.mjs';
+import { validateWorkflowEventsContract } from './agentic-workflow-runtime.mjs';
 import { validateMarkdownGovernance } from './validate-markdown-governance.mjs';
 
 const markdownLinkPattern = /\[[^\]]*\]\(([^)]+)\)/g;
@@ -115,6 +118,17 @@ export async function validateGovernance(rootDirectory) {
   errors.push(...await validateAgenticWorkflow(root));
 
   try {
+    errors.push(...validateWorkflowEventsContract(JSON.parse(await fs.readFile(
+      path.join(root, 'contracts', 'governance', 'agentic-workflow-events.json'),
+      'utf8'
+    ))));
+  } catch (error) {
+    errors.push(error instanceof SyntaxError
+      ? 'contracts/governance/agentic-workflow-events.json: invalid JSON'
+      : 'contracts/governance/agentic-workflow-events.json: required for workflow event validation');
+  }
+
+  try {
     const adrDirectory = path.join(root, 'doc', 'adr');
     const adrFiles = (await fs.readdir(adrDirectory))
       .filter((fileName) => fileName !== 'README.md' && fileName.endsWith('.md'))
@@ -156,6 +170,7 @@ export async function validateGovernance(rootDirectory) {
   try {
     const hookConfig = JSON.parse(await fs.readFile(path.join(root, '.codex', 'hooks.json'), 'utf8'));
     errors.push(...validateAgenticHookConfig(hookConfig));
+    errors.push(...validateAgenticWorkflowHookConfig(hookConfig));
     errors.push(...validateMarkdownGovernanceHookConfig(hookConfig));
   } catch (error) {
     if (error instanceof SyntaxError) errors.push('.codex/hooks.json: invalid JSON');
@@ -165,9 +180,22 @@ export async function validateGovernance(rootDirectory) {
     errors.push(...validateAgenticHookScript(
       await fs.readFile(path.join(root, '.codex', 'hooks', 'pre-tool-use-agentic-lean-path.mjs'), 'utf8')
     ));
+    errors.push(...validateAgenticWorkflowHookScript(
+      await fs.readFile(path.join(root, '.codex', 'hooks', 'pre-tool-use-agentic-workflow.mjs'), 'utf8')
+    ));
     errors.push(...validateAgenticHookScript(
       await fs.readFile(path.join(root, '.codex', 'hooks', 'post-tool-use-agentic-lean-path.mjs'), 'utf8')
     ));
+    for (const scriptName of [
+      'user-prompt-submit-agentic-workflow.mjs',
+      'subagent-start-agentic-workflow.mjs',
+      'subagent-stop-agentic-workflow.mjs',
+      'stop-agentic-workflow.mjs'
+    ]) {
+      errors.push(...validateAgenticWorkflowHookScript(
+        await fs.readFile(path.join(root, '.codex', 'hooks', scriptName), 'utf8')
+      ));
+    }
     errors.push(...validateMarkdownGovernanceHookScript(
       await fs.readFile(path.join(root, '.codex', 'hooks', 'pre-tool-use-markdown-governance.mjs'), 'utf8')
     ));
@@ -289,6 +317,8 @@ export {
   validateMarkdownGovernancePolicy,
   validateAgenticHookConfig,
   validateAgenticHookScript,
+  validateAgenticWorkflowHookConfig,
+  validateAgenticWorkflowHookScript,
   validateAgenticPathContract,
   validateAgenticWorkflowGuide,
   validateAgenticWorkflowPolicy,
@@ -306,3 +336,4 @@ export {
   validateMarkdownGovernanceContract,
   validateMarkdownGovernanceEntries
 } from './markdown-governance-runtime.mjs';
+export { validateWorkflowEventsContract } from './agentic-workflow-runtime.mjs';

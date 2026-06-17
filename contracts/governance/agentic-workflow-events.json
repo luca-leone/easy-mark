@@ -1,0 +1,75 @@
+{
+  "version": 1,
+  "contractName": "Agentic Workflow Events",
+  "report": {
+    "path": "reports/agentic-workflow-events.jsonl",
+    "requiredFields": [
+      "event",
+      "timestamp",
+      "source",
+      "state"
+    ]
+  },
+  "stateOrder": [
+    "intake",
+    "classification",
+    "requirements-discovery",
+    "requirements-reconciliation",
+    "budget-gate",
+    "routing",
+    "planning",
+    "execution",
+    "quality-review",
+    "contract-guardrail-check",
+    "verification",
+    "repair-loop",
+    "handoff"
+  ],
+  "events": {
+    "intake.started": {
+      "state": "intake",
+      "source": "UserPromptSubmit"
+    },
+    "agent.started": {
+      "source": "SubagentStart",
+      "requiredFields": [
+        "agent"
+      ]
+    },
+    "agent.completed": {
+      "source": "SubagentStop",
+      "requiredFields": [
+        "agent"
+      ]
+    },
+    "workflow.completed": {
+      "state": "handoff",
+      "source": "Stop"
+    }
+  },
+  "pathAgentRequirements": {
+    "high-change": {
+      "beforeMutatingToolUse": [
+        {
+          "agent": "planner",
+          "event": "agent.completed"
+        },
+        {
+          "agent": "implementer",
+          "event": "agent.started"
+        }
+      ],
+      "beforeWorkflowCompletion": [
+        {
+          "agent": "verifier",
+          "event": "agent.completed"
+        }
+      ]
+    }
+  },
+  "hookPolicy": {
+    "intakeTrigger": "UserPromptSubmit must append intake.started before governed work begins.",
+    "routingGate": "PreToolUse must require path agent events before mutating tools or non-trivial commands.",
+    "completionGate": "Stop must report incomplete required agent events before workflow completion."
+  }
+}

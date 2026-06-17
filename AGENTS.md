@@ -30,7 +30,7 @@ Never rewrite or delete existing entries in `memory/decisions.md`. Record correc
 
 ## Policy Index
 
-- Deterministic Agentic Workflow: follow [ADR-0033](doc/adr/0033-deterministic-agentic-workflow.md), [rules/agentic-workflow.md](rules/agentic-workflow.md), `$orchestrate-request`, and `$quality-gate`.
+- Deterministic Agentic Workflow: follow [ADR-0033](doc/adr/0033-deterministic-agentic-workflow.md), [rules/agentic-workflow.md](rules/agentic-workflow.md), `contracts/governance/agentic-workflow-events.json`, `$orchestrate-request`, and `$quality-gate`.
 - Resource budgets for non-trivial work: follow [ADR-0035](doc/adr/0035-deterministic-resource-budgets.md), [rules/resource-budgets.md](rules/resource-budgets.md), and `$resource-budget-gate`.
 - Markdown governance: follow [rules/markdown-governance.md](rules/markdown-governance.md) and `contracts/governance/markdown-governance.json`.
 - Engineering, quality, documentation, context, and multi-agent rules: [rules/project-rules.md](rules/project-rules.md).
