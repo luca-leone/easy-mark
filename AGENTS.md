@@ -36,6 +36,6 @@ Never rewrite or delete existing entries in `memory/decisions.md`. Record correc
 - Engineering, quality, documentation, context, and multi-agent rules: [rules/project-rules.md](rules/project-rules.md).
 - Repository layout and Codex surface separation: [rules/workspace-layout.md](rules/workspace-layout.md).
 - Command reference: [rules/command-reference.md](rules/command-reference.md).
-- Release and package publishing: [rules/release-process.md](rules/release-process.md).
+- Release, versioning, tags, and package publishing: [rules/release-process.md](rules/release-process.md), [contracts/governance/versioning.json](contracts/governance/versioning.json).
 - Non-negotiable invariants: [guardrails/non-negotiables.md](guardrails/non-negotiables.md).
 - Observable product behavior: [contracts/application-contract.md](contracts/application-contract.md).

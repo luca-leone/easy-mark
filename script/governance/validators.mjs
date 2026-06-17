@@ -93,6 +93,7 @@ export function validateAutoCommitSkill(skillContents, metadataContents) {
     'git add --all',
     'Version And Tag Proposal',
     'git push origin <tag>',
+    'remote tags',
     'Push remains manual'
   ]) {
     if (!skillContents.includes(phrase)) errors.push(`auto-commit: missing ${phrase}`);
@@ -111,6 +112,7 @@ export function validateAgenticWorkflowGuide(contents) {
     'contracts/governance/agentic-workflow-events.json',
     'rules/markdown-governance.md',
     'contracts/governance/markdown-governance.json',
+    'contracts/governance/versioning.json',
     'rules/resource-budgets.md',
     '$orchestrate-request',
     '$quality-gate',
@@ -538,6 +540,21 @@ export function validateMarkdownGovernancePolicy(contents) {
     'script/repair-markdown-governance.mjs'
   ]) {
     if (!contents.includes(phrase)) errors.push(`rules/markdown-governance.md: missing ${phrase}`);
+  }
+  return errors;
+}
+
+export function validateReleaseProcessPolicy(contents) {
+  const errors = [];
+  for (const phrase of [
+    'npm run validate:versioning',
+    'npm run pack:dry-run',
+    'package.json',
+    'local tags',
+    'remote tags',
+    'git push origin <tag>'
+  ]) {
+    if (!contents.includes(phrase)) errors.push(`rules/release-process.md: missing ${phrase}`);
   }
   return errors;
 }

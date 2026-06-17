@@ -31,6 +31,7 @@ import {
   validateAgenticWorkflowPolicy,
   validateOrchestrateRequestSkill,
   validateQualityGateSkill,
+  validateReleaseProcessPolicy,
   validateResourceBudgetGateSkill,
   validateResourceBudgetPolicy,
   validateWorkflowScriptPaths
@@ -40,6 +41,7 @@ import {
   validateMarkdownGovernanceEntries
 } from './markdown-governance-runtime.mjs';
 import { validateWorkflowEventsContract } from './agentic-workflow-runtime.mjs';
+import { validateVersioningContract } from './versioning-runtime.mjs';
 import { validateMarkdownGovernance } from './validate-markdown-governance.mjs';
 
 const markdownLinkPattern = /\[[^\]]*\]\(([^)]+)\)/g;
@@ -129,6 +131,17 @@ export async function validateGovernance(rootDirectory) {
   }
 
   try {
+    errors.push(...validateVersioningContract(JSON.parse(await fs.readFile(
+      path.join(root, 'contracts', 'governance', 'versioning.json'),
+      'utf8'
+    ))));
+  } catch (error) {
+    errors.push(error instanceof SyntaxError
+      ? 'contracts/governance/versioning.json: invalid JSON'
+      : 'contracts/governance/versioning.json: required for versioning validation');
+  }
+
+  try {
     const adrDirectory = path.join(root, 'doc', 'adr');
     const adrFiles = (await fs.readdir(adrDirectory))
       .filter((fileName) => fileName !== 'README.md' && fileName.endsWith('.md'))
@@ -161,6 +174,12 @@ export async function validateGovernance(rootDirectory) {
 
   try {
     errors.push(...validateMarkdownGovernancePolicy(await fs.readFile(path.join(root, 'rules', 'markdown-governance.md'), 'utf8')));
+  } catch {
+    // Required-file diagnostics cover this path.
+  }
+
+  try {
+    errors.push(...validateReleaseProcessPolicy(await fs.readFile(path.join(root, 'rules', 'release-process.md'), 'utf8')));
   } catch {
     // Required-file diagnostics cover this path.
   }
@@ -324,6 +343,7 @@ export {
   validateAgenticWorkflowPolicy,
   validateOrchestrateRequestSkill,
   validateQualityGateSkill,
+  validateReleaseProcessPolicy,
   validateResourceBudgetGateSkill,
   validateResourceBudgetPolicy,
   validateWorkflowScriptPaths
@@ -337,3 +357,4 @@ export {
   validateMarkdownGovernanceEntries
 } from './markdown-governance-runtime.mjs';
 export { validateWorkflowEventsContract } from './agentic-workflow-runtime.mjs';
+export { validateVersioningContract } from './versioning-runtime.mjs';

@@ -16,7 +16,7 @@ Use this skill at the end of a completed repository task after `$quality-gate` a
 
 ## Determinism
 
-The command stages with `git add --all`, derives a Conventional Commit message from the changed path classes, validates the message with repository policy, commits with that exact message, creates the proposed local tag when a version bump applies, and prints deterministic version/tag guidance.
+The command stages with `git add --all`, derives a Conventional Commit message from the changed path classes, validates the message with repository policy, commits with that exact message, reads package metadata plus local tags and remote tags, creates the proposed local tag when a version bump applies, and prints deterministic version/tag guidance.
 
 If the generated message does not describe the task well enough, run:
 

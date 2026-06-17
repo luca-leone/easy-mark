@@ -1,6 +1,6 @@
 {
   "name": "@easy-mark/cli",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "private": false,
   "type": "module",
   "description": "Lightweight CLI to compile, sanitise, preview, and export Markdown directories as HTML and PDFs.",
@@ -46,7 +46,9 @@
     "validate:agentic-workflow-events": "node script/agentic-workflow-runtime.mjs validate-contract",
     "validate:agentic-paths": "node script/validate-agentic-paths.mjs",
     "validate:agentic-runtime-contract": "node script/validate-agentic-lean-path-runtime.mjs",
+    "validate:versioning": "node script/versioning-runtime.mjs validate-contract",
     "workflow:status": "node script/agentic-workflow-runtime.mjs status",
+    "pack:dry-run": "node script/versioning-runtime.mjs pack-check && npm pack --dry-run",
     "validate:resource-budgets": "node script/validate-resource-budgets.mjs",
     "validate:markdown-governance": "node script/validate-markdown-governance.mjs",
     "repair:markdown-governance": "node script/repair-markdown-governance.mjs",

@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "tagPattern": "vMAJOR.MINOR.PATCH",
+  "baseSources": [
+    "package.json",
+    "local-tags",
+    "remote-tags"
+  ],
+  "baseSelection": "highest-semver",
+  "bumpRules": {
+    "breaking": "major",
+    "feat": "minor",
+    "fix": "patch",
+    "build(package)": "patch",
+    "default": "none"
+  },
+  "tagProposal": {
+    "createLocalTag": true,
+    "printPushCommand": true,
+    "pushCommandTemplate": "git push origin <tag>",
+    "pushRequiresHumanControl": true
+  },
+  "pack": {
+    "tarballNameTemplate": "<sanitized-package-name>-<package-version>.tgz",
+    "requirePackageVersionEqualsTagVersion": true,
+    "dryRunCommand": "npm pack --dry-run"
+  }
+}

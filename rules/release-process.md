@@ -6,10 +6,10 @@ This file records repository release and local packaging steps. It is operationa
 
 ## Local Package Smoke Test
 
-Create a local tarball:
+Create a local tarball only after the deterministic versioning check passes:
 
 ```sh
-npm pack
+npm run pack:dry-run
 ```
 
 Install that tarball in a consumer project when testing package installation:
@@ -42,13 +42,21 @@ Use the Node baseline, install dependencies, run tests, and perform dry runs bef
 nvm use
 npm install
 npm test
-npm pack --dry-run
+npm run validate:versioning
+npm run pack:dry-run
 npm login
 npm whoami
 npm view @easy-mark/cli name version
 npm version patch
+npm run pack:dry-run
 npm publish --dry-run
 npm publish --access public
+```
+
+The versioning base is the highest semver value across `package.json`, local tags, and remote tags. Every proposed tag requires this printed push command:
+
+```sh
+git push origin <tag>
 ```
 
 ## GitHub Release

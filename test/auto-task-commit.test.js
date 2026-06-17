@@ -25,32 +25,50 @@ test('proposes version bumps and tags from commit semantics without pushing', ()
   assert.deepEqual(proposeVersioning('docs(governance): update docs', '1.2.3'), {
     bump: 'none',
     currentVersion: '1.2.3',
+    baseVersion: '1.2.3',
     nextVersion: '1.2.3',
-    tag: undefined
+    tag: undefined,
+    tagPushCommand: undefined
   });
   assert.deepEqual(proposeVersioning('feat(cli): add export mode', '1.2.3'), {
     bump: 'minor',
     currentVersion: '1.2.3',
+    baseVersion: '1.2.3',
     nextVersion: '1.3.0',
-    tag: 'v1.3.0'
+    tag: 'v1.3.0',
+    tagPushCommand: 'git push origin v1.3.0'
   });
   assert.deepEqual(proposeVersioning('fix(runtime): handle reloads', '1.2.3'), {
     bump: 'patch',
     currentVersion: '1.2.3',
+    baseVersion: '1.2.3',
     nextVersion: '1.2.4',
-    tag: 'v1.2.4'
+    tag: 'v1.2.4',
+    tagPushCommand: 'git push origin v1.2.4'
   });
   assert.deepEqual(proposeVersioning('feat(api)!: replace routes', '1.2.3'), {
     bump: 'major',
     currentVersion: '1.2.3',
+    baseVersion: '1.2.3',
     nextVersion: '2.0.0',
-    tag: 'v2.0.0'
+    tag: 'v2.0.0',
+    tagPushCommand: 'git push origin v2.0.0'
   });
   assert.deepEqual(proposeVersioning('build(package): update package metadata', '1.0.0', ['v1.0.0', 'v1.0.1']), {
     bump: 'patch',
     currentVersion: '1.0.0',
+    baseVersion: '1.0.1',
     nextVersion: '1.0.2',
-    tag: 'v1.0.2'
+    tag: 'v1.0.2',
+    tagPushCommand: 'git push origin v1.0.2'
+  });
+  assert.deepEqual(proposeVersioning('fix(runtime): handle reloads', '1.0.0', ['v1.0.1', 'v1.0.3']), {
+    bump: 'patch',
+    currentVersion: '1.0.0',
+    baseVersion: '1.0.3',
+    nextVersion: '1.0.4',
+    tag: 'v1.0.4',
+    tagPushCommand: 'git push origin v1.0.4'
   });
 });
 
@@ -63,6 +81,9 @@ test('auto task commit stages all changes, commits, and reports proposal', async
     }
     if (argumentsList.join(' ') === 'tag --list v[0-9]*.[0-9]*.[0-9]*') {
       return { status: 0, stdout: 'v1.0.0\n', stderr: '' };
+    }
+    if (argumentsList.join(' ') === 'ls-remote --tags --refs origin v[0-9]*.[0-9]*.[0-9]*') {
+      return { status: 0, stdout: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\trefs/tags/v1.0.0\n', stderr: '' };
     }
     if (argumentsList.join(' ') === 'rev-parse --short HEAD') {
       return { status: 0, stdout: 'abc1234\n', stderr: '' };
@@ -83,6 +104,7 @@ test('auto task commit stages all changes, commits, and reports proposal', async
     ['add', '--all'],
     ['diff', '--cached', '--name-only', '-z'],
     ['tag', '--list', 'v[0-9]*.[0-9]*.[0-9]*'],
+    ['ls-remote', '--tags', '--refs', 'origin', 'v[0-9]*.[0-9]*.[0-9]*'],
     ['commit', '-m', 'chore(git): automate repository git workflow'],
     ['rev-parse', '--short', 'HEAD']
   ]);
@@ -98,6 +120,9 @@ test('auto task commit creates proposed version tags and reports tag push comman
     if (argumentsList.join(' ') === 'tag --list v[0-9]*.[0-9]*.[0-9]*') {
       return { status: 0, stdout: 'v1.0.0\n', stderr: '' };
     }
+    if (argumentsList.join(' ') === 'ls-remote --tags --refs origin v[0-9]*.[0-9]*.[0-9]*') {
+      return { status: 0, stdout: 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\trefs/tags/v1.0.2\n', stderr: '' };
+    }
     if (argumentsList.join(' ') === 'rev-parse --short HEAD') {
       return { status: 0, stdout: 'def5678\n', stderr: '' };
     }
@@ -112,14 +137,15 @@ test('auto task commit creates proposed version tags and reports tag push comman
   });
 
   assert.equal(result.committed, true);
-  assert.equal(result.tagCreated, 'v1.0.1');
-  assert.equal(result.tagPushCommand, 'git push origin v1.0.1');
+  assert.equal(result.tagCreated, 'v1.0.3');
+  assert.equal(result.tagPushCommand, 'git push origin v1.0.3');
   assert.deepEqual(calls, [
     ['add', '--all'],
     ['diff', '--cached', '--name-only', '-z'],
     ['tag', '--list', 'v[0-9]*.[0-9]*.[0-9]*'],
+    ['ls-remote', '--tags', '--refs', 'origin', 'v[0-9]*.[0-9]*.[0-9]*'],
     ['commit', '-m', 'fix(navigation): align markers'],
     ['rev-parse', '--short', 'HEAD'],
-    ['tag', 'v1.0.1']
+    ['tag', 'v1.0.3']
   ]);
 });

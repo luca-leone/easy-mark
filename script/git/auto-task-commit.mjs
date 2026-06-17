@@ -3,6 +3,12 @@ import path from 'node:path';
 import process from 'node:process';
 import { pathToFileURL } from 'node:url';
 import { runGit, validateCommitMessage } from './validate-commit-message.mjs';
+import {
+  proposeVersioning,
+  readVersionSources
+} from '../versioning-runtime.mjs';
+
+export { proposeVersioning } from '../versioning-runtime.mjs';
 
 const pathRules = Object.freeze([
   { scope: 'governance', type: 'docs', test: (file) => /^(AGENTS\.md|rules\/|guardrails\/|contracts\/|evaluation\/|memory\/|doc\/adr\/|\.agents\/|\.codex\/)/.test(file) },
@@ -82,73 +88,6 @@ export function deriveCommitPlan(files, options = {}) {
   };
 }
 
-function parseConventionalHeader(message) {
-  const [subject] = String(message).split(/\r?\n/);
-  const match = subject.match(/^([a-z]+)(?:\(([^)]+)\))?(!)?: /);
-  if (!match) return { type: 'chore', breaking: false };
-  return {
-    type: match[1],
-    scope: match[2],
-    breaking: Boolean(match[3]) || /\n\nBREAKING(?: CHANGE|-CHANGE): /.test(String(message))
-  };
-}
-
-function incrementVersion(version, bump) {
-  const match = String(version ?? '').match(/^(\d+)\.(\d+)\.(\d+)$/);
-  if (!match) return undefined;
-  const major = Number(match[1]);
-  const minor = Number(match[2]);
-  const patch = Number(match[3]);
-  if (bump === 'major') return `${major + 1}.0.0`;
-  if (bump === 'minor') return `${major}.${minor + 1}.0`;
-  if (bump === 'patch') return `${major}.${minor}.${patch + 1}`;
-  return version;
-}
-
-function parseSemverTag(tag) {
-  const match = String(tag ?? '').match(/^v(\d+)\.(\d+)\.(\d+)$/);
-  if (!match) return undefined;
-  return {
-    version: `${Number(match[1])}.${Number(match[2])}.${Number(match[3])}`,
-    parts: [Number(match[1]), Number(match[2]), Number(match[3])]
-  };
-}
-
-function compareSemverParts(left, right) {
-  for (let index = 0; index < 3; index += 1) {
-    if (left[index] !== right[index]) return left[index] - right[index];
-  }
-  return 0;
-}
-
-function highestVersion(currentVersion, existingTags = []) {
-  const versions = [];
-  const current = parseSemverTag(`v${currentVersion}`);
-  if (current) versions.push(current);
-  for (const tag of existingTags) {
-    const parsed = parseSemverTag(tag);
-    if (parsed) versions.push(parsed);
-  }
-  return versions.sort((left, right) => compareSemverParts(left.parts, right.parts)).at(-1)?.version;
-}
-
-export function proposeVersioning(message, currentVersion, existingTags = []) {
-  const header = parseConventionalHeader(message);
-  const bump = header.breaking ? 'major'
-    : header.type === 'feat' ? 'minor'
-      : header.type === 'fix' ? 'patch'
-        : header.type === 'build' && header.scope === 'package' ? 'patch'
-          : 'none';
-  const baseVersion = highestVersion(currentVersion, existingTags) ?? currentVersion;
-  const nextVersion = bump === 'none' ? currentVersion : incrementVersion(baseVersion, bump);
-  return {
-    bump,
-    currentVersion,
-    nextVersion,
-    tag: nextVersion && bump !== 'none' ? `v${nextVersion}` : undefined
-  };
-}
-
 function runGitChecked(argumentsList, options = {}) {
   const result = (options.gitRunner ?? runGit)(argumentsList, { cwd: options.cwd, input: options.input });
   if (result.status !== 0) {
@@ -161,23 +100,6 @@ function parseNullSeparated(output) {
   return output.split('\0').filter(Boolean);
 }
 
-async function readPackageVersion(repositoryRoot) {
-  try {
-    const packageManifest = JSON.parse(await fs.readFile(path.join(repositoryRoot, 'package.json'), 'utf8'));
-    return packageManifest.version;
-  } catch {
-    return undefined;
-  }
-}
-
-function readSemverTags(repositoryRoot, gitRunner) {
-  const result = runGitChecked(['tag', '--list', 'v[0-9]*.[0-9]*.[0-9]*'], {
-    cwd: repositoryRoot,
-    gitRunner
-  });
-  return result.stdout.split(/\r?\n/).map((tag) => tag.trim()).filter(Boolean);
-}
-
 export async function autoTaskCommit(options = {}) {
   const repositoryRoot = path.resolve(options.repositoryRoot ?? process.cwd());
   const gitRunner = options.gitRunner ?? runGit;
@@ -185,11 +107,18 @@ export async function autoTaskCommit(options = {}) {
   runGitChecked(['add', '--all'], { cwd: repositoryRoot, gitRunner });
   const diffResult = runGitChecked(['diff', '--cached', '--name-only', '-z'], { cwd: repositoryRoot, gitRunner });
   const files = parseNullSeparated(diffResult.stdout);
-  const existingTags = options.existingTags ?? readSemverTags(repositoryRoot, gitRunner);
+  const versionSources = await readVersionSources({
+    repositoryRoot,
+    gitRunner,
+    currentVersion: options.currentVersion,
+    localTags: options.localTags ?? options.existingTags,
+    remoteTags: options.remoteTags,
+    remote: options.remote
+  });
   const plan = deriveCommitPlan(files, {
     message: options.message,
-    currentVersion: options.currentVersion ?? await readPackageVersion(repositoryRoot),
-    existingTags
+    currentVersion: versionSources.packageVersion,
+    existingTags: versionSources.tags
   });
 
   if (!plan.hasChanges) return { committed: false, reason: 'No staged changes after git add --all.' };
@@ -203,8 +132,9 @@ export async function autoTaskCommit(options = {}) {
   return {
     committed: true,
     tagCreated: plan.versionProposal.tag,
-    tagPushCommand: plan.versionProposal.tag ? `git push origin ${plan.versionProposal.tag}` : undefined,
+    tagPushCommand: plan.versionProposal.tagPushCommand,
     sha: shaResult.stdout.trim(),
+    versionSources,
     ...plan
   };
 }

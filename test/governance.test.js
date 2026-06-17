@@ -25,6 +25,7 @@ import {
   validateMarkdownGovernanceHookConfig,
   validateMarkdownGovernanceHookScript,
   validateMarkdownGovernancePolicy,
+  validateReleaseProcessPolicy,
   validateAgenticHookConfig,
   validateAgenticHookScript,
   validateAgenticWorkflowHookConfig,
@@ -32,6 +33,7 @@ import {
   validateAgenticPathContract,
   validateAgenticWorkflowPolicy,
   validateWorkflowEventsContract,
+  validateVersioningContract,
   validateOrchestrateRequestSkill,
   validateQualityGateSkill,
   validateResourceBudgetGateSkill,
@@ -44,6 +46,11 @@ import { validateAgenticRuntimeContractFile } from '../script/validate-agentic-l
 import { validateResourceBudgets } from '../script/validate-resource-budgets.mjs';
 import { buildAgenticComplianceReport } from '../script/report-agentic-compliance.mjs';
 import { readWorkflowEvents } from '../script/agentic-workflow-runtime.mjs';
+import {
+  expectedPackTarballName,
+  parseRemoteTagRefs,
+  validatePackVersion
+} from '../script/versioning-runtime.mjs';
 
 test('repository governance is valid', async () => {
   const rootDirectory = path.resolve(import.meta.dirname, '..');
@@ -108,6 +115,22 @@ test('validates deterministic automatic commit skill', async () => {
     skill.replaceAll('npm run task:commit', 'manual git commit'),
     metadata.replace('allow_implicit_invocation: false', 'allow_implicit_invocation: true')
   ).length >= 2);
+});
+
+test('validates deterministic versioning and package tag governance', async () => {
+  const rootDirectory = path.resolve(import.meta.dirname, '..');
+  const [contract, releasePolicy] = await Promise.all([
+    fs.readFile(path.join(rootDirectory, 'contracts', 'governance', 'versioning.json'), 'utf8'),
+    fs.readFile(path.join(rootDirectory, 'rules', 'release-process.md'), 'utf8')
+  ]);
+  assert.deepEqual(validateVersioningContract(JSON.parse(contract)), []);
+  assert.deepEqual(validateReleaseProcessPolicy(releasePolicy), []);
+  assert.deepEqual(parseRemoteTagRefs('abc\trefs/tags/v1.0.3\n'), ['v1.0.3']);
+  assert.deepEqual(validatePackVersion({
+    packageManifest: { name: '@easy-mark/cli', version: '1.0.0' },
+    tags: ['v1.0.1']
+  }), ['npm pack would create easy-mark-cli-1.0.0.tgz, but highest tag source is v1.0.1']);
+  assert.equal(expectedPackTarballName({ name: '@easy-mark/cli', version: '1.0.1' }), 'easy-mark-cli-1.0.1.tgz');
 });
 
 
@@ -640,7 +663,9 @@ test('uses the public @easy-mark/cli package metadata and ESM workflow scripts',
   assert.equal(packageManifest.scripts['validate:agentic-workflow-events'], 'node script/agentic-workflow-runtime.mjs validate-contract');
   assert.equal(packageManifest.scripts['validate:agentic-paths'], 'node script/validate-agentic-paths.mjs');
   assert.equal(packageManifest.scripts['validate:agentic-runtime-contract'], 'node script/validate-agentic-lean-path-runtime.mjs');
+  assert.equal(packageManifest.scripts['validate:versioning'], 'node script/versioning-runtime.mjs validate-contract');
   assert.equal(packageManifest.scripts['workflow:status'], 'node script/agentic-workflow-runtime.mjs status');
+  assert.equal(packageManifest.scripts['pack:dry-run'], 'node script/versioning-runtime.mjs pack-check && npm pack --dry-run');
   assert.equal(packageManifest.scripts['report:agentic-compliance'], 'node script/report-agentic-compliance.mjs');
   assert.equal(packageManifest.scripts['validate:resource-budgets'], 'node script/validate-resource-budgets.mjs');
   assert.equal(packageManifest.scripts['validate:markdown-governance'], 'node script/validate-markdown-governance.mjs');
