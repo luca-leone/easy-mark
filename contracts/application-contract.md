@@ -46,8 +46,8 @@
 
 - Markdown supports CommonMark and GitHub Flavored Markdown.
 - Raw HTML is parsed and sanitized before serving.
-- Fenced `mermaid` code blocks render as Mermaid diagrams by default through the package-owned local Mermaid runtime. Mermaid rendering uses `startOnLoad: false`, `securityLevel: strict`, and `htmlLabels: false`; no Mermaid CDN or user-provided JavaScript is loaded.
-- Fenced `chart` and `chartjs` code blocks render as Chart.js charts from JSON configuration. Supported chart types are `bar`, `line`, `pie`, `doughnut`, `donut`, `polarArea`, `radar`, `bubble`, and `scatter`; `donut` is normalized to Chart.js `doughnut`.
+- Fenced `mermaid` code blocks render as Mermaid diagrams through the installed `mermaid` peer package served from a same-origin allowlisted runtime route. Mermaid rendering uses `startOnLoad: false`, `securityLevel: strict`, and `htmlLabels: false`; no Mermaid CDN or user-provided JavaScript is loaded.
+- Fenced `chart` and `chartjs` code blocks render as Chart.js charts through the installed `chart.js` peer package served from a same-origin allowlisted runtime route. Supported chart types are `bar`, `line`, `pie`, `doughnut`, `donut`, `polarArea`, `radar`, `bubble`, and `scatter`; `donut` is normalized to Chart.js `doughnut`.
 - Chart blocks must contain JSON objects with data and at least one dataset. JavaScript functions, callbacks, plugins, prototype-pollution keys, unknown chart types, and invalid JSON are rejected at render time with text-only errors.
 - Mermaid and chart source text is stored only as sanitized element attributes in generated fragments and is not included in document search text. Rendered diagrams and charts expose an image role label derived from the visual title or a safe fallback.
 - `compileMarkdown` derives collapsed search text only from sanitized HAST text nodes after sanitization and before stringification. Deterministic separators preserve visible block, table-cell, and line-break boundaries; URLs, attributes, comments, internal paths, raw Markdown, serialized HTML, and removed dangerous content are excluded.

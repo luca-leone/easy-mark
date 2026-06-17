@@ -11,14 +11,14 @@ It is designed for project notes, product docs, team handbooks, technical guides
 - **Keeps output clean:** rendered HTML is sanitised before it is shown.
 - **Supports visuals:** Mermaid diagrams and Chart.js charts work directly from fenced Markdown blocks.
 - **Exports to PDF:** create a complete PDF from the same Markdown source.
-- **Works locally:** bundled assets are served from the package, without depending on external CDNs.
+- **Works locally:** runtime assets are served same-origin, without depending on external CDNs.
 
 ## Installation
 
 Install it in a project:
 
 ```sh
-npm install @easy-mark/cli
+npm install @easy-mark/cli mermaid chart.js
 ```
 
 Then run it through `npx`:
@@ -30,7 +30,7 @@ npx easy-mark serve ./docs
 Or install it globally if you want the `easy-mark` command available everywhere:
 
 ```sh
-npm install --global @easy-mark/cli
+npm install --global @easy-mark/cli mermaid chart.js
 ```
 
 ## Quick Start

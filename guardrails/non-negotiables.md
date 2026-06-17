@@ -27,3 +27,4 @@
 25. Keep machine-readable governance contracts under `contracts/governance/`; `rules/` explains how to apply them and does not own JSON contracts.
 26. Keep versioned Git hook adapters under `hooks/git/` and install them through `core.hooksPath=hooks/git`; do not treat `.git/hooks` as repository source.
 27. Treat `guardrails/` as the explicit invariant index for product, governance, hook, contract, and budget constraints.
+28. Do not commit static third-party browser bundles under `core/web/vendor/`; serve peer package browser runtimes through allowlisted same-origin routes.

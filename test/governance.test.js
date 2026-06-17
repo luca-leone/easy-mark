@@ -500,14 +500,22 @@ test('uses the public @easy-mark/cli package metadata and ESM workflow scripts',
   assert.equal(packageManifest.scripts['validate:markdown-governance'], 'node script/validate-markdown-governance.mjs');
   assert.equal(packageManifest.scripts['repair:markdown-governance'], 'node script/repair-markdown-governance.mjs');
   assert.deepEqual(packageManifest.dependencies, lockfile.packages[''].dependencies);
+  assert.equal(packageManifest.dependencies['chart.js'], undefined);
+  assert.equal(packageManifest.dependencies.mermaid, undefined);
+  assert.equal(packageManifest.peerDependencies['chart.js'], '^4.5.1');
+  assert.equal(packageManifest.peerDependencies.mermaid, '^11.15.0');
+  assert.equal(packageManifest.devDependencies['chart.js'], '^4.5.1');
+  assert.equal(packageManifest.devDependencies.mermaid, '^11.15.0');
+  assert.equal(lockfile.packages[''].peerDependencies['chart.js'], '^4.5.1');
+  assert.equal(lockfile.packages[''].peerDependencies.mermaid, '^11.15.0');
+  assert.equal(lockfile.packages[''].devDependencies['chart.js'], '^4.5.1');
+  assert.equal(lockfile.packages[''].devDependencies.mermaid, '^11.15.0');
   for (const dependencyName of [
-    'chart.js',
     'chokidar',
     'express',
     'github-slugger',
     'mem-fs',
     'mem-fs-editor',
-    'mermaid',
     'mime-types',
     'rehype-raw',
     'rehype-sanitize',
@@ -525,6 +533,7 @@ test('uses the public @easy-mark/cli package metadata and ESM workflow scripts',
   assert.ok(packageManifest.files.includes('core/server/'));
   assert.ok(packageManifest.files.includes('core/web/'));
   assert.equal(packageManifest.files.includes('demo/'), false);
+  await assert.rejects(fs.access(new URL('../core/web/vendor', import.meta.url)));
   await assert.rejects(fs.access(new URL('../server.js', import.meta.url)));
   await assert.rejects(fs.access(new URL('../core/server/server.js', import.meta.url)));
   assert.deepEqual(validateWorkflowScriptPaths([

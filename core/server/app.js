@@ -1,5 +1,8 @@
 import express from 'express';
+import fs from 'node:fs/promises';
 import mime from 'mime-types';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const publicAssetExtensions = new Set([
   '.css',
@@ -19,6 +22,17 @@ const publicAssetExtensions = new Set([
   '.otf',
   '.txt'
 ]);
+const vendorAssetDefinitions = new Map([
+  ['vendor/mermaid/mermaid.min.js', {
+    entry: 'mermaid',
+    relativePath: ['mermaid.min.js']
+  }],
+  ['vendor/chart.js/chart.umd.min.js', {
+    entry: 'chart.js/auto',
+    relativePath: ['..', 'dist', 'chart.umd.min.js']
+  }]
+]);
+const resolvedVendorAssets = new Map();
 
 function securityHeaders(request, response, next) {
   response.set({
@@ -42,10 +56,39 @@ function isPublicAssetPath(relativePath) {
   return publicAssetExtensions.has(`.${relativePath.split('.').pop()?.toLowerCase()}`);
 }
 
+function resolveVendorAsset(relativePath) {
+  if (resolvedVendorAssets.has(relativePath)) return resolvedVendorAssets.get(relativePath);
+  const definition = vendorAssetDefinitions.get(relativePath);
+  if (!definition) return null;
+  try {
+    const entryPath = fileURLToPath(import.meta.resolve(definition.entry));
+    const assetPath = path.resolve(path.dirname(entryPath), ...definition.relativePath);
+    resolvedVendorAssets.set(relativePath, assetPath);
+    return assetPath;
+  } catch {
+    return null;
+  }
+}
+
 function sendVirtualFile(response, builder, relativePath, { generated = false } = {}) {
   const contents = generated ? builder.readGenerated(relativePath) : builder.read(relativePath);
   if (!contents) return false;
   response.type(mime.lookup(relativePath) || 'application/octet-stream').send(contents);
+  return true;
+}
+
+async function sendVendorAsset(response, relativePath) {
+  const assetPath = resolveVendorAsset(relativePath);
+  if (!assetPath) {
+    response.status(500).type('text/plain').send(`${relativePath} requires the matching peer dependency to be installed.`);
+    return true;
+  }
+  try {
+    const contents = await fs.readFile(assetPath);
+    response.type(mime.lookup(relativePath) || 'application/octet-stream').send(contents);
+  } catch {
+    response.status(500).type('text/plain').send(`${relativePath} could not be loaded from the installed peer dependency.`);
+  }
   return true;
 }
 
@@ -83,7 +126,7 @@ export function createApp(builder) {
     }
   });
 
-  app.get('*', (request, response) => {
+  app.get('*', async (request, response) => {
     const assetPath = safeDecodePath(request.path);
     if (assetPath === null) {
       response.sendStatus(400);
@@ -92,6 +135,11 @@ export function createApp(builder) {
 
     if (assetPath.includes('.') && !isPublicAssetPath(assetPath)) {
       response.sendStatus(404);
+      return;
+    }
+
+    if (vendorAssetDefinitions.has(assetPath)) {
+      await sendVendorAsset(response, assetPath);
       return;
     }
 

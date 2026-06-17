@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted — 2026-06-16
+Superseded by [ADR-0037](0037-peer-resolved-visual-runtimes.md) — 2026-06-17
 
 ## Context
 

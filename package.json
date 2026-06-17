@@ -56,13 +56,11 @@
     "check": "npm test"
   },
   "dependencies": {
-    "chart.js": "^4.5.1",
     "chokidar": "^4.0.3",
     "express": "^4.21.2",
     "github-slugger": "^2.0.0",
     "mem-fs": "^4.1.0",
     "mem-fs-editor": "^11.1.4",
-    "mermaid": "^11.15.0",
     "mime-types": "^2.1.35",
     "rehype-raw": "^7.0.0",
     "rehype-sanitize": "^6.0.0",
@@ -74,8 +72,14 @@
     "unist-util-visit": "^5.0.0"
   },
   "peerDependencies": {
+    "chart.js": "^4.5.1",
+    "mermaid": "^11.15.0",
     "playwright": "^1.0.0",
     "playwright-core": "^1.0.0"
+  },
+  "devDependencies": {
+    "chart.js": "^4.5.1",
+    "mermaid": "^11.15.0"
   },
   "peerDependenciesMeta": {
     "playwright": {
