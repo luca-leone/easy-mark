@@ -49,6 +49,7 @@ export async function exportPdf({
     await page.goto(baseUrl, { waitUntil: 'networkidle' });
     await page.evaluate(async () => {
       const exportModule = await import('/pdf-export.js');
+      const visualsModule = await import('/visuals.js');
       const response = await fetch('/__export', { headers: { Accept: 'application/json' } });
       if (!response.ok) throw new Error('Impossibile preparare lo snapshot PDF.');
       const snapshot = await response.json();
@@ -56,6 +57,7 @@ export async function exportPdf({
       exportModule.buildPrintExport(snapshot, container, document, window.location.origin);
       exportModule.setExportLifecycle(document.body, container, true);
       if (document.fonts?.ready) await document.fonts.ready;
+      await visualsModule.renderVisuals(container, { documentObject: document, print: true });
       await exportModule.waitForExportImages(container);
     });
     await fs.mkdir(path.dirname(path.resolve(pdfPath)), { recursive: true });

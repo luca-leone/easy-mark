@@ -10,7 +10,14 @@ test('exportPdf orchestra Chromium e scrive solo il PDF richiesto', async (conte
   const outputDirectory = await fs.mkdtemp(path.join(os.tmpdir(), 'easy-mark-pdf-out-'));
   context.after(() => fs.rm(sourceDirectory, { recursive: true, force: true }));
   context.after(() => fs.rm(outputDirectory, { recursive: true, force: true }));
-  await fs.writeFile(path.join(sourceDirectory, 'page.md'), '# Pagina PDF\n\nContenuto');
+  await fs.writeFile(path.join(sourceDirectory, 'page.md'), [
+    '# Pagina PDF',
+    '',
+    '```chart',
+    '{"type":"bar","data":{"labels":["A"],"datasets":[{"data":[1]}]}}',
+    '```',
+    ''
+  ].join('\n'));
   const pdfPath = path.join(outputDirectory, 'bignami.pdf');
   const calls = [];
   const playwrightModule = {
@@ -26,6 +33,8 @@ test('exportPdf orchestra Chromium e scrive solo il PDF richiesto', async (conte
               },
               async evaluate(callback) {
                 calls.push(['evaluate', callback instanceof Function]);
+                assert.match(callback.toString(), /import\('\/visuals\.js'\)/);
+                assert.match(callback.toString(), /renderVisuals\(container, \{ documentObject: document, print: true \}\)/);
               },
               async pdf(options) {
                 calls.push(['pdf', options.path, options.printBackground, options.preferCSSPageSize]);
