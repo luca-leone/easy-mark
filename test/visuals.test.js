@@ -136,3 +136,53 @@ test('renderizza Mermaid e Chart.js con adapter fake e pulisce le chart', async 
   cleanupVisuals(root);
   assert.equal(destroyed, true);
 });
+
+test('converte Chart.js in immagine stabile durante il rendering per stampa', async () => {
+  const root = new FakeElement();
+  const chartVisual = createVisual('chart', JSON.stringify({
+    type: 'bar',
+    data: { labels: ['A'], datasets: [{ data: [1] }] }
+  }), 'Print chart');
+  root.append(chartVisual.figure);
+
+  const calls = [];
+  class FakeChart {
+    constructor(canvas, config) {
+      this.canvas = canvas;
+      this.config = config;
+      calls.push(['create', config.options.devicePixelRatio]);
+    }
+
+    resize() {
+      calls.push(['resize']);
+    }
+
+    update(mode) {
+      calls.push(['update', mode]);
+    }
+
+    toBase64Image() {
+      calls.push(['image']);
+      return 'data:image/png;base64,chart';
+    }
+
+    destroy() {
+      calls.push(['destroy']);
+    }
+  }
+
+  await renderVisuals(root, {
+    documentObject: {
+      defaultView: { requestAnimationFrame: (callback) => callback() },
+      createElement: (tagName) => new FakeElement(tagName)
+    },
+    Chart: FakeChart,
+    print: true
+  });
+
+  assert.deepEqual(calls, [['create', 2], ['resize'], ['update', 'none'], ['image'], ['destroy']]);
+  assert.equal(chartVisual.stage.children[0].tagName, 'img');
+  assert.equal(chartVisual.stage.children[0].className, 'visual__image');
+  assert.equal(chartVisual.stage.children[0].alt, 'Print chart');
+  assert.equal(chartVisual.stage.children[0].src, 'data:image/png;base64,chart');
+});

@@ -24,7 +24,7 @@ Non-trivial work preserves this state order for every applicable state:
 12. `repair-loop`
 13. `handoff`
 
-Every state produces output that can be inspected. `UserPromptSubmit` records `intake.started`; `workflow:start` writes the runtime contract and records `workflow.started`; `workflow:run` invokes configured read-only agents; `workflow:verify` checks active-run gates before handoff. Before file edits, non-trivial commands, or project-agent runs, hooks detect and report violations.
+Every state produces output that can be inspected. `UserPromptSubmit` records `intake.started`; `workflow:start` writes the runtime contract and records `workflow.started`; `workflow:run` invokes configured read-only agents; `workflow:trace` and `workflow:tail` expose readable spans and event logs; `workflow:verify` checks active-run gates before handoff. Before file edits, non-trivial commands, or project-agent runs, hooks detect and report violations.
 
 ## Intake And Classification Loop
 
@@ -142,7 +142,7 @@ Before the final response, confirm:
 - required contracts, ADRs, memory entries, and skills are synchronized;
 - budget handoff report is complete;
 - agentic compliance report covers selected path, escalation rules, hook monitoring, hook violation policy, verification, and violations;
-- `workflow:status` reports the final workflow state and missing required agent events;
+- `workflow:status`, `workflow:trace`, and `workflow:tail` report the final workflow state and missing required agent events;
 - verified task changes are committed with `$auto-commit` or `npm run task:commit` unless the user explicitly disables automatic committing;
 - long-running processes are closed unless intentionally handed off with a URL;
 - residual risks or skipped checks are explicitly stated.

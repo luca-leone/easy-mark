@@ -451,8 +451,25 @@ test('validates observable workflow intake, routing, and stop gates', async (con
     env: hookEnvironment
   });
   assert.equal(dryRunAgents.status, 0, dryRunAgents.stderr.toString());
+  assert.match(dryRunAgents.stdout.toString(), /planner: running/);
   assert.match(dryRunAgents.stdout.toString(), /planner: completed/);
+  assert.match(dryRunAgents.stdout.toString(), /verifier: running/);
   assert.match(dryRunAgents.stdout.toString(), /verifier: completed/);
+  const traced = spawnSync(process.execPath, [workflowRuntimePath, 'trace'], {
+    cwd: rootDirectory,
+    env: hookEnvironment
+  });
+  assert.equal(traced.status, 0, traced.stderr.toString());
+  assert.match(traced.stdout.toString(), /Trace:/);
+  assert.match(traced.stdout.toString(), /Spans:/);
+  assert.match(traced.stdout.toString(), /planner: completed/);
+  assert.match(traced.stdout.toString(), /Events:/);
+  const tailed = spawnSync(process.execPath, [workflowRuntimePath, 'tail', '--lines', '2'], {
+    cwd: rootDirectory,
+    env: hookEnvironment
+  });
+  assert.equal(tailed.status, 0, tailed.stderr.toString());
+  assert.equal((tailed.stdout.toString().match(/\n  \d{4}-/g) ?? []).length, 2);
   const missingAgents = spawnSync(process.execPath, [preHookPath], {
     cwd: rootDirectory,
     env: hookEnvironment,
@@ -712,6 +729,8 @@ test('uses the public @easy-mark/cli package metadata and ESM workflow scripts',
   assert.equal(packageManifest.scripts['workflow:run'], 'node script/agentic-workflow-runtime.mjs run');
   assert.equal(packageManifest.scripts['workflow:verify'], 'node script/agentic-workflow-runtime.mjs verify');
   assert.equal(packageManifest.scripts['workflow:status'], 'node script/agentic-workflow-runtime.mjs status');
+  assert.equal(packageManifest.scripts['workflow:trace'], 'node script/agentic-workflow-runtime.mjs trace');
+  assert.equal(packageManifest.scripts['workflow:tail'], 'node script/agentic-workflow-runtime.mjs tail');
   assert.equal(packageManifest.scripts['pack:dry-run'], 'node script/versioning-runtime.mjs pack-check && npm pack --dry-run');
   assert.equal(packageManifest.scripts['report:agentic-compliance'], 'node script/report-agentic-compliance.mjs');
   assert.equal(packageManifest.scripts['validate:resource-budgets'], 'node script/validate-resource-budgets.mjs');

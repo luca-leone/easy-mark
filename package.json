@@ -51,6 +51,8 @@
     "workflow:run": "node script/agentic-workflow-runtime.mjs run",
     "workflow:verify": "node script/agentic-workflow-runtime.mjs verify",
     "workflow:status": "node script/agentic-workflow-runtime.mjs status",
+    "workflow:trace": "node script/agentic-workflow-runtime.mjs trace",
+    "workflow:tail": "node script/agentic-workflow-runtime.mjs tail",
     "pack:dry-run": "node script/versioning-runtime.mjs pack-check && npm pack --dry-run",
     "validate:resource-budgets": "node script/validate-resource-budgets.mjs",
     "validate:markdown-governance": "node script/validate-markdown-governance.mjs",

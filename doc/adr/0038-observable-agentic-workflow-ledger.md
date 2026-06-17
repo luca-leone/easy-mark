@@ -28,6 +28,8 @@ Expose `npm run workflow:status` for human-readable status and include workflow 
 
 Expose `npm run workflow:run` as the deterministic orchestrator command. It invokes configured read-only Codex agents, records `agent.started`, `agent.completed`, and `agent.failed`, isolates nested hook reports, and stores agent output as ignored text reports.
 
+Expose `npm run workflow:trace` and `npm run workflow:tail` as readable trace views over the same event ledger. Use the active `runId` as the trace identifier, workflow and agents as spans, and grouped events as human-readable logs.
+
 ## Consequences
 
 The workflow becomes visible and auditable while keeping report files out of Git. Hook violations remain repair triggers, and the same runtime event contract is used by hooks, status, validation, and compliance reporting.
@@ -35,6 +37,8 @@ The workflow becomes visible and auditable while keeping report files out of Git
 High-change work now requires explicit agent routing evidence. If Codex does not start the required subagents, governed mutating work enters repair mode instead of continuing as a single-agent hidden flow.
 
 Planner and verifier routing can now be driven through a repository command instead of relying only on manual subagent starts. Failed agent execution remains visible as active workflow status until the agent completes successfully.
+
+Debugging no longer requires reading raw JSONL directly. The ledger remains the source of truth, while trace commands provide deterministic, compressed status for humans.
 
 ## Alternatives Considered
 

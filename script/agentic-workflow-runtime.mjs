@@ -189,6 +189,23 @@ export function formatWorkflowStatus(status) {
   ].join('\n');
 }
 
+export function formatWorkflowTrace(events, runtimeContract = null, contract = null, options = {}) {
+  const status = buildWorkflowStatus(events, runtimeContract, contract);
+  const scopedEvents = Number.isInteger(options.lines) ? events.slice(-options.lines) : events;
+  const runId = events.find((event) => event.runId)?.runId ?? 'none';
+  return [
+    `Trace: ${runId}`,
+    `Path: ${status.selectedPath}`,
+    `State: ${status.currentState}`,
+    `Active violations: ${status.activeViolations.length === 0 ? 'none' : status.activeViolations.join('; ')}`,
+    'Spans:',
+    `  workflow: ${status.intakeStarted ? 'started' : 'pending'} -> ${status.currentState}`,
+    ...formatAgentSpans(events),
+    'Events:',
+    ...formatWorkflowTraceEvents(scopedEvents)
+  ].join('\n');
+}
+
 export async function runWorkflowHook(eventName, rawPayload, options = {}) {
   const root = await findRepositoryRoot(process.cwd());
   const payload = parseHookPayload(rawPayload);
@@ -336,6 +353,7 @@ export async function runWorkflowAgents(root, options = {}) {
       agent,
       state: stateForAgent(agent)
     }, eventsPath);
+    options.onAgentStart?.(agent);
     const result = options.dryRun
       ? dryRunAgent(agent)
       : runCodexAgent(repositoryRoot, currentRun, agentConfig, options.runner ?? spawnSync, options.timeoutMs ?? 120000);
@@ -360,6 +378,7 @@ export async function runWorkflowAgents(root, options = {}) {
       }, eventsPath);
     }
     results.push({ agent, ...result, reportPath: agentReportPath(currentRun.runId, agent) });
+    options.onAgentComplete?.(results.at(-1));
     if (result.status !== 0 && !options.continueOnFailure) break;
   }
   return results;
@@ -577,6 +596,52 @@ function formatRequirements(requirements) {
     : requirements.map((requirement) => `${requirement.agent}.${requirement.event}`).join(', ');
 }
 
+function formatAgentSpans(events) {
+  return ['planner', 'implementer', 'verifier', 'reviewer'].map((agent) => {
+    const started = events.find((event) => event.event === 'agent.started' && event.agent === agent);
+    const completed = events.findLast((event) => event.event === 'agent.completed' && event.agent === agent);
+    const failed = events.findLast((event) => event.event === 'agent.failed' && event.agent === agent);
+    const state = completed ? 'completed' : failed ? `failed(${failed.exitCode})` : started ? 'running' : 'pending';
+    return `  ${agent}: ${state}${started ? ` since ${started.timestamp}` : ''}`;
+  });
+}
+
+function formatWorkflowTraceEvent(event) {
+  const details = [
+    event.agent ? `agent=${event.agent}` : '',
+    event.phase ? `phase=${event.phase}` : '',
+    event.exitCode ? `exitCode=${event.exitCode}` : '',
+    event.reportPath ? `report=${event.reportPath}` : '',
+    event.violations?.length ? `violations=${event.violations.length}` : ''
+  ].filter(Boolean).join(' ');
+  return `  ${event.timestamp} ${event.state} ${event.event} source=${event.source}${details ? ` ${details}` : ''}`;
+}
+
+function formatWorkflowTraceEvents(events) {
+  const groups = [];
+  for (const event of events) {
+    const key = workflowTraceEventKey(event);
+    const previous = groups.at(-1);
+    if (previous?.key === key) previous.count += 1;
+    else groups.push({ key, event, count: 1 });
+  }
+  return groups.map(({ event, count }) =>
+    `${formatWorkflowTraceEvent(event)}${count > 1 ? ` x${count}` : ''}`
+  );
+}
+
+function workflowTraceEventKey(event) {
+  return JSON.stringify({
+    event: event.event,
+    source: event.source,
+    state: event.state,
+    agent: event.agent,
+    phase: event.phase,
+    exitCode: event.exitCode,
+    violations: event.violations?.length ?? 0
+  });
+}
+
 function uniqueSorted(values) {
   return [...new Set(values)].sort(compareCodeUnits);
 }
@@ -622,11 +687,17 @@ async function runCli() {
   }
   if (command === 'run') {
     const options = parseRunArguments(process.argv.slice(3));
-    const results = await runWorkflowAgents(root, options);
-    for (const result of results) {
+    options.onAgentStart = (agent) => console.log(`${agent}: running...`);
+    options.onAgentComplete = (result) => {
       console.log(`${result.agent}: ${result.status === 0 ? 'completed' : `failed (${result.status})`} -> ${result.reportPath}`);
-    }
+    };
+    const results = await runWorkflowAgents(root, options);
     if (results.some((result) => result.status !== 0)) process.exitCode = 1;
+    return;
+  }
+  if (command === 'trace' || command === 'tail') {
+    const options = command === 'tail' ? parseTraceArguments(process.argv.slice(3), { lines: 20 }) : parseTraceArguments(process.argv.slice(3));
+    console.log(formatWorkflowTrace(events, runtimeContract, contract, options));
     return;
   }
   if (command === 'validate' || command === 'verify') {
@@ -678,6 +749,16 @@ function parseRunArguments(argumentsList) {
     else if (argument === '--dry-run') options.dryRun = true;
     else if (argument === '--continue-on-failure') options.continueOnFailure = true;
     else throw new Error(`Unknown workflow:run argument: ${argument}`);
+  }
+  return options;
+}
+
+function parseTraceArguments(argumentsList, defaults = {}) {
+  const options = { ...defaults };
+  for (let index = 0; index < argumentsList.length; index += 1) {
+    const argument = argumentsList[index];
+    if (argument === '--lines') options.lines = Number(argumentsList[index += 1]);
+    else throw new Error(`Unknown workflow trace argument: ${argument}`);
   }
   return options;
 }

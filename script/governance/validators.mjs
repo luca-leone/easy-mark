@@ -154,6 +154,8 @@ export function validateAgenticWorkflowPolicy(contents) {
     'workflow:run',
     'workflow:verify',
     'workflow:status',
+    'workflow:trace',
+    'workflow:tail',
     'agentic compliance report',
     'intake',
     'classification',

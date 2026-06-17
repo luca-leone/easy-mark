@@ -91,6 +91,12 @@ function showVisualError(stage, message, documentObject) {
   stage.replaceChildren(error);
 }
 
+function waitForVisualFrame(documentObject) {
+  const frame = documentObject.defaultView?.requestAnimationFrame ?? globalThis.requestAnimationFrame;
+  if (!frame) return Promise.resolve();
+  return new Promise((resolve) => frame(resolve));
+}
+
 function initializeMermaid(mermaid) {
   if (mermaidInitialized) return;
   mermaid.initialize({
@@ -114,14 +120,29 @@ async function renderMermaid(figure, stage, source, { mermaid, documentObject })
   stage.replaceChildren(image);
 }
 
-function renderChart(figure, stage, source, { Chart, documentObject, print }) {
+async function renderChart(figure, stage, source, { Chart, documentObject, print }) {
   if (!Chart) throw new Error('Chart.js runtime is unavailable.');
   const { config, title } = normalizeChartConfig(source, { print });
   const canvas = documentObject.createElement('canvas');
   canvas.setAttribute('role', 'img');
-  canvas.setAttribute('aria-label', figure.getAttribute('data-visual-title') || title);
+  const label = figure.getAttribute('data-visual-title') || title;
+  canvas.setAttribute('aria-label', label);
   stage.replaceChildren(canvas);
-  stage[chartInstance] = new Chart(canvas, config);
+  const chart = new Chart(canvas, config);
+  stage[chartInstance] = chart;
+  if (!print) return;
+
+  chart.resize?.();
+  chart.update?.('none');
+  await waitForVisualFrame(documentObject);
+  const image = documentObject.createElement('img');
+  image.className = 'visual__image';
+  image.alt = label;
+  image.decoding = 'async';
+  image.src = chart.toBase64Image?.() ?? canvas.toDataURL('image/png');
+  chart.destroy?.();
+  delete stage[chartInstance];
+  stage.replaceChildren(image);
 }
 
 export function cleanupVisuals(root) {
@@ -146,7 +167,7 @@ export async function renderVisuals(root, {
     const kind = figure.getAttribute('data-visual-kind');
     try {
       if (kind === 'mermaid') await renderMermaid(figure, stage, source, { mermaid, documentObject });
-      else if (kind === 'chart') renderChart(figure, stage, source, { Chart, documentObject, print });
+      else if (kind === 'chart') await renderChart(figure, stage, source, { Chart, documentObject, print });
       stage.setAttribute('data-visual-rendered', 'true');
     } catch (error) {
       showVisualError(stage, error instanceof Error ? error.message : 'Unable to render visual.', documentObject);
