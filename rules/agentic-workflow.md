@@ -115,10 +115,11 @@ Loop until:
 
 ## Repair Loop
 
-The repair loop is mandatory when any of these triggers occurs. Hook violations enter `repair mode`: do not start a new workflow phase until the violation is repaired or reported as blocked.
+The repair loop is mandatory when any of these triggers occurs. Hook violations enter `repair mode`: do not start a new workflow phase until `workflow:status` shows no active violation or the violation is reported as blocked.
 
 - a test, governance validation, or targeted verification fails;
 - a `PreToolUse` or `PostToolUse` hook reports an agentic lean path violation;
+- a workflow hook records `workflow.violation` in the active run ledger;
 - implementation violates a contract, ADR, rule, or guardrail;
 - reviewer or verifier reports a valid finding;
 - acceptance criteria are not met;
@@ -145,5 +146,4 @@ Before the final response, confirm:
 - verified task changes are committed with `$auto-commit` or `npm run task:commit` unless the user explicitly disables automatic committing;
 - long-running processes are closed unless intentionally handed off with a URL;
 - residual risks or skipped checks are explicitly stated.
-
 ## Execution Template: use `Task Classification`, `Risk`, `Required Skills`, `Required Agents`, `Source Documents`, `Requirements`, `Budget Envelope`, `Acceptance Criteria`, `Execution Steps`, `Verification Matrix`, `Repair Triggers`, and `Final Handoff Checklist`.

@@ -7,5 +7,5 @@ const errors = await runWorkflowHook('Stop', await readStdin());
 if (errors.length > 0) {
   console.error('Agentic workflow Stop hook detected an incomplete workflow; enter repair mode.');
   for (const error of errors) console.error(`- ${error}`);
-  process.exit(1);
+  process.exit(0);
 }

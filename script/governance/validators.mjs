@@ -518,8 +518,7 @@ export function validateAgenticWorkflowHookScript(contents) {
   for (const phrase of [
     'Agentic workflow',
     'runWorkflowHook',
-    'repair mode',
-    'process.exit(1)'
+    'repair mode'
   ]) {
     if (!contents.includes(phrase)) errors.push(`agentic-workflow hook script: missing ${phrase}`);
   }

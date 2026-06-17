@@ -14,6 +14,7 @@ import { compareCodeUnits } from './governance/validators.mjs';
 
 export const DEFAULT_WORKFLOW_EVENTS_CONTRACT_PATH = path.join('contracts', 'governance', 'agentic-workflow-events.json');
 export const DEFAULT_WORKFLOW_EVENTS_PATH = path.join('reports', 'agentic-workflow-events.jsonl');
+export const DEFAULT_WORKFLOW_CURRENT_RUN_PATH = path.join('reports', 'agentic-workflow-current.json');
 
 export async function appendWorkflowEvent(root, event, eventsPath = DEFAULT_WORKFLOW_EVENTS_PATH) {
   const absoluteEventsPath = path.resolve(root, eventsPath);
@@ -30,6 +31,14 @@ export async function readWorkflowEvents(root, eventsPath = DEFAULT_WORKFLOW_EVE
       .map((line) => JSON.parse(line));
   } catch {
     return [];
+  }
+}
+
+export async function readCurrentWorkflowRun(root, currentRunPath = DEFAULT_WORKFLOW_CURRENT_RUN_PATH) {
+  try {
+    return await readJsonFile(path.resolve(root, currentRunPath));
+  } catch {
+    return null;
   }
 }
 
@@ -57,12 +66,15 @@ export function validateWorkflowEventsContract(contract) {
   if (contract.report?.path !== DEFAULT_WORKFLOW_EVENTS_PATH) {
     errors.push(`contracts/governance/agentic-workflow-events.json: report.path must be ${DEFAULT_WORKFLOW_EVENTS_PATH}`);
   }
+  if (contract.currentRun?.path !== DEFAULT_WORKFLOW_CURRENT_RUN_PATH) {
+    errors.push(`contracts/governance/agentic-workflow-events.json: currentRun.path must be ${DEFAULT_WORKFLOW_CURRENT_RUN_PATH}`);
+  }
   for (const field of ['event', 'timestamp', 'source', 'state']) {
     if (!contract.report?.requiredFields?.includes(field)) {
       errors.push(`contracts/governance/agentic-workflow-events.json: report.requiredFields missing ${field}`);
     }
   }
-  for (const eventName of ['intake.started', 'agent.started', 'agent.completed', 'workflow.completed']) {
+  for (const eventName of ['intake.started', 'agent.started', 'agent.completed', 'workflow.completed', 'workflow.violation']) {
     if (!contract.events?.[eventName]) {
       errors.push(`contracts/governance/agentic-workflow-events.json: events missing ${eventName}`);
     }
@@ -136,7 +148,10 @@ export function buildWorkflowStatus(events, runtimeContract = null, contract = n
     intakeStarted: hasEvent(events, { event: 'intake.started' }),
     agents,
     missingBeforeMutatingToolUse: missingMutating,
-    missingBeforeWorkflowCompletion: missingCompletion
+    missingBeforeWorkflowCompletion: missingCompletion,
+    activeViolations: uniqueSorted(events
+      .filter((event) => event.event === 'workflow.violation')
+      .flatMap((event) => event.violations ?? []))
   };
 }
 
@@ -151,7 +166,8 @@ export function formatWorkflowStatus(status) {
       `  ${agent}: ${completed ? 'completed' : started ? 'started' : 'pending'}`
     ),
     `Missing before mutating tool use: ${formatRequirements(status.missingBeforeMutatingToolUse)}`,
-    `Missing before completion: ${formatRequirements(status.missingBeforeWorkflowCompletion)}`
+    `Missing before completion: ${formatRequirements(status.missingBeforeWorkflowCompletion)}`,
+    `Active violations: ${status.activeViolations.length === 0 ? 'none' : status.activeViolations.join('; ')}`
   ].join('\n');
 }
 
@@ -159,24 +175,35 @@ export async function runWorkflowHook(eventName, rawPayload, options = {}) {
   const root = await findRepositoryRoot(process.cwd());
   const payload = parseHookPayload(rawPayload);
   const eventsPath = process.env.AGENTIC_WORKFLOW_EVENTS_PATH ?? DEFAULT_WORKFLOW_EVENTS_PATH;
+  const currentRunPath = process.env.AGENTIC_WORKFLOW_CURRENT_RUN_PATH ?? currentRunPathForEvents(eventsPath);
   const contract = await readJsonFile(path.resolve(root, options.contractPath ?? DEFAULT_WORKFLOW_EVENTS_CONTRACT_PATH));
   const runtimeContractPath = process.env.AGENTIC_RUNTIME_CONTRACT_PATH ?? DEFAULT_RUNTIME_CONTRACT_PATH;
   const runtimeContract = await readOptionalJson(path.resolve(root, runtimeContractPath));
 
   if (eventName === 'UserPromptSubmit') {
+    const promptHash = hashString(rawPayload);
+    const run = {
+      runId: `${Date.now()}-${promptHash}`,
+      promptHash,
+      startedAt: new Date().toISOString()
+    };
+    await writeCurrentWorkflowRun(root, run, currentRunPath);
     await appendWorkflowEvent(root, {
       event: 'intake.started',
       source: 'UserPromptSubmit',
-      promptHash: hashString(rawPayload),
+      runId: run.runId,
+      promptHash,
       state: 'intake'
     }, eventsPath);
     return [];
   }
 
+  const currentRun = await readCurrentWorkflowRun(root, currentRunPath);
   if (eventName === 'SubagentStart') {
     await appendWorkflowEvent(root, {
       event: 'agent.started',
       source: 'SubagentStart',
+      runId: currentRun?.runId,
       agent: getAgentName(payload),
       state: stateForAgent(getAgentName(payload))
     }, eventsPath);
@@ -187,20 +214,23 @@ export async function runWorkflowHook(eventName, rawPayload, options = {}) {
     await appendWorkflowEvent(root, {
       event: 'agent.completed',
       source: 'SubagentStop',
+      runId: currentRun?.runId,
       agent: getAgentName(payload),
       state: stateForAgent(getAgentName(payload))
     }, eventsPath);
     return [];
   }
 
-  const events = await readWorkflowEvents(root, eventsPath);
+  const events = eventsForRun(await readWorkflowEvents(root, eventsPath), currentRun);
   if (eventName === 'PreToolUse') {
     const requirement = toolCallRequiresRuntimeContract(payload, rawPayload);
     if (!requirement.required) return [];
-    return validateWorkflowEvents(events, contract, runtimeContract, {
+    const errors = validateWorkflowEvents(events, contract, runtimeContract, {
       requireIntake: true,
       phase: 'beforeMutatingToolUse'
     });
+    if (errors.length > 0) await appendWorkflowViolation(root, currentRun, 'beforeMutatingToolUse', errors, eventsPath);
+    return errors;
   }
 
   if (eventName === 'Stop') {
@@ -208,10 +238,12 @@ export async function runWorkflowHook(eventName, rawPayload, options = {}) {
       requireIntake: true,
       phase: 'beforeWorkflowCompletion'
     });
+    if (errors.length > 0) await appendWorkflowViolation(root, currentRun, 'beforeWorkflowCompletion', errors, eventsPath);
     if (errors.length === 0) {
       await appendWorkflowEvent(root, {
         event: 'workflow.completed',
         source: 'Stop',
+        runId: currentRun?.runId,
         state: 'handoff'
       }, eventsPath);
     }
@@ -233,12 +265,44 @@ function getAgentName(payload) {
   return firstString(
     payload.subagentType,
     payload.subagent_type,
+    payload.subagent?.name,
+    payload.subagent?.type,
     payload.agent,
+    payload.agent?.name,
+    payload.agent?.type,
     payload.agentName,
     payload.agent_name,
     payload.name,
     payload.type
   ) ?? 'unknown';
+}
+
+async function writeCurrentWorkflowRun(root, run, currentRunPath) {
+  const absolutePath = path.resolve(root, currentRunPath);
+  await fs.mkdir(path.dirname(absolutePath), { recursive: true });
+  await fs.writeFile(absolutePath, `${JSON.stringify(run, null, 2)}\n`);
+}
+
+async function appendWorkflowViolation(root, currentRun, phase, violations, eventsPath) {
+  await appendWorkflowEvent(root, {
+    event: 'workflow.violation',
+    source: phase === 'beforeWorkflowCompletion' ? 'Stop' : 'PreToolUse',
+    runId: currentRun?.runId,
+    state: 'repair-loop',
+    phase,
+    violations
+  }, eventsPath);
+}
+
+function eventsForRun(events, currentRun) {
+  if (!currentRun?.runId) return events;
+  const scopedEvents = events.filter((event) => event.runId === currentRun.runId);
+  return scopedEvents.length === 0 ? events : scopedEvents;
+}
+
+function currentRunPathForEvents(eventsPath) {
+  if (eventsPath === DEFAULT_WORKFLOW_EVENTS_PATH) return DEFAULT_WORKFLOW_CURRENT_RUN_PATH;
+  return path.join(path.dirname(eventsPath), 'agentic-workflow-current.json');
 }
 
 function stateForAgent(agent) {
@@ -263,6 +327,10 @@ function formatRequirements(requirements) {
   return requirements.length === 0
     ? 'none'
     : requirements.map((requirement) => `${requirement.agent}.${requirement.event}`).join(', ');
+}
+
+function uniqueSorted(values) {
+  return [...new Set(values)].sort(compareCodeUnits);
 }
 
 function hashString(value) {
@@ -293,7 +361,9 @@ async function runCli() {
     return;
   }
   const runtimeContract = await readOptionalJson(path.resolve(root, process.env.AGENTIC_RUNTIME_CONTRACT_PATH ?? DEFAULT_RUNTIME_CONTRACT_PATH));
-  const events = await readWorkflowEvents(root, process.env.AGENTIC_WORKFLOW_EVENTS_PATH ?? DEFAULT_WORKFLOW_EVENTS_PATH);
+  const eventsPath = process.env.AGENTIC_WORKFLOW_EVENTS_PATH ?? DEFAULT_WORKFLOW_EVENTS_PATH;
+  const currentRun = await readCurrentWorkflowRun(root, process.env.AGENTIC_WORKFLOW_CURRENT_RUN_PATH ?? currentRunPathForEvents(eventsPath));
+  const events = eventsForRun(await readWorkflowEvents(root, eventsPath), currentRun);
   if (command === 'validate') {
     const errors = validateWorkflowEvents(events, contract, runtimeContract, { requireIntake: events.length > 0 });
     if (errors.length > 0) {

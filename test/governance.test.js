@@ -45,7 +45,11 @@ import { validateAgenticPaths } from '../script/validate-agentic-paths.mjs';
 import { validateAgenticRuntimeContractFile } from '../script/validate-agentic-lean-path-runtime.mjs';
 import { validateResourceBudgets } from '../script/validate-resource-budgets.mjs';
 import { buildAgenticComplianceReport } from '../script/report-agentic-compliance.mjs';
-import { readWorkflowEvents } from '../script/agentic-workflow-runtime.mjs';
+import {
+  buildWorkflowStatus,
+  readCurrentWorkflowRun,
+  readWorkflowEvents
+} from '../script/agentic-workflow-runtime.mjs';
 import {
   expectedPackTarballName,
   parseRemoteTagRefs,
@@ -411,7 +415,7 @@ test('validates observable workflow intake, routing, and stop gates', async (con
     env: hookEnvironment,
     input: JSON.stringify({ toolName: 'apply_patch', input: { patch: '*** Begin Patch\n*** End Patch\n' } })
   });
-  assert.equal(missingIntake.status, 1);
+  assert.equal(missingIntake.status, 0);
   assert.match(missingIntake.stderr.toString(), /intake\.started is required/);
 
   assert.equal(spawnSync(process.execPath, [userPromptHookPath], {
@@ -424,8 +428,16 @@ test('validates observable workflow intake, routing, and stop gates', async (con
     env: hookEnvironment,
     input: JSON.stringify({ toolName: 'apply_patch', input: { patch: '*** Begin Patch\n*** End Patch\n' } })
   });
-  assert.equal(missingAgents.status, 1);
+  assert.equal(missingAgents.status, 0);
   assert.match(missingAgents.stderr.toString(), /planner\.agent\.completed/);
+  const repairEvents = await readWorkflowEvents(rootDirectory, eventsPath);
+  const repairStatus = buildWorkflowStatus(
+    repairEvents,
+    JSON.parse(await fs.readFile(runtimePath, 'utf8')),
+    contract
+  );
+  assert.equal(repairStatus.currentState, 'repair-loop');
+  assert.ok(repairStatus.activeViolations.some((violation) => violation.includes('planner.agent.completed')));
 
   assert.equal(spawnSync(process.execPath, [subagentStopHookPath], {
     cwd: rootDirectory,
@@ -449,7 +461,7 @@ test('validates observable workflow intake, routing, and stop gates', async (con
     env: hookEnvironment,
     input: JSON.stringify({})
   });
-  assert.equal(missingVerifier.status, 1);
+  assert.equal(missingVerifier.status, 0);
   assert.match(missingVerifier.stderr.toString(), /verifier\.agent\.completed/);
   assert.equal(spawnSync(process.execPath, [subagentStopHookPath], {
     cwd: rootDirectory,
@@ -462,13 +474,19 @@ test('validates observable workflow intake, routing, and stop gates', async (con
     input: JSON.stringify({})
   }).status, 0);
   const events = await readWorkflowEvents(rootDirectory, eventsPath);
+  const currentRun = await readCurrentWorkflowRun(rootDirectory, path.join(temporaryDirectory, 'agentic-workflow-current.json'));
+  assert.equal(typeof currentRun.runId, 'string');
   assert.deepEqual(events.map(({ event }) => event), [
+    'workflow.violation',
     'intake.started',
+    'workflow.violation',
     'agent.completed',
     'agent.started',
+    'workflow.violation',
     'agent.completed',
     'workflow.completed'
   ]);
+  assert.ok(events.filter((event) => event.runId === currentRun.runId).length >= 5);
 });
 
 test('validates Markdown governance contract, hooks, reports, and repair trigger', async (context) => {

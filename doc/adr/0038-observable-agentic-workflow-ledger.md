@@ -12,19 +12,19 @@ This created a gap between declared governance and runtime behavior: the contrac
 
 ## Decision
 
-Add `contracts/governance/agentic-workflow-events.json` as the machine-readable contract for workflow events. Record runtime events in `reports/agentic-workflow-events.jsonl`.
+Add `contracts/governance/agentic-workflow-events.json` as the machine-readable contract for workflow events. Record runtime events in `reports/agentic-workflow-events.jsonl` and the active run in `reports/agentic-workflow-current.json`.
 
 Use Codex lifecycle hooks for deterministic observability:
 
 - `UserPromptSubmit` records `intake.started`.
 - `SubagentStart` records `agent.started`.
 - `SubagentStop` records `agent.completed`.
-- `PreToolUse` checks intake and required routing events before governed mutating work.
-- `Stop` checks completion requirements and records `workflow.completed` only when required events exist.
+- `PreToolUse` checks intake and required routing events before governed mutating work, then records `workflow.violation` when repair is required.
+- `Stop` checks completion requirements, records `workflow.violation` when repair is required, and records `workflow.completed` only when required events exist.
 
 For `high-change`, `planner.completed` and `implementer.started` are required before mutating tool use, and `verifier.completed` is required before workflow completion.
 
-Expose `npm run workflow:status` for human-readable status and include workflow status in the agentic compliance report.
+Expose `npm run workflow:status` for human-readable status and include workflow status in the agentic compliance report. Status is scoped to the active run and must show `repair-loop` plus active violations when hooks detect missing routing.
 
 ## Consequences
 

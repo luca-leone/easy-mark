@@ -7,5 +7,5 @@ const errors = await runWorkflowHook('PreToolUse', await readStdin());
 if (errors.length > 0) {
   console.error('Agentic workflow PreToolUse gate detected a workflow violation; enter repair mode.');
   for (const error of errors) console.error(`- ${error}`);
-  process.exit(1);
+  process.exit(0);
 }

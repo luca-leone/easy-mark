@@ -10,6 +10,14 @@
       "state"
     ]
   },
+  "currentRun": {
+    "path": "reports/agentic-workflow-current.json",
+    "requiredFields": [
+      "runId",
+      "promptHash",
+      "startedAt"
+    ]
+  },
   "stateOrder": [
     "intake",
     "classification",
@@ -45,6 +53,13 @@
     "workflow.completed": {
       "state": "handoff",
       "source": "Stop"
+    },
+    "workflow.violation": {
+      "state": "repair-loop",
+      "requiredFields": [
+        "phase",
+        "violations"
+      ]
     }
   },
   "pathAgentRequirements": {
